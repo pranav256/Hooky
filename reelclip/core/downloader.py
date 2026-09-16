@@ -38,6 +38,42 @@ VIDEO_HOST_HINTS = re.compile(
 PROBE_FORMAT = "bv*+ba/b"    # permissive: only used to LIST formats, not download
 
 
+class YouTubeAuthRequired(RuntimeError):
+    """YouTube refused an anonymous or invalidly authenticated request."""
+
+
+_AUTH_MARKERS = (
+    "sign in to confirm", "cookies-from-browser", "cookies from browser",
+    "confirm you’re not a bot", "confirm you're not a bot", "login required",
+)
+
+
+def is_youtube_auth_error(error: BaseException) -> bool:
+    text = str(error).lower()
+    return any(marker in text for marker in _AUTH_MARKERS)
+
+
+def youtube_auth_help() -> str:
+    browser = os.environ.get("YTDLP_COOKIES_FROM_BROWSER", "").strip()
+    cookie_file = os.environ.get("YTDLP_COOKIES_FILE", "").strip()
+    if browser:
+        return (f"YTDLP_COOKIES_FROM_BROWSER={browser!r} is configured, but "
+                "YouTube rejected those cookies. Open YouTube in that browser, "
+                "sign in, solve any CAPTCHA, close the browser, and retry; "
+                "otherwise export fresh Netscape cookies and use YTDLP_COOKIES_FILE.")
+    if cookie_file:
+        return (f"YTDLP_COOKIES_FILE points to {cookie_file!r}, but YouTube rejected "
+                "it. Export a fresh Netscape cookies.txt after signing in and retry.")
+    return ("YouTube needs authentication. Set YTDLP_COOKIES_FROM_BROWSER=firefox "
+            "(or chrome/brave/edge) after signing into YouTube, close that browser, "
+            "and retry. Alternatively export Netscape cookies.txt and set "
+            "YTDLP_COOKIES_FILE=/absolute/path/cookies.txt.")
+
+
+def _auth_failure(error: BaseException) -> YouTubeAuthRequired:
+    return YouTubeAuthRequired(f"{error}\n\n[youtube] {youtube_auth_help()}")
+
+
 def yt_dlp_auth_opts() -> dict:
     """Optional yt-dlp authentication, shared by downloads and channel scans.
 
@@ -49,14 +85,53 @@ def yt_dlp_auth_opts() -> dict:
     """
     auth: dict = {}
     browser = os.environ.get("YTDLP_COOKIES_FROM_BROWSER", "").strip()
+    cookie_file = os.path.expanduser(os.environ.get("YTDLP_COOKIES_FILE", "").strip())
+    if browser and cookie_file:
+        raise ValueError("Set only one of YTDLP_COOKIES_FROM_BROWSER or "
+                         "YTDLP_COOKIES_FILE")
     if browser:
         name, _, profile = browser.partition(":")
+        name = name.strip().lower()
+        allowed = {"brave", "chrome", "chromium", "edge", "firefox", "opera",
+                   "safari", "vivaldi"}
+        if name not in allowed:
+            raise ValueError(f"Unsupported browser '{name}' in "
+                             "YTDLP_COOKIES_FROM_BROWSER")
         auth["cookiesfrombrowser"] = (
-            name.strip(), profile.strip() or None, None, None)
-    cookie_file = os.environ.get("YTDLP_COOKIES_FILE", "").strip()
+            name, profile.strip() or None, None, None)
     if cookie_file:
-        auth["cookiefile"] = cookie_file
+        path = Path(cookie_file)
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"YTDLP_COOKIES_FILE does not exist: {path}. "
+                "Export a Netscape cookies.txt file first.")
+        auth["cookiefile"] = str(path)
     return auth
+
+
+def check_youtube_access(url: str) -> bool:
+    """Probe one URL without downloading and print an actionable diagnosis."""
+    try:
+        import yt_dlp
+        auth = yt_dlp_auth_opts()
+        print("[youtube] authentication: " +
+              ("configured browser/cookie file" if auth else "anonymous (no cookies)"))
+        opts = {"quiet": True, "no_warnings": True, "noplaylist": True,
+                "skip_download": True, **auth}
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+        if not info:
+            print("[youtube] no metadata returned", file=sys.stderr)
+            return False
+        print(f"[youtube] OK: {info.get('title') or info.get('id') or url}")
+        return True
+    except Exception as exc:
+        if is_youtube_auth_error(exc):
+            print(f"[youtube] AUTHENTICATION FAILED: {_auth_failure(exc)}",
+                  file=sys.stderr)
+        else:
+            print(f"[youtube] probe failed: {exc}", file=sys.stderr)
+        return False
 
 
 def _format_string(max_height: int) -> str:
@@ -128,7 +203,11 @@ def make_analysis_twin(master: Path) -> Path | None:
 
 def _attach_analysis(videos: list[dict]) -> None:
     for v in videos:
-        v["analysis"] = make_analysis_twin(v["path"])
+        # Semantic source captions already let Gemini select textually; avoid
+        # transcoding the entire long master into a 480p proxy. The proxy is
+        # retained only for the visual/audio fallback when captions are absent.
+        v["analysis"] = (None if v.get("source_transcript")
+                          else make_analysis_twin(v["path"]))
 
 
 def parse_links_file(links_path: Path) -> list[dict]:
@@ -286,7 +365,11 @@ def expand_and_download(entry: dict, limits: dict) -> tuple[list[dict], bool]:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as exc:
-        print(f"[links] Failed to read {url}: {exc}", file=sys.stderr)
+        if is_youtube_auth_error(exc):
+            print(f"[links] YouTube authentication failed: {_auth_failure(exc)}",
+                  file=sys.stderr)
+        else:
+            print(f"[links] Failed to read {url}: {exc}", file=sys.stderr)
         return videos, False
 
     if info is None:
@@ -343,8 +426,12 @@ def expand_and_download(entry: dict, limits: dict) -> tuple[list[dict], bool]:
                 full = ydl.extract_info(flat.get("url") or flat.get("webpage_url") or url,
                                         download=True)
         except Exception as exc:
-            print(f"[links] Download failed for {flat.get('title', video_id)}: {exc}",
-                  file=sys.stderr)
+            if is_youtube_auth_error(exc):
+                print(f"[links] YouTube authentication failed: {_auth_failure(exc)}",
+                      file=sys.stderr)
+            else:
+                print(f"[links] Download failed for {flat.get('title', video_id)}: {exc}",
+                      file=sys.stderr)
             continue
 
         merged = _merge_info(flat, full)

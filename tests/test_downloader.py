@@ -19,6 +19,49 @@ def test_parse_links_skips_both_done_markers(tmp_path: Path) -> None:
     assert [entry["url"] for entry in entries] == ["https://example.test/new"]
 
 
+def test_youtube_auth_options_support_browser_or_cookie_file(tmp_path: Path,
+                                                             monkeypatch) -> None:
+    monkeypatch.setenv("YTDLP_COOKIES_FROM_BROWSER", "firefox:default")
+    monkeypatch.delenv("YTDLP_COOKIES_FILE", raising=False)
+    assert downloader.yt_dlp_auth_opts()["cookiesfrombrowser"] == (
+        "firefox", "default", None, None)
+
+    monkeypatch.delenv("YTDLP_COOKIES_FROM_BROWSER")
+    cookie_file = tmp_path / "cookies.txt"
+    cookie_file.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
+    monkeypatch.setenv("YTDLP_COOKIES_FILE", str(cookie_file))
+    assert downloader.yt_dlp_auth_opts()["cookiefile"] == str(cookie_file)
+
+
+def test_youtube_auth_options_reject_missing_or_conflicting_credentials(tmp_path: Path,
+                                                                        monkeypatch) -> None:
+    monkeypatch.setenv("YTDLP_COOKIES_FROM_BROWSER", "firefox")
+    monkeypatch.setenv("YTDLP_COOKIES_FILE", str(tmp_path / "cookies.txt"))
+    import pytest
+    with pytest.raises(ValueError):
+        downloader.yt_dlp_auth_opts()
+    monkeypatch.delenv("YTDLP_COOKIES_FROM_BROWSER")
+    with pytest.raises(FileNotFoundError):
+        downloader.yt_dlp_auth_opts()
+
+
+def test_auth_error_has_actionable_help() -> None:
+    error = RuntimeError("Sign in to confirm you're not a bot; use --cookies-from-browser")
+    assert downloader.is_youtube_auth_error(error)
+    assert "YTDLP_COOKIES_FROM_BROWSER" in downloader._auth_failure(error).args[0]
+
+
+def test_caption_sources_skip_full_analysis_proxy(tmp_path: Path, monkeypatch) -> None:
+    video = tmp_path / "source.mp4"
+    video.write_bytes(b"video")
+    monkeypatch.setattr(downloader, "make_analysis_twin",
+                        lambda path: (_ for _ in ()).throw(AssertionError("proxy")))
+    videos = [{"path": video, "source_transcript": [{"start": 0, "end": 1,
+                                                       "text": "hello"}]}]
+    downloader._attach_analysis(videos)
+    assert videos[0]["analysis"] is None
+
+
 def test_cache_lookup_ignores_list_json(tmp_path: Path, monkeypatch) -> None:
     downloads = tmp_path / "downloads"
     downloads.mkdir()

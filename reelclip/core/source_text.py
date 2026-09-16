@@ -114,7 +114,8 @@ def download_source_captions(url: str, video_id: str, output_dir: Path,
     except ImportError:
         return None
     output_dir.mkdir(parents=True, exist_ok=True)
-    from .downloader import yt_dlp_auth_opts
+    from .downloader import (_auth_failure, is_youtube_auth_error,
+                              yt_dlp_auth_opts)
     # Cache the outcome, including unavailable tracks for a day. Never choose
     # an arbitrary neighbouring video's captions using a broad glob.
     from .checkpoints import load_checkpoint, save_checkpoint, digest
@@ -148,8 +149,12 @@ def download_source_captions(url: str, video_id: str, output_dir: Path,
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.download([url])
     except Exception as exc:
-        print(f"[captions] source captions unavailable for {video_id}: {exc}",
-              file=sys.stderr)
+        if is_youtube_auth_error(exc):
+            print(f"[captions] YouTube authentication failed: {_auth_failure(exc)}",
+                  file=sys.stderr)
+        else:
+            print(f"[captions] source captions unavailable for {video_id}: {exc}",
+                  file=sys.stderr)
         return None
     candidates = sorted(output_dir.glob(f"{safe_id}.*.vtt"))
     for language in languages:

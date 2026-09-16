@@ -12,7 +12,8 @@ from pathlib import Path
 from .config import (CHANNELS_FILE, LINKS_FILE, OUTPUT_DIR, POST_HOURS,
                       REELS_MAX_DURATION)
 from .core import queue as post_queue
-from .core.downloader import expand_and_download, parse_links_file
+from .core.downloader import (check_youtube_access, expand_and_download,
+                               parse_links_file)
 from .core.queue import load_queue
 from .core.source_text import load_caption_file, sidecar_caption_file
 from .core.subtitles import STYLES
@@ -109,6 +110,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="After checking Instagram, confirm a held upload's media code")
     review.add_argument("--retry-after-review", type=Path, metavar="CLIP",
                         help="After verifying Instagram has no post, explicitly release a held clip for retry")
+    parser.add_argument("--check-youtube", metavar="URL", default=None,
+                        help="Probe a YouTube URL and verify cookie authentication without downloading")
     parser.add_argument("--check-gemini", action="store_true",
                         help="Verify the Gemini key and model chain")
     return parser
@@ -442,6 +445,8 @@ def _main(argv: list[str] | None = None) -> int:
     if args.sub_style not in STYLES:
         print(f"[error] Unknown sub_style '{args.sub_style}'", file=sys.stderr)
         return 1
+    if args.check_youtube is not None:
+        return 0 if check_youtube_access(args.check_youtube) else 2
     if args.check_gemini:
         from .core.gemini import check_gemini
         return check_gemini()
