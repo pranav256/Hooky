@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reelclip"
+version = "1.0.0"
+description = "Turn long videos into high-quality Instagram Reels"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+keywords = ["instagram", "reels", "subtitles", "gemini", "ffmpeg"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "google-genai>=1.0.0",
+    "faster-whisper>=1.0.0",
+]
+
+[project.optional-dependencies]
+instagram = ["instagrapi>=2.1.0"]
+download = ["yt-dlp>=2024.10.22"]
+all = ["instagrapi>=2.1.0", "yt-dlp>=2024.10.22"]
+
+[project.scripts]
+reelclip = "reelclip.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["reelclip*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "integration: slow ffmpeg/media integration checks",
+]
