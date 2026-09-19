@@ -25,6 +25,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from ..config import GEMINI_SELECTION_CHUNK_CHARS
 from .utils import clamp, format_timestamp, get_duration, safe_duration_clamp
 from .checkpoints import digest, load_checkpoint, save_checkpoint
 
@@ -388,7 +389,8 @@ def snap_clip_boundaries(clips: list[dict], words: list[dict] | None,
     return out
 
 
-def _transcript_chunks(transcript: list[dict], max_chars: int = 12000) -> list[list[dict]]:
+def _transcript_chunks(transcript: list[dict],
+                       max_chars: int = GEMINI_SELECTION_CHUNK_CHARS) -> list[list[dict]]:
     """Contiguous text windows with overlap; never sparsely discard the speech."""
     chunks: list[list[dict]] = []
     current: list[dict] = []
@@ -421,7 +423,8 @@ def _transcript_chunks(transcript: list[dict], max_chars: int = 12000) -> list[l
     return chunks
 
 
-def _ask_json(prompt: str, cache_dir: Path | None, parts=None) -> list:
+def _ask_json(prompt: str, cache_dir: Path | None, parts=None,
+              parts_factory=None) -> list:
     from .gemini import generate
     from ..config import GEMINI_MODEL
     key = digest([GEMINI_MODEL, prompt])
@@ -429,6 +432,8 @@ def _ask_json(prompt: str, cache_dir: Path | None, parts=None) -> list:
     cached = load_checkpoint(path, key) if path else None
     if isinstance(cached, list):
         return cached
+    if parts is None and parts_factory is not None:
+        parts = parts_factory()
     text = generate(prompt, parts=parts, temperature=0.3)
     match = re.search(r"\[.*\]", text, flags=re.DOTALL)
     data = json.loads(match.group(0)) if match else None
@@ -491,20 +496,10 @@ def _semantic_highlights(transcript: list[dict], source: Path, duration: float,
     for batch_start in range(0, len(chosen), 6):
         batch = chosen[batch_start:batch_start + 6]
         with tempfile.TemporaryDirectory(prefix="reelclip_review_") as tmp:
-            parts = []
             descriptions = []
             for index, clip in enumerate(batch):
                 descriptions.append({"index": index, **clip})
-                for frame_no, fraction in enumerate((0.25, 0.75)):
-                    frame = Path(tmp) / f"{index}_{frame_no}.jpg"
-                    timestamp = clip["start"] + fraction * (clip["end"] - clip["start"])
-                    subprocess.run([
-                        "ffmpeg", "-y", "-loglevel", "error", "-threads", "2",
-                        "-ss", str(timestamp), "-i", str(source), "-frames:v", "1",
-                        "-vf", "scale=640:-2", str(frame),
-                    ], check=True, capture_output=True, timeout=60)
-                    parts.append(make_image_part(frame.read_bytes()))
-            response = _ask_json(
+            review_prompt = (
                 "Check visual suitability of these transcript-selected windows. Exactly two "
                 "frames per candidate, in candidate order. Reject only clearly unusable blank, "
                 "unavailable, or fully obstructed footage. Choose framing=fit when a center crop "
@@ -512,7 +507,24 @@ def _semantic_highlights(transcript: list[dict], source: Path, duration: float,
                 "choose center for a close speaker/portrait. Do not infer speech or change times. "
                 "Return a JSON array with every candidate: {\"index\":integer,\"usable\":boolean,"
                 "\"framing\":\"center\"|\"fit\"}.\n"
-                + json.dumps(descriptions), cache_dir, parts)
+                + json.dumps(descriptions))
+
+            def make_review_parts():
+                parts = []
+                for index, clip in enumerate(batch):
+                    for frame_no, fraction in enumerate((0.25, 0.75)):
+                        frame = Path(tmp) / f"{index}_{frame_no}.jpg"
+                        timestamp = clip["start"] + fraction * (clip["end"] - clip["start"])
+                        subprocess.run([
+                            "ffmpeg", "-y", "-loglevel", "error", "-threads", "2",
+                            "-ss", str(timestamp), "-i", str(source), "-frames:v", "1",
+                            "-vf", "scale=640:-2", str(frame),
+                        ], check=True, capture_output=True, timeout=60)
+                        parts.append(make_image_part(frame.read_bytes()))
+                return parts
+
+            response = _ask_json(review_prompt, cache_dir,
+                                 parts_factory=make_review_parts)
             decisions = {d.get("index"): d for d in response if isinstance(d, dict)}
             if any(not isinstance(decisions.get(i, {}).get("usable"), bool)
                    for i in range(len(batch))):

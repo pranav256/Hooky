@@ -9,6 +9,7 @@ from argparse import Namespace
 from dataclasses import dataclass
 from pathlib import Path
 
+from .config import MAKE_COVERS, SUBTITLE_SOURCE
 from .core.subtitles import STYLES
 
 
@@ -29,11 +30,16 @@ class PipelineOptions:
     no_subs: bool = False
     sub_style: str = "hormozi"
     sub_lang: str | None = None
+    subtitle_source: str = SUBTITLE_SOURCE
+    make_covers: bool = MAKE_COVERS
+    profile: bool = False
 
     def __post_init__(self) -> None:
         if self.sub_style not in STYLES:
             raise ValueError(
                 f"Unknown sub_style '{self.sub_style}'. Options: {', '.join(STYLES)}")
+        if self.subtitle_source not in {"auto", "source", "whisper"}:
+            raise ValueError("subtitle_source must be auto, source, or whisper")
 
     @classmethod
     def from_args(cls, args: Namespace) -> "PipelineOptions":
@@ -49,4 +55,8 @@ class PipelineOptions:
             no_subs=getattr(args, "no_subs", False),
             sub_style=getattr(args, "sub_style", "hormozi"),
             sub_lang=getattr(args, "sub_lang", None),
+            subtitle_source=(getattr(args, "subtitle_source", None) or SUBTITLE_SOURCE),
+            make_covers=(MAKE_COVERS if getattr(args, "make_covers", None) is None
+                         else args.make_covers),
+            profile=getattr(args, "profile", False),
         )
