@@ -5,6 +5,8 @@ cookies.txt
 *.cookies.txt
 .reelclip-state/
 
+# Local workspace instructions and context
+
 # User inputs and generated output
 links.txt
 channels.txt
@@ -20,3 +22,7 @@ build/
 dist/
 *.egg-info/
 .pytest_cache/
+
+# Runtime lock artifacts from interrupted channel scans and posting passes
+*.channels.lock
+*.post.lock
