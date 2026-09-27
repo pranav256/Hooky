@@ -333,7 +333,8 @@ def expand_and_download(entry: dict, limits: dict) -> tuple[list[dict], bool]:
         p = Path(url)
         if p.exists():
             videos.append(_video_entry(p, None, None, entry, limits))
-            _attach_analysis(videos)
+            if limits.get("make_analysis", True):
+                _attach_analysis(videos)
             return videos, True
         print(f"[links] line {entry['line_no']}: not a link or file: {url}",
               file=sys.stderr)
@@ -463,7 +464,8 @@ def expand_and_download(entry: dict, limits: dict) -> tuple[list[dict], bool]:
                                    source_caption_path=caption_path))
         downloaded_any = True
 
-    _attach_analysis(videos)
+    if limits.get("make_analysis", True):
+        _attach_analysis(videos)
     return videos, downloaded_any
 
 
@@ -493,7 +495,7 @@ def _video_entry(path: Path, url: str | None, info: dict | None, entry: dict,
         "title": merged.get("title") or path.stem,
         "description": (merged.get("description") or "")[:1200],
         "uploader": merged.get("uploader") or merged.get("channel") or "",
-        # clips=None -> AUTO: the AI decides from the video's duration
+        # clips=None -> AUTO: content determines the count by default
         "clips": entry["clips"] if entry["clips"] is not None else limits["clips"],
         "min_len": entry["min_len"] or limits["min"],
         "max_len": entry["max_len"] or limits["max"],

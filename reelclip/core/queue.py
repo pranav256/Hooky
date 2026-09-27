@@ -33,6 +33,10 @@ class QueueBusyError(QueueError):
     """Another process owns the queue/posting lock."""
 
 
+class QueueFullError(QueueError):
+    """The maker must resume after publishing frees queue capacity."""
+
+
 class QueueReviewRequired(QueueError):
     """An upload may have succeeded and requires a human decision."""
 
@@ -275,7 +279,8 @@ def _matching_key(clip_path: Path | str, entries: dict, clip_id: str = "") -> st
 
 def enqueue_clips(clip_paths: list[Path], source_url: str = "",
                   state: dict | None = None, path: Path | None = None,
-                  title: str = "", caption: str = "", clip_id: str = "") -> dict:
+                  title: str = "", caption: str = "", clip_id: str = "",
+                  max_pending: int | None = None) -> dict:
     def change(fresh):
         for clip in clip_paths:
             key = _key(clip)
@@ -306,6 +311,8 @@ def enqueue_clips(clip_paths: list[Path], source_url: str = "",
                     break
             if existing is not None or key in {_key(p) for p in fresh["ignored"]}:
                 continue
+            if max_pending is not None and len(fresh["pending"]) >= max_pending:
+                raise QueueFullError("Posting queue is full; remaining clips are saved for resume")
             fresh["pending"][key] = {
                 "added_at": time.time(), "source_url": source_url,
                 "title": (title or "")[:200], "caption": (caption or "")[:4000],

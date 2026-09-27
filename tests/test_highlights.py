@@ -6,11 +6,44 @@ No ffmpeg, no Gemini, no network needed.
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from reelclip.core.highlights import (  # noqa: E402
     plan_auto_clips, snap_clip_boundaries,
 )
+
+
+@pytest.mark.parametrize("count", [3, 10])
+def test_content_auto_count_comes_from_moments_not_duration(monkeypatch, tmp_path, count):
+    from reelclip.core import highlights, gemini
+
+    candidates = [{"start": i * 25.0, "end": i * 25.0 + 20, "reason": "complete idea"}
+                  for i in range(count)]
+    prompts = []
+
+    def ask(prompt, *args, **kwargs):
+        prompts.append(prompt)
+        if prompt.startswith("Select self-contained"):
+            return candidates
+        if prompt.startswith("Select only the worthwhile"):
+            return list(range(count))
+        return [{"index": i, "usable": True, "framing": "center"}
+                for i in range(min(6, count - (6 if len(prompts) > 3 else 0)))]
+
+    monkeypatch.setattr(highlights, "_ask_json", ask)
+    monkeypatch.setattr(highlights, "get_duration", lambda path: 300.0)
+    monkeypatch.setattr(gemini, "make_image_part", lambda value: value)
+    result = highlights.find_highlights(
+        tmp_path / "video.mp4", transcript=[{"start": 0, "end": 300, "text": "evidence"}])
+    assert len(result) == count
+    assert "do not fill a quota" in prompts[1]
+
+
+def test_content_auto_rejects_incomplete_duration_instead_of_expanding():
+    from reelclip.core.highlights import _parse_clips
+    assert _parse_clips('[{"start": 5, "end": 10}]', 100, 15, 60, strict=True) == []
 
 
 def test_plan_auto_scales_with_duration() -> None:

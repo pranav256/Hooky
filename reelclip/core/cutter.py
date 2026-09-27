@@ -14,7 +14,7 @@ from pathlib import Path
 
 from ..config import CLIP_HEIGHT, CLIP_WIDTH, OUTPUT_DIR, TARGET_FPS
 from .lowspec import (AUDIO_BITRATE, AUDIO_NORMALIZATION, X264_CRF, X264_PRESET,
-                      lowspec_encode_args)
+                      lowspec_encode_args, lowspec_input_args)
 from .subtitles import build_ass, FONT_OVERRIDE, STYLES
 from .utils import format_timestamp, has_audio, vertical_crop_filter, get_duration
 from .checkpoints import atomic_json, digest, file_revision, source_id, clip_id
@@ -49,17 +49,25 @@ def _ffmpeg_error(result: subprocess.CompletedProcess[str], action: str,
 
 
 def cut_clip(video_path: Path, start: float, end: float, out_path: Path,
-             ass_path: Path | None = None, framing: str = "center") -> Path:
+              ass_path: Path | None = None, framing: str = "center",
+              background_height: int = 0, label: str = "") -> Path:
     """Render ``[start, end]`` from the master as a centered 9:16 Reel."""
     if end <= start:
         raise ValueError("clip end must be greater than clip start")
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    vf = vertical_crop_filter(framing)
+    vf = vertical_crop_filter(framing, background_height)
     if ass_path is not None:
         vf += f",{_subtitles_filter(ass_path)}"
+    if label:
+        # The parts renderer supplies only a numeric series label, not source text.
+        if not all(char.isdigit() or char in "Part /" for char in label):
+            raise ValueError("Unsupported part label")
+        vf += (f",drawtext=text='{label}':fontsize=64:fontcolor=white:"
+               "borderw=3:bordercolor=black:x=(w-tw)/2:y=h*0.08")
 
     cmd = [
         "ffmpeg", "-y", "-loglevel", "error",
+        *lowspec_input_args(),
         "-ss", f"{max(0.0, start):.3f}", "-i", str(video_path),
         "-t", f"{end - start:.3f}",
         "-map", "0:v:0", "-vf", vf,
@@ -81,7 +89,7 @@ def cut_clip(video_path: Path, start: float, end: float, out_path: Path,
           f"{format_timestamp(end)} ({end - start:.1f}s)"
           f"{' +subs' if ass_path else ''} ...")
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         if result.returncode != 0:
             raise _ffmpeg_error(result, "render", out_path.name)
         if not temporary.exists() or not _valid_render(temporary, end - start):
@@ -94,17 +102,25 @@ def cut_clip(video_path: Path, start: float, end: float, out_path: Path,
     return out_path
 
 
+def encoding_profile() -> dict:
+    """Cache identity shared by single-window clips and multi-window parts."""
+    return {"video_args": _VIDEO_ARGS, "audio_bitrate": AUDIO_BITRATE,
+            "audio_normalization": AUDIO_NORMALIZATION, "font": FONT_OVERRIDE,
+            "canvas": [CLIP_WIDTH, CLIP_HEIGHT]}
+
+
 def make_cover(video_path: Path, timestamp: float, out_path: Path,
                framing: str = "center") -> Path:
     """Generate a 1080x1920 JPEG cover from the master."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
         "ffmpeg", "-y", "-loglevel", "error",
+        *lowspec_input_args(),
         "-ss", f"{max(0.0, timestamp):.3f}", "-i", str(video_path),
         "-frames:v", "1", "-vf", vertical_crop_filter(framing),
         "-q:v", "3", str(out_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
     if result.returncode != 0:
         raise _ffmpeg_error(result, "cover", out_path.name)
     return out_path
@@ -160,8 +176,7 @@ def cut_all_clips(video_path: Path, clips: list[dict], output_dir: Path | None =
             "framing": clip.get("framing", "center"),
             "sub_style": STYLES[sub_style], "font": FONT_OVERRIDE,
             "words": _words_digest(selected_words),
-            "video_args": _VIDEO_ARGS, "audio_bitrate": AUDIO_BITRATE,
-            "canvas": [CLIP_WIDTH, CLIP_HEIGHT],
+            **encoding_profile(),
         }
         stem = f"reel_{identity}_{digest(signature)[:8]}"
         clip_path = output_dir / f"{stem}.mp4"
