@@ -1,6 +1,8 @@
 # Credentials and local session
 .env
 .ig_session
+cookies.txt
+*.cookies.txt
 .reelclip-state/
 __agent__/
 

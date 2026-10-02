@@ -242,13 +242,34 @@ QUALITY=highest
 # QUEUE_MAX_PENDING=12
 ```
 
-For YouTube links that trigger bot protection, use one of these optional
-download settings:
+For YouTube links that trigger bot protection, authentication is required.
+The error is not a Python or FFmpeg failure: YouTube rejected an anonymous
+request. First log into YouTube in a browser and solve any CAPTCHA, then close
+that browser before yt-dlp reads its cookie database.
+
+Use one of these methods in `.env`:
 
 ```dotenv
-# YTDLP_COOKIES_FROM_BROWSER=chrome
-# YTDLP_COOKIES_FILE=cookies.txt
+# Browser cookies (choose your actual browser):
+YTDLP_COOKIES_FROM_BROWSER=firefox
+# YTDLP_COOKIES_FROM_BROWSER=brave
+# YTDLP_COOKIES_FROM_BROWSER=chrome:Profile 1
+
+# Or a Netscape/Mozilla cookies.txt export instead:
+# YTDLP_COOKIES_FILE=/absolute/path/to/cookies.txt
 ```
+
+Do not set both methods. Verify authentication without downloading a video:
+
+```bash
+.venv/bin/python -m reelclip --check-youtube \
+  'https://www.youtube.com/watch?v=h5NvTTOlOtI'
+```
+
+If browser-cookie extraction still fails, refresh the YouTube session and
+export a fresh Netscape cookies file. Keep cookies outside the repository;
+`.gitignore` excludes common cookie filenames. yt-dlp's current FAQ warns that
+cookies should come from the same browser/IP session that passed any CAPTCHA.
 
 ## Tests
 
