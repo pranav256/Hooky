@@ -1,0 +1,21 @@
+# Credentials and local session
+.env
+.ig_session
+.reelclip-state/
+__agent__/
+
+# User inputs and generated output
+links.txt
+channels.txt
+output/
+
+# Partial downloads and Python build artifacts
+*.part
+*.ytdl
+__pycache__/
+*.pyc
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
