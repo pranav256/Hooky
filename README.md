@@ -1,8 +1,10 @@
 # reelclip
 
 A lean pipeline for turning long videos into high-quality Instagram Reels.
-It selects moments with Gemini, transcribes only the selected windows, burns
-karaoke subtitles, renders 1080x1920 H.264 clips, and posts through Instagram.
+It selects moments with Gemini, uses available source captions for semantic
+selection and subtitle timing, falls back to selected-window Whisper when
+needed, burns karaoke subtitles, renders 1080x1920 H.264 clips, and posts
+through Instagram.
 
 ## Workflow
 
@@ -14,8 +16,8 @@ channel scanner ranks videos by views (upload date is ignored)
 source captions are read in bounded semantic chunks
       ↓
 Gemini selects complete spoken moments and visually reviews framing
-      ↓
-Whisper transcribes only selected windows for your burned-in subtitles
+       ↓
+source captions provide timing when available; Whisper covers the fallback
       ↓
 FFmpeg center-crops or selectively fits clips into 1080x1920
       ↓
@@ -169,7 +171,19 @@ Useful options:
 ./make.sh video.mp4 --no-captions
 ./make.sh video.mp4 --sub-style clean
 ./make.sh video.mp4 --dry-run
+./make.sh video.mp4 --subtitle-source source
+./make.sh video.mp4 --no-covers --profile
 ```
+
+`--dry-run` writes `selection.json` under the source output directory so the
+chosen windows and their evidence can be reviewed before rendering.
+
+`SUBTITLE_SOURCE=auto` (the default) uses timestamped YouTube or local VTT/SRT
+captions for the burned-in subtitle timing. It distributes phrase-cue timing
+across individual words for karaoke highlighting. Set
+`--subtitle-source whisper` when source captions are unavailable or their
+timing needs to be regenerated locally. `--subtitle-source source` requires a
+usable caption track.
 
 ## Post to Instagram
 
@@ -218,6 +232,12 @@ Remove a clip from the queue:
 .venv/bin/python -m reelclip --ignore /absolute/path/to/reel.mp4
 ```
 
+Clean up clips that were already recorded as posted:
+
+```bash
+.venv/bin/python -m reelclip --cleanup-posted
+```
+
 ## Configuration
 
 Useful optional settings in `.env`:
@@ -240,7 +260,29 @@ QUALITY=highest
 # CHANNEL_SCAN_MAX=0
 # MAKE_MAX_SOURCES=2
 # QUEUE_MAX_PENDING=12
+# SUBTITLE_SOURCE=auto
+# MAKE_COVERS=false
+# AUDIO_NORMALIZATION=true
+# FFMPEG_THREADS=2
+# GEMINI_MIN_INTERVAL_SECONDS=20
+# GEMINI_SELECTION_CHUNK_CHARS=18000
 ```
+
+## Disposable media cleanup
+
+The lean defaults remove the processed source after a successful render and
+remove a clip's MP4, ASS, caption sidecar, and cover after Instagram confirms
+the upload. Queue state, posted history, manifests, and checkpoints remain.
+
+```dotenv
+DELETE_SOURCE_AFTER_CLIP=true
+DELETE_POSTED_CLIPS=true
+```
+
+Source cleanup happens only after the source's clips and manifest are complete.
+Posted-clip cleanup happens only after a valid Instagram media code has been
+durably recorded. An uncertain upload is held for review and is never cleaned
+up automatically. Set either value to `false` to retain that media.
 
 For YouTube links that trigger bot protection, authentication is required.
 The error is not a Python or FFmpeg failure: YouTube rejected an anonymous
@@ -297,6 +339,8 @@ by the test suite.
 - `reelclip/core/cutter.py` - center crop, render, and covers
 - `reelclip/core/downloader.py` - optional links.txt downloads and source captions
 - `reelclip/core/source_text.py` - WebVTT/SRT parsing and caption download cache
+- `reelclip/core/cleanup.py` - successful-source and confirmed-post media cleanup
+- `reelclip/core/profiling.py` - opt-in stage timing metrics
 - `reelclip/core/queue.py` - durable Instagram-only queue and review holds
 - `reelclip/platforms/instagram.py` - login and Reel upload
 - `make.sh` / `post.sh` - make-only and post-only entry points

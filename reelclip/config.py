@@ -49,6 +49,15 @@ GEMINI_FALLBACK_MODELS = [
         "gemini-2.5-flash,gemini-3.1-flash-lite,gemini-flash-latest").split(",")
     if m.strip() and m.strip().lower() != GEMINI_MODEL.lower()
 ]
+try:
+    GEMINI_MIN_INTERVAL = max(0.0, float(os.environ.get("GEMINI_MIN_INTERVAL_SECONDS", "20")))
+except ValueError:
+    GEMINI_MIN_INTERVAL = 20.0
+try:
+    GEMINI_SELECTION_CHUNK_CHARS = max(
+        4000, int(os.environ.get("GEMINI_SELECTION_CHUNK_CHARS", "18000")))
+except ValueError:
+    GEMINI_SELECTION_CHUNK_CHARS = 18000
 
 # --- Instagram ------------------------------------------------------------
 IG_USERNAME = os.environ.get("IG_USERNAME", "")
@@ -112,3 +121,24 @@ def _env_minutes(key: str, default_minutes: float) -> float:
 QUEUE_MIN_GAP = _env_minutes("QUEUE_MIN_GAP_MINUTES", 60)    # min seconds between posts
 QUEUE_MAX_GAP = _env_minutes("QUEUE_MAX_GAP_MINUTES", 120)   # upper bound (randomized)
 QUEUE_MAX_ATTEMPTS = int(os.environ.get("QUEUE_MAX_ATTEMPTS", "3"))
+
+
+def _env_bool(key: str, default: bool) -> bool:
+    value = os.environ.get(key)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+# --- Lean output and cleanup -------------------------------------------------
+# Source captions are used whenever available; Whisper remains the fallback
+# for sources without a usable timestamped caption track.
+SUBTITLE_SOURCE = os.environ.get("SUBTITLE_SOURCE", "auto").strip().lower()
+MAKE_COVERS = _env_bool("MAKE_COVERS", False)
+AUDIO_NORMALIZATION = _env_bool("AUDIO_NORMALIZATION", True)
+
+# These are intentionally enabled for the user's disposable-media workflow.
+# Queue history and manifests are always retained; only confirmed media files
+# are eligible for removal.
+DELETE_SOURCE_AFTER_CLIP = _env_bool("DELETE_SOURCE_AFTER_CLIP", True)
+DELETE_POSTED_CLIPS = _env_bool("DELETE_POSTED_CLIPS", True)

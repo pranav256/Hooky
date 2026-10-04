@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-import subprocess
+
+from ..config import AUDIO_NORMALIZATION
 
 # --- Whisper (speech-to-text) ---------------------------------------------
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "tiny")       # tiny|base|small
@@ -12,6 +13,10 @@ WHISPER_COMPUTE = os.environ.get("WHISPER_COMPUTE", "int8")   # int8 = fast on o
 X264_PRESET = os.environ.get("X264_PRESET", "medium")  # override per machine/profile
 NGROUPS = 48            # cap GOP memory usage
 MAX_MUX_QUEUE = "4M"    # keep muxing RAM small
+try:
+    FFMPEG_THREADS = max(1, int(os.environ.get("FFMPEG_THREADS", "2")))
+except ValueError:
+    FFMPEG_THREADS = 2
 
 # --- Output quality tier -----------------------------------------------------
 # QUALITY=highest -> crf 15 / medium preset / 256k audio (Instagram master)
@@ -41,7 +46,7 @@ else:
 def lowspec_encode_args() -> list[str]:
     """Extra ffmpeg args tuned for 4GB RAM / old i3: bounded threads, small queues."""
     return [
-        "-threads", "2",                     # hyper-threaded cores only
+        "-threads", str(FFMPEG_THREADS),
         "-x264-params", f"scenecut=0:keyint={NGROUPS}",
         "-max_muxing_queue_size", MAX_MUX_QUEUE,
     ]

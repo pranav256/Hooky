@@ -12,6 +12,7 @@ from pathlib import Path
 from .config import (CHANNELS_FILE, LINKS_FILE, OUTPUT_DIR, POST_HOURS,
                       REELS_MAX_DURATION)
 from .core import queue as post_queue
+from .core.cleanup import delete_clip_artifacts, delete_source_artifacts
 from .core.downloader import (check_youtube_access, expand_and_download,
                                parse_links_file)
 from .core.queue import load_queue
@@ -61,7 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="reelclip",
         description="Find highlights, render high-quality vertical clips, and post them to Instagram.",
-        epilog="Pipeline: analyze -> transcribe selected windows -> render -> queue -> Instagram.",
+        epilog="Pipeline: analyze -> source captions/selected Whisper -> render -> queue -> Instagram.",
     )
     parser.add_argument("sources", nargs="*", type=Path,
                         help="Video file(s) and/or folders")
@@ -84,11 +85,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-captions", action="store_true",
                         help="Skip Gemini captions")
     parser.add_argument("--no-subs", action="store_true",
-                        help="Skip Whisper subtitles and selected-window transcription")
+                        help="Skip burned-in subtitles and subtitle transcription")
     parser.add_argument("--sub-style", default="hormozi",
                         help=f"Subtitle style: {', '.join(STYLES)}")
     parser.add_argument("--sub-lang", default=None,
                         help="Force Whisper language, for example 'en'")
+    parser.add_argument("--subtitle-source", choices=("auto", "source", "whisper"),
+                        default=None,
+                        help="Subtitle timing source: source captions when available, or Whisper")
+    covers = parser.add_mutually_exclusive_group()
+    covers.add_argument("--covers", dest="make_covers", action="store_true",
+                        help="Generate Instagram cover images")
+    covers.add_argument("--no-covers", dest="make_covers", action="store_false",
+                        help="Skip cover images (default from MAKE_COVERS)")
+    parser.set_defaults(make_covers=None)
+    parser.add_argument("--profile", action="store_true",
+                        help="Write timing and cache metrics to the source output directory")
     parser.add_argument("--list-styles", action="store_true",
                         help="List subtitle styles and exit")
     parser.add_argument("--links", nargs="?", const=str(LINKS_FILE), default=None,
@@ -105,6 +117,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Reset the queue cooldown")
     parser.add_argument("--ignore", action="append", type=Path, metavar="CLIP",
                         help="Remove a clip from the queue (not an uncertain upload)")
+    parser.add_argument("--cleanup-posted", action="store_true",
+                        help="Remove generated files for clips already recorded as posted")
     review = parser.add_mutually_exclusive_group()
     review.add_argument("--confirm-posted", nargs=2, metavar=("CLIP", "MEDIA_CODE"),
                         help="After checking Instagram, confirm a held upload's media code")
@@ -245,6 +259,15 @@ def _upload_due_locked(state: dict, force: bool) -> dict:
                 break
             stats["posted"] += 1
             print(f"[queue] ✓ Instagram: {clip.name} ({result})")
+            try:
+                removed = delete_clip_artifacts(clip)
+                if removed:
+                    print(f"[cleanup] Removed posted clip artifacts for {clip.name}")
+            except OSError as exc:
+                # Upload state is already durable; a cleanup failure must not
+                # turn a confirmed post into an unsafe retry.
+                print(f"[cleanup] Could not remove posted clip {clip}: {exc}",
+                      file=sys.stderr)
             if not force:
                 break
 
@@ -373,6 +396,11 @@ def ingest_links(args) -> None:
                        if video["url"] else None)
             try:
                 pipeline.options.sub_style = style
+                if args.subtitle_source:
+                    pipeline.options.subtitle_source = args.subtitle_source
+                if args.make_covers is not None:
+                    pipeline.options.make_covers = args.make_covers
+                pipeline.options.profile = args.profile
                 pipeline.options.no_subs = args.no_subs if video["no_subs"] is None else video["no_subs"]
                 pipeline.options.clips = (0 if str(video["clips"]).lower() in ("auto", "0")
                                           else video["clips"])
@@ -397,6 +425,11 @@ def ingest_links(args) -> None:
             _mark_links_done(links_path, [entry["line_no"]],
                              expected={entry["line_no"]: entry["raw_line"]})
             print(f"[links] Marked line {entry['line_no']} as DONE")
+            if not args.dry_run:
+                for video in videos:
+                    removed = delete_source_artifacts(video["path"])
+                    if removed:
+                        print(f"[cleanup] Removed source artifacts for {video['path'].name}")
     if processed >= maximum:
         print(f"[make] Source limit reached ({maximum}); remaining links are unchanged.")
 
@@ -463,6 +496,13 @@ def _main(argv: list[str] | None = None) -> int:
         clip, code = args.confirm_posted
         post_queue.confirm_posted(Path(clip), code, load_queue())
         print(f"[queue] Confirmed posted: {clip} ({code})")
+        try:
+            removed = delete_clip_artifacts(Path(clip))
+            if removed:
+                print(f"[cleanup] Removed posted clip artifacts for {Path(clip).name}")
+        except OSError as exc:
+            print(f"[cleanup] Could not remove posted clip {clip}: {exc}",
+                  file=sys.stderr)
         return 0
     if args.retry_after_review:
         post_queue.retry_after_review(args.retry_after_review, load_queue())
@@ -477,6 +517,14 @@ def _main(argv: list[str] | None = None) -> int:
         for clip in args.ignore:
             post_queue.ignore(clip, state)
             print(f"[queue] Removed: {clip}")
+        return 0
+    if args.cleanup_posted:
+        state = load_queue()
+        cleaned = 0
+        for key in state["posted"]:
+            if delete_clip_artifacts(Path(key)):
+                cleaned += 1
+        print(f"[cleanup] Removed artifacts for {cleaned} posted clip(s)")
         return 0
     if args.post_now:
         return post_now()
@@ -516,6 +564,10 @@ def _main(argv: list[str] | None = None) -> int:
                 queue_state=None if args.no_upload or args.dry_run else load_queue(),
                 source_transcript=load_caption_file(sidecar_caption_file(video)),
             )
+            if not args.dry_run:
+                removed = delete_source_artifacts(video)
+                if removed:
+                    print(f"[cleanup] Removed source artifacts for {video.name}")
             gc.collect()
 
     # Make is deliberately queue-only. Posting always requires a separate,

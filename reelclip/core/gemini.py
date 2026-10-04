@@ -16,7 +16,8 @@ import random
 import sys
 import time
 
-from ..config import GEMINI_API_KEY, GEMINI_FALLBACK_MODELS, GEMINI_MODEL
+from ..config import (GEMINI_API_KEY, GEMINI_FALLBACK_MODELS, GEMINI_MIN_INTERVAL,
+                      GEMINI_MODEL)
 from .logbook import log as _logbook
 
 # The Google SDK is optional and expensive to import. Keep commands such as
@@ -51,7 +52,7 @@ BASE_DELAY = 4.0  # seconds; exponential backoff multiplier for transient errors
 # conservative: 20s spacing guarantees staying under the strictest published
 # limit while a noon batch of ~2 calls per video still processes several
 # videos per hour.
-MIN_INTERVAL = 20.0
+MIN_INTERVAL = GEMINI_MIN_INTERVAL
 
 # 429 quotas reset at midnight Pacific; a run started before that would keep
 # hammering exhausted models forever. After this many 429s in a row across the

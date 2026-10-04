@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import os
 import re
 import sys
@@ -13,6 +14,7 @@ _TIME_RE = re.compile(
     r"(?P<a>\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{1,3})?)\s*-->\s*"
     r"(?P<b>\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d{1,3})?)")
 _TAG_RE = re.compile(r"<[^>]+>")
+_WORD_RE = re.compile(r"\S+")
 
 
 def _seconds(value: str) -> float:
@@ -92,6 +94,39 @@ def sidecar_caption_file(video: Path) -> Path | None:
 
 def load_caption_file(path: Path | None) -> list[dict]:
     return parse_caption_file(path) if path and path.exists() else []
+
+
+def caption_words(captions: list[dict]) -> list[dict]:
+    """Approximate word timings from timestamped caption cues.
+
+    YouTube VTT/SRT tracks generally timestamp phrases rather than individual
+    words. Distributing each cue's duration across its words gives the ASS
+    renderer a useful karaoke timeline without paying for a second Whisper
+    pass. Whisper remains the fallback when no usable source captions exist.
+    """
+    words: list[dict] = []
+    for cue in captions:
+        try:
+            start = float(cue["start"])
+            end = float(cue["end"])
+            text = str(cue.get("text", ""))
+        except (KeyError, TypeError, ValueError):
+            continue
+        tokens = _WORD_RE.findall(" ".join(text.split()))
+        if not tokens or not math.isfinite(start + end) or start < 0 or end <= start:
+            continue
+        span = end - start
+        # Weight longer words slightly more while keeping every token visible.
+        weights = [max(1, len(token.strip(".,!?;:()[]{}\"'"))) for token in tokens]
+        total = sum(weights)
+        cursor = start
+        for index, token in enumerate(tokens):
+            next_cursor = end if index == len(tokens) - 1 else cursor + span * weights[index] / total
+            if next_cursor > cursor:
+                words.append({"start": round(cursor, 3), "end": round(next_cursor, 3),
+                              "word": token})
+            cursor = next_cursor
+    return words
 
 
 def _language_patterns() -> list[str]:

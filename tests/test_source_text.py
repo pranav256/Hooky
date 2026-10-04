@@ -2,7 +2,7 @@
 from pathlib import Path
 
 from reelclip.core.highlights import _build_prompt
-from reelclip.core.source_text import parse_caption_file
+from reelclip.core.source_text import caption_words, parse_caption_file
 
 
 def test_parse_vtt_to_timestamped_text(tmp_path: Path) -> None:
@@ -39,3 +39,12 @@ def test_highlight_prompt_explicitly_falls_back_without_captions() -> None:
         transcript=None,
     )
     assert "No source captions were available" in prompt
+
+
+def test_caption_words_derive_usable_word_timing_from_phrase_cues() -> None:
+    words = caption_words([{"start": 10.0, "end": 12.0,
+                            "text": "A longer thought."}])
+    assert [word["word"] for word in words] == ["A", "longer", "thought."]
+    assert words[0]["start"] == 10.0
+    assert words[-1]["end"] == 12.0
+    assert all(word["end"] > word["start"] for word in words)
