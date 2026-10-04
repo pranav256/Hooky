@@ -27,5 +27,6 @@ dist/
 .pytest_cache/
 
 # Runtime lock artifacts from interrupted channel scans and posting passes
+*.lock
 *.channels.lock
 *.post.lock
