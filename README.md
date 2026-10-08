@@ -6,11 +6,12 @@ A lean toolkit for turning long videos into high-quality vertical clips:
 | --- | --- | --- |
 | Podcast highlights | `./make.sh podcast.mp4 --clips auto` | AI chooses the worthwhile standalone moments; the count follows the content. |
 | Condensed story parts | `./parts.sh story.mp4` | AI retains a coherent story and exports chronological, roughly 60-second parts. |
+| Number-only parts | `./number-parts.sh cartoon.mp4` | Gemini finds funny moments, then the export burns only `1`, `2`, `3`… as part labels. |
 
-Both workflows use Gemini, timestamped source captions, karaoke subtitles,
-and 1080x1920 H.264 output. Podcast highlights feed the Instagram posting
-queue. The [parts subproject](reelclip/parts/README.md) exports numbered files
-with the full source picture over a blurred background.
+Podcast highlights and condensed story parts use Gemini and caption timing;
+all workflows export 1080x1920 H.264 files. Podcast highlights feed the
+Instagram posting queue. The [parts subproject](reelclip/parts/README.md)
+exports files with the full source picture over a blurred background.
 
 ## Workflow
 
@@ -269,6 +270,26 @@ MrBeast-style story videos:
 ./parts.sh story.mp4 --dry-run
 ```
 
+For cartoons, episodes, or any video that must not be condensed, use the
+number-only variant:
+
+```bash
+./number-parts.sh cartoon.mp4
+./number-parts.sh cartoon.mp4 --part-seconds 60 --background blur
+./parts.sh cartoon.mp4 --mode number-only --dry-run
+```
+
+This variant runs Gemini over the long video to find funny, surprising, absurd,
+reaction, visual-gag, and punchline moments. It keeps those selected moments in
+chronological order, packs them into roughly 60-second parts, skips Whisper and
+subtitles, and burns only the numeric part marker (`1`, `2`, `3` …) near the
+top of the video. It still uses the full-picture vertical layout: `blur` keeps
+the landscape frame visible, while `plain` uses lighter plain padding.
+
+It does not preserve every source second: filler and non-funny footage are
+intentionally omitted. If you need the complete source without selection, use
+FFmpeg directly or the existing story workflow with an appropriate plan.
+
 The equivalent Python command is:
 
 ```bash
@@ -321,6 +342,10 @@ removed after their final part has been assembled and validated.
 The parts workflow exports files independently of the posting queue and
 preserves its input video. `--out DIR` selects an export directory.
 
+Number-only output sets `mode` to `number-only`, records Gemini's selected
+funny-moment ranges, and writes `labels: numeric part number only` in the plan.
+Its output is export-only and never enters the Instagram queue.
+
 Useful options:
 
 ```bash
@@ -329,6 +354,7 @@ Useful options:
 ./parts.sh story.mp4 --subtitle-source whisper # regenerate retained word timing
 ./parts.sh story.mp4 --sub-style clean
 ./parts.sh story.mp4 --no-subs --profile
+./parts.sh cartoon.mp4 --mode number-only --no-subs
 ```
 
 The blurred background is processed at a smaller resolution before scaling
@@ -425,6 +451,7 @@ QUALITY=highest
 # AUTO_CLIP_DENSITY_MINUTES=10
 # PARTS_TARGET_SECONDS=60
 # PARTS_BACKGROUND=blur
+# PARTS_MODE=story
 ```
 
 Unquoted inline comments separated by whitespace are supported, for example
@@ -514,6 +541,7 @@ by the test suite.
 - `reelclip/platforms/instagram.py` - login and Reel upload
 - `make.sh` / `post.sh` - make-only and post-only entry points
 - `parts.sh` / `parts.bat` - separate story-parts export entry points
+- `number-parts.sh` / `number-parts.bat` - deterministic number-only variant
 
 ## Recovery copy
 

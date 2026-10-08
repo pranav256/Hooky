@@ -32,7 +32,10 @@ def render_part(video: Path, part: dict, words: list[dict], output_dir: Path,
                  options: PartsOptions, total_parts: int) -> Path:
     """Encode each retained fragment once; never open all source ranges together."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    label = f"Part {part['index']} / {total_parts}" if options.labels else ""
+    if options.mode == "number-only":
+        label = str(part["index"])
+    else:
+        label = f"Part {part['index']} / {total_parts}" if options.labels else ""
     signature = {"version": 1, "source": file_revision(video), "part": part,
                  "words": digest(words), "style": STYLES[options.sub_style],
                  "background": options.background, "label": label, **encoding_profile()}
