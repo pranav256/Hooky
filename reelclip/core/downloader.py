@@ -23,8 +23,9 @@ from pathlib import Path
 
 from ..config import (OUTPUT_DIR, SOURCE_LONG_SECONDS, SOURCE_MAX_HEIGHT_LONG,
                       SOURCE_MAX_HEIGHT_SHORT)
+from .lowspec import lowspec_encode_args, lowspec_input_args
 from .source_text import (download_source_captions, load_caption_file,
-                          sidecar_caption_file)
+                           sidecar_caption_file)
 
 DOWNLOADS_DIR = OUTPUT_DIR / "downloads"
 
@@ -180,10 +181,12 @@ def make_analysis_twin(master: Path) -> Path | None:
     tmp = twin.with_suffix(".tmp.mp4")
     cmd = [
         "ffmpeg", "-y", "-loglevel", "error",
+        *lowspec_input_args(),
         "-i", str(master),
         "-vf", f"scale=-2:{ANALYSIS_HEIGHT}",
         "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
         "-c:a", "aac", "-b:a", "96k",   # keep audio: energy analysis needs it
+        *lowspec_encode_args(),
         str(tmp),
     ]
     try:

@@ -183,7 +183,7 @@ def cut_all_clips(video_path: Path, clips: list[dict], output_dir: Path | None =
         cover_path = output_dir / f"{stem}_cover.jpg"
         ass_path: Path | None = None
         if words:
-            ass_text = build_ass(words, start, end, sub_style)
+            ass_text = build_ass(selected_words, start, end, sub_style)
             if ass_text:
                 ass_path = output_dir / f"{stem}.ass"
                 ass_path.write_text(ass_text, encoding="utf-8")
@@ -192,8 +192,11 @@ def cut_all_clips(video_path: Path, clips: list[dict], output_dir: Path | None =
         can_resume = (cached.get("signature") == signature
                       and _valid_render(clip_path, end - start))
         if not can_resume:
-            cut_clip(video_path, start, end, clip_path, ass_path=ass_path,
-                     framing=clip.get("framing", "center"))
+            framing = clip.get("framing", "center")
+            cut_kwargs = {"ass_path": ass_path, "framing": framing}
+            if framing == "fit":
+                cut_kwargs["background_height"] = 480
+            cut_clip(video_path, start, end, clip_path, **cut_kwargs)
         else:
             print(f"[clip] Reusing completed {clip_path.name}")
         # Commit video completion before optional cover work so it can resume independently.
@@ -220,8 +223,9 @@ def cut_all_clips(video_path: Path, clips: list[dict], output_dir: Path | None =
                 entry["cover"] = None
         else:
             entry["cover"] = None
-        render_state[stem] = {"signature": signature,
-                              "cover": bool(entry.get("cover"))}
-        _save_render_state(render_state_path, render_state)
+        if make_covers:
+            render_state[stem] = {"signature": signature,
+                                  "cover": bool(entry.get("cover"))}
+            _save_render_state(render_state_path, render_state)
         results.append(entry)
     return results

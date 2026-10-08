@@ -24,12 +24,13 @@ import sys
 import tempfile
 from pathlib import Path
 
-from ..config import AUTO_CLIP_MODE, GEMINI_SELECTION_CHUNK_CHARS
+from ..config import ANALYSIS_MAX_FRAMES, AUTO_CLIP_MODE, GEMINI_SELECTION_CHUNK_CHARS
+from .checkpoints import digest, file_revision, load_checkpoint, save_checkpoint
+from .lowspec import lowspec_input_args
 from .utils import clamp, format_timestamp, get_duration, safe_duration_clamp
-from .checkpoints import digest, load_checkpoint, save_checkpoint
 
 
-MAX_FRAMES = 20          # frames sampled across the video (keeps request small)
+MAX_FRAMES = ANALYSIS_MAX_FRAMES  # sparse frames across the video
 FRAME_JPEG_QUALITY = 5   # ffmpeg -q:v scale (2=high quality, 31=low)
 
 # --- auto clip planning (used when clips=0 / "auto") --------------------------
@@ -68,15 +69,23 @@ def plan_auto_clips(duration: float) -> tuple[int, int, int]:
 
 def _extract_frames(video_path: Path, out_dir: Path, n_frames: int = MAX_FRAMES) -> list[Path]:
     """Seek to sparse midpoint samples instead of decoding hours of footage."""
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # The source revision is part of the cache path. A replaced source can
+    # therefore never reuse frames from an older master, while a retry avoids
+    # spawning one ffmpeg process per frame again.
+    frame_dir = out_dir / f"frames_{digest({'source': file_revision(video_path), 'count': n_frames, 'quality': FRAME_JPEG_QUALITY})}"
+    frame_dir.mkdir(parents=True, exist_ok=True)
     duration = get_duration(video_path)
     if not math.isfinite(duration) or duration <= 0 or n_frames <= 0:
         raise ValueError("Video duration and frame count must be positive")
+    expected = [frame_dir / f"frame_{i:03d}.jpg" for i in range(n_frames)]
+    if all(frame.exists() and frame.stat().st_size > 0 for frame in expected):
+        print(f"[gemini] Reusing {len(expected)} cached analysis frames")
+        return expected
     frame_paths: list[Path] = []
     for i in range(n_frames):
-        frame = out_dir / f"frame_{i:03d}.jpg"
+        frame = frame_dir / f"frame_{i:03d}.jpg"
         subprocess.run([
-            "ffmpeg", "-y", "-loglevel", "error", "-threads", "2",
+            "ffmpeg", "-y", "-loglevel", "error", *lowspec_input_args(),
             "-ss", f"{duration * (i + 0.5) / n_frames:.3f}", "-i", str(video_path),
             "-map", "0:v:0", "-frames:v", "1",
             "-vf", "scale=w='min(854,iw)':h='min(480,ih)':force_original_aspect_ratio=decrease",
@@ -97,6 +106,7 @@ def _extract_audio_energy(video_path: Path) -> list[float]:
     """
     cmd = [
         "ffmpeg", "-hide_banner", "-loglevel", "error",
+        *lowspec_input_args(),
         "-i", str(video_path),
         "-map", "a:0?", "-vn", "-sn", "-dn",
         "-af",
@@ -528,15 +538,20 @@ def _semantic_highlights(transcript: list[dict], source: Path, duration: float,
 
             def make_review_parts():
                 parts = []
+                frame_dir = (cache_dir / "review_frames" / digest(batch)
+                             if cache_dir else Path(tmp))
+                frame_dir.mkdir(parents=True, exist_ok=True)
                 for index, clip in enumerate(batch):
                     for frame_no, fraction in enumerate((0.25, 0.75)):
-                        frame = Path(tmp) / f"{index}_{frame_no}.jpg"
+                        frame = frame_dir / f"{index}_{frame_no}.jpg"
                         timestamp = clip["start"] + fraction * (clip["end"] - clip["start"])
-                        subprocess.run([
-                            "ffmpeg", "-y", "-loglevel", "error", "-threads", "2",
-                            "-ss", str(timestamp), "-i", str(source), "-frames:v", "1",
-                            "-vf", "scale=640:-2", str(frame),
-                        ], check=True, capture_output=True, timeout=60)
+                        if not frame.exists() or frame.stat().st_size == 0:
+                            subprocess.run([
+                                "ffmpeg", "-y", "-loglevel", "error",
+                                *lowspec_input_args(), "-ss", str(timestamp),
+                                "-i", str(source), "-frames:v", "1",
+                                "-vf", "scale=640:-2", str(frame),
+                            ], check=True, capture_output=True, timeout=60)
                         parts.append(make_image_part(frame.read_bytes()))
                 return parts
 
@@ -604,9 +619,10 @@ def find_highlights(video_path: Path, n_clips: int = 0, clip_min: int = 15,
     print("[gemini] WARNING: no source transcript — visual/audio fallback cannot "
           "judge spoken stories reliably.", file=sys.stderr)
     print(f"[gemini] Extracting {MAX_FRAMES} sample frames "
-          f"({ 'analysis twin' if analysis_path else 'master' })...")
+           f"({ 'analysis twin' if analysis_path else 'master' })...")
     with tempfile.TemporaryDirectory(prefix="reelclip_frames_") as tmp:
-        frames = _extract_frames(source, Path(tmp))
+        frame_root = cache_dir / "analysis_frames" if cache_dir else Path(tmp)
+        frames = _extract_frames(source, frame_root)
 
         print("[gemini] Analyzing audio energy...")
         energies = _extract_audio_energy(source)
