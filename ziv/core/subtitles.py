@@ -130,7 +130,7 @@ def _transcribe_selected(model, video_path: Path, timestamps: list[float],
     if len(timestamps) % 2:
         raise ValueError("Selected timestamps require start/end pairs")
     words = []
-    with tempfile.TemporaryDirectory(prefix="reelclip_speech_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="ziv_speech_") as tmp:
         audio = Path(tmp) / "window.wav"
         for start, end in zip(timestamps[::2], timestamps[1::2]):
             if not math.isfinite(start + end) or start < 0 or end <= start:

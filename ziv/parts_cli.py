@@ -1,9 +1,9 @@
-"""Public ``ziv-parts`` console-script facade."""
+"""Public ``ziv-parts`` console script."""
 from __future__ import annotations
 
 from collections.abc import Sequence
 
-from reelclip.parts.cli import main as _main
+from .parts.cli import main as _main
 
 
 def main(argv: Sequence[str] | None = None) -> int:

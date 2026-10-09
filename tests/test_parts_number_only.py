@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from reelclip.parts.options import PartsOptions
+from ziv.parts.options import PartsOptions
 
 
 def test_number_only_options_force_numeric_label_and_no_subtitles():
@@ -13,7 +13,7 @@ def test_number_only_options_force_numeric_label_and_no_subtitles():
 
 
 def test_number_only_pipeline_uses_gemini_and_skips_whisper(tmp_path, monkeypatch):
-    from reelclip.parts import pipeline as module
+    from ziv.parts import pipeline as module
 
     source = tmp_path / "cartoon.mp4"
     source.write_bytes(b"source")
@@ -57,7 +57,7 @@ def test_number_only_pipeline_uses_gemini_and_skips_whisper(tmp_path, monkeypatc
 
 
 def test_number_only_renderer_sends_only_numeric_label(tmp_path, monkeypatch):
-    from reelclip.parts import renderer
+    from ziv.parts import renderer
 
     source = tmp_path / "cartoon.mp4"
     source.write_bytes(b"source")

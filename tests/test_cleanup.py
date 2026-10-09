@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from reelclip.core.cleanup import delete_clip_artifacts, delete_source_artifacts
+from ziv.core.cleanup import delete_clip_artifacts, delete_source_artifacts
 
 
 def test_posted_clip_cleanup_removes_only_generated_sidecars(tmp_path: Path) -> None:

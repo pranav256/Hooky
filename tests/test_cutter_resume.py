@@ -1,7 +1,7 @@
 """Renderer resume behavior without running FFmpeg."""
 from pathlib import Path
 
-from reelclip.core import cutter
+from ziv.core import cutter
 
 
 def test_completed_clip_is_reused_when_source_and_window_match(tmp_path: Path,

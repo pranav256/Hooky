@@ -59,7 +59,7 @@ def _chunk_images(source: Path, low: float, high: float) -> list:
     from ..core.gemini import make_image_part
 
     parts = []
-    with tempfile.TemporaryDirectory(prefix="reelclip_story_") as directory:
+    with tempfile.TemporaryDirectory(prefix="ziv_story_") as directory:
         for index, fraction in enumerate((0.25, 0.75)):
             frame = Path(directory) / f"frame_{index}.jpg"
             subprocess.run([

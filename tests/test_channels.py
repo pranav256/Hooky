@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from reelclip.core import channels
+from ziv.core import channels
 
 _REAL_ENRICH = channels._enrich_shortlist
 _REAL_FETCH = channels._fetch_channel_entries

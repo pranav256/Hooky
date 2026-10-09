@@ -370,7 +370,7 @@ def check_gemini() -> int:
     if any(s == "RETIRED" for _, s, _ in results):
         print("  A retired model is in your chain — remove it from .env "
               "(GEMINI_MODEL_FALLBACKS) to stop the skip warnings.")
-    print("  At least one model works — reelclip will auto-rotate onto it.")
+    print("  At least one model works — Ziv will auto-rotate onto it.")
     return 0
 
 

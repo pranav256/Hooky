@@ -9,9 +9,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from reelclip import cli, config
-from reelclip.core import queue as post_queue
-from reelclip.platforms import instagram
+from ziv import config, pipeline_cli as cli
+from ziv.core import queue as post_queue
+from ziv.platforms import instagram
 
 
 @pytest.fixture(autouse=True)
@@ -252,8 +252,8 @@ def test_hard_crash_leaves_hold_and_os_releases_poster_lock(tmp_path):
 import os, sys
 from pathlib import Path
 from types import SimpleNamespace
-from reelclip import cli
-from reelclip.core import queue as q
+from ziv import pipeline_cli as cli
+from ziv.core import queue as q
 q.QUEUE_FILE = Path(sys.argv[1])
 q.POST_HOURS = ''
 cli.is_configured = lambda: True

@@ -1,4 +1,4 @@
-"""Public Ziv command and compatibility dispatch for existing workflows."""
+"""Public Ziv command and workflow dispatch."""
 from __future__ import annotations
 
 import sys
@@ -6,30 +6,30 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
-from reelclip import cli as legacy_cli
-from reelclip.config import CHANNELS_FILE, LINKS_FILE
-from reelclip.catalog import CatalogError, SourceCatalog
+from . import pipeline_cli
+from .catalog import CatalogError, SourceCatalog
+from .config import CHANNELS_FILE, LINKS_FILE
 
 
 def _raw_args(argv: Sequence[str] | None) -> list[str]:
     return list(sys.argv[1:] if argv is None else argv)
 
 
-def _legacy(args: Sequence[str], *, prog: str = "ziv") -> int:
-    return legacy_cli.main(list(args), prog=prog)
+def _pipeline(args: Sequence[str], *, prog: str = "ziv") -> int:
+    return pipeline_cli.main(list(args), prog=prog)
 
 
 def _make(args: Sequence[str]) -> int:
     """Preserve make.sh's bounded channel/link behavior behind ``ziv make``."""
     if args:
-        return _legacy(["--no-post", *args])
+        return _pipeline(["--no-post", *args])
 
     if CHANNELS_FILE.is_file():
-        result = _legacy(["--source"])
+        result = _pipeline(["--source"])
         if result:
             return result
     if LINKS_FILE.is_file() and LINKS_FILE.stat().st_size:
-        return _legacy(["--links", "--no-post"])
+        return _pipeline(["--links", "--no-post"])
 
     print("[ziv] Nothing to make. Add channels to channels.txt or a video/link to links.txt.")
     return 1
@@ -37,15 +37,15 @@ def _make(args: Sequence[str]) -> int:
 
 def _post(args: Sequence[str]) -> int:
     if not args:
-        return _legacy(["--post-now"])
+        return _pipeline(["--post-now"])
     if list(args) in (["--due"], ["--post-due"]):
-        return _legacy(["--post-due"])
+        return _pipeline(["--post-due"])
     print("Usage: ziv post [--due]", file=sys.stderr)
     return 1
 
 
 def _parts(args: Sequence[str], *, number_only: bool = False) -> int:
-    from reelclip.parts import cli as parts_cli
+    from .parts import cli as parts_cli
 
     forwarded = list(args)
     if number_only:
@@ -59,7 +59,7 @@ def _run_tui() -> int:
         print("[ziv] The TUI needs an interactive terminal; use --help for scripts.",
               file=sys.stderr)
         return 2
-    from reelclip.tui import run_tui
+    from .tui import run_tui
 
     return run_tui()
 
@@ -124,7 +124,7 @@ def _run_source(args: Sequence[str]) -> int:
         print(f"[ziv] {exc}", file=sys.stderr)
         return 2
     if kind == "channel":
-        from reelclip.core.channels import scan_channels
+        from .core.channels import scan_channels
 
         state_dir = SourceCatalog().path.parent
         state_dir.mkdir(parents=True, exist_ok=True)
@@ -158,17 +158,17 @@ def _run_source(args: Sequence[str]) -> int:
             temporary.write(target + (f" | {options}" if options else "") + "\n")
             temporary.flush()
             temporary.close()
-            return _legacy(["--links", str(path), "--no-post"])
+            return _pipeline(["--links", str(path), "--no-post"])
         finally:
             path.unlink(missing_ok=True)
-    return _legacy([target, "--no-post"])
+    return _pipeline([target, "--no-post"])
 
 
 def _doctor(args: Sequence[str]) -> int:
     if not args or args[0] != "youtube":
         print("Usage: ziv doctor youtube [URL]", file=sys.stderr)
         return 1
-    from reelclip.core.downloader import check_youtube_access, youtube_auth_status
+    from .core.downloader import check_youtube_access, youtube_auth_status
 
     status = youtube_auth_status()
     print(f"[youtube] method: {status['method']}")
@@ -194,7 +194,7 @@ def _catalog_command(command: str, args: Sequence[str]) -> int:
 
 
 def _help() -> int:
-    legacy_cli.build_parser(prog="ziv").print_help()
+    pipeline_cli.build_parser(prog="ziv").print_help()
     print("\nZiv commands:")
     print("  ziv                         open the terminal GUI")
     print("  ziv add link NAME TARGET   add a named video source")
@@ -230,14 +230,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "run-source":
         return _run_source(rest)
     if command in {"source", "scan"}:
-        return _legacy(["--source", *rest])
+        return _pipeline(["--source", *rest])
     if command in {"queue", "queue-status"}:
-        return _legacy(["--queue-status", *rest])
+        return _pipeline(["--queue-status", *rest])
     if command == "styles":
-        return _legacy(["--list-styles", *rest])
+        return _pipeline(["--list-styles", *rest])
 
     # Preserve the existing flag-based pipeline interface and explicit paths.
-    return _legacy(args)
+    return _pipeline(args)
 
 
 __all__ = ["main"]

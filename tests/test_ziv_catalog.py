@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from reelclip.catalog import CatalogError, SourceCatalog
+from ziv.catalog import CatalogError, SourceCatalog
 
 
 def test_catalog_crud_persists_named_channels_and_links(tmp_path: Path) -> None:

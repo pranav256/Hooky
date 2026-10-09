@@ -2,8 +2,8 @@
 import json
 from pathlib import Path
 
-from reelclip.options import PipelineOptions
-from reelclip.pipeline import Pipeline
+from ziv.options import PipelineOptions
+from ziv.pipeline import Pipeline
 
 
 def test_cached_words_are_loaded_without_full_transcribe_api(tmp_path: Path) -> None:
@@ -46,7 +46,7 @@ def test_run_selects_highlights_before_partial_transcription(tmp_path: Path,
     rendered = output / "reel_01.mp4"
     rendered.write_bytes(b"clip")
 
-    monkeypatch.setattr("reelclip.pipeline.get_duration", lambda path: 60.0)
+    monkeypatch.setattr("ziv.pipeline.get_duration", lambda path: 60.0)
     pipeline = Pipeline(PipelineOptions(no_upload=True, out=output,
                                          clips=1, min_len=5, max_len=30))
     pipeline.state["find_highlights"] = lambda *args, **kwargs: [
@@ -115,11 +115,11 @@ def test_selected_word_checkpoints_are_reused_per_window(tmp_path: Path) -> None
 
 
 def test_full_selection_resumes_across_queue_batches_and_deleted_posted_files(tmp_path, monkeypatch):
-    from reelclip.core import queue
+    from ziv.core import queue
 
     source = tmp_path / "source.mp4"
     source.write_bytes(b"source")
-    monkeypatch.setattr("reelclip.pipeline.get_duration", lambda path: 300.0)
+    monkeypatch.setattr("ziv.pipeline.get_duration", lambda path: 300.0)
     monkeypatch.setattr(queue, "QUEUE_FILE", tmp_path / "queue.json")
     monkeypatch.setenv("QUEUE_MAX_PENDING", "2")
     pipeline = Pipeline(PipelineOptions(out=tmp_path / "out", no_subs=True, no_captions=True))

@@ -27,9 +27,9 @@ def test_non_tty_tui_does_not_read_input_or_render_a_prompt() -> None:
     assert "select [" not in combined.lower()
 
 
-def test_current_compatibility_wizard_keeps_the_same_non_tty_contract(monkeypatch) -> None:
-    """The rename must not regress the already documented reelclip behavior."""
-    from reelclip import interactive
+def test_guided_workflow_keeps_the_non_tty_contract(monkeypatch) -> None:
+    """The public rename must preserve the guided workflow behavior."""
+    from ziv import interactive
 
     monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
     output: list[str] = []

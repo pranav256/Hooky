@@ -19,7 +19,6 @@ def _protected_paths() -> set[Path]:
         CHANNELS_FILE.resolve(),
         SESSION_FILE.resolve(),
         state_dir.resolve(),
-        (PROJECT_ROOT / ".reelclip-state").resolve(),
     }
 
 

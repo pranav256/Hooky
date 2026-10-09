@@ -22,12 +22,23 @@ from typing import Any, Callable
 from .catalog import SourceCatalog
 
 
-VIEWS = ("sources", "queue", "resources", "logs")
+VIEWS = ("links", "queue", "channels", "logs")
 VIEW_LABELS = {
-    "sources": "SOURCES",
+    "links": "LINKS",
     "queue": "QUEUE",
-    "resources": "RESOURCES",
+    "channels": "CHANNELS",
     "logs": "LOGS",
+}
+SOURCE_VIEWS = {"links", "channels"}
+_COLOR_READY = False
+_COLOR_PAIRS = {
+    "title": 1,
+    "accent": 2,
+    "success": 3,
+    "warning": 4,
+    "danger": 5,
+    "muted": 6,
+    "selected": 7,
 }
 
 
@@ -68,46 +79,74 @@ def _gauge(label: str, percent: Any, width: int = 18) -> str:
     return f"{label:<5} [{'#' * filled}{'-' * (width - filled)}] {value:5.1f}%"
 
 
-def _header(width: int, active_view: str) -> list[str]:
-    title = " ZIV // TERMINAL CONTROL "
-    subtitle = "source console | safe resumable workflows"
+def _header(width: int, active_view: str, snapshot: dict[str, Any]) -> list[str]:
+    statuses = list(snapshot.get("statuses") or [])
+    links = sum(item.get("kind") == "link" for item in statuses)
+    channels = sum(item.get("kind") == "channel" for item in statuses)
+    title = " ZIV  •  SOURCE LIBRARY "
+    subtitle = f"{links} links  ·  {channels} channels"
     tabs = "  ".join(
         f"[{index} {VIEW_LABELS[name]}]" if name == active_view
-        else f"  {index} {VIEW_LABELS[name]} "
+        else f" {index} {VIEW_LABELS[name]} "
         for index, name in enumerate(VIEWS, 1)
     )
     return [
         _line(title + " " + subtitle, width),
         _line(tabs, width),
-        _line("-" * width, width),
+        _line("─" * width, width),
     ]
 
 
-def _sources_body(snapshot: dict[str, Any], width: int, selected: int) -> list[str]:
-    statuses = list(snapshot.get("statuses") or [])
-    summary = snapshot.get("summary") or {}
-    left = max(32, width // 2)
-    right = max(1, width - left - 3)
+def _source_records(snapshot: dict[str, Any], active_view: str) -> list[dict[str, Any]]:
+    kind = "channel" if active_view == "channels" else "link"
+    return [item for item in list(snapshot.get("statuses") or [])
+            if item.get("kind") == kind]
+
+
+def _status_counts(records: list[dict[str, Any]]) -> str:
+    counts = {status: 0 for status in ("active", "done", "missing", "disabled")}
+    for record in records:
+        status = str(record.get("status", "active"))
+        if status in counts:
+            counts[status] += 1
+    return "  ".join(f"{key} {value}" for key, value in counts.items() if value)
+
+
+def _sources_body(snapshot: dict[str, Any], width: int, selected: int,
+                  active_view: str) -> list[str]:
+    records = _source_records(snapshot, active_view)
+    label = "CHANNELS" if active_view == "channels" else "LINKS"
+    summary = _status_counts(records) or "empty"
+    detail_width = max(28, width // 3)
+    list_width = max(30, width - detail_width - 3)
     lines = [
-        _line(f"SOURCES  active={summary.get('active', 0)}  done={summary.get('done', 0)}  "
-              f"missing={summary.get('missing', 0)}  disabled={summary.get('disabled', 0)}", width),
-        _line("-" * left + "   " + "DETAILS", width),
+        _line(f"{label}   {len(records)} saved   {summary}", width),
+        _line("─" * list_width + "┬" + "─" * (width - list_width - 1), width),
     ]
-    if not statuses:
-        lines.append(_line("No sources in the catalog. Import links.txt/channels.txt or add a named source.", width))
+    if not records:
+        lines.append(_line(f"No {label.lower()} yet. Press a to add one or i to import text files.", width))
+        lines.append(_line("", width))
         return lines
-    for index, item in enumerate(statuses):
-        marker = ">" if index == selected else " "
-        kind = str(item.get("kind", "source")).upper()[:7]
-        status = str(item.get("status", "?"))[:8]
-        name = str(item.get("name", ""))
+    for index, item in enumerate(records):
+        marker = "▶" if index == selected else " "
+        status = str(item.get("status", "active")).upper()
+        name = str(item.get("name", "Unnamed"))
         target = str(item.get("target", ""))
-        left_text = f"{marker} {kind:<7} {status:<8} {name}"
+        row = f"{marker} {status:<8} {name}"
         if index == selected:
-            detail = f"{item.get('kind', 'source')} '{name}' -> {target}"
-        else:
-            detail = ""
-        lines.append(_line(_clip(left_text, left) + "   " + _clip(detail, right), width))
+            row += " " * max(1, list_width - len(row) - 1) + "│ " + _clip(target, detail_width - 2)
+        lines.append(_line(_clip(row, width), width))
+    selected_item = records[selected] if 0 <= selected < len(records) else None
+    lines.append(_line("─" * list_width + "┴" + "─" * (width - list_width - 1), width))
+    if selected_item:
+        options = selected_item.get("options") or {}
+        lines.extend([
+            _line(f"SELECTED {label[:-1]}", width),
+            _line(f"  Name     {selected_item.get('name', '')}", width),
+            _line(f"  Status   {str(selected_item.get('status', '')).upper()}", width),
+            _line(f"  Target   {selected_item.get('target', '')}", width),
+            _line(f"  Options  {options or 'default'}", width),
+        ])
     return lines
 
 
@@ -176,26 +215,26 @@ def _logs_body(snapshot: dict[str, Any], width: int) -> list[str]:
 
 
 def render_frame(snapshot: dict[str, Any], width: int = 100, height: int = 30,
-                 active_view: str = "sources", selected: int = 0) -> list[str]:
+                 active_view: str = "links", selected: int = 0) -> list[str]:
     """Render a complete frame as strings, without importing or requiring curses."""
 
     width = max(24, int(width))
     height = max(6, int(height))
+    if active_view == "sources":
+        active_view = "links"
     if active_view not in VIEWS:
         active_view = VIEWS[0]
-    lines = _header(width, active_view)
-    if active_view == "sources":
-        lines.extend(_sources_body(snapshot, width, selected))
+    lines = _header(width, active_view, snapshot)
+    if active_view in SOURCE_VIEWS:
+        lines.extend(_sources_body(snapshot, width, selected, active_view))
     elif active_view == "queue":
         lines.extend(_queue_body(snapshot, width, selected))
-    elif active_view == "resources":
-        lines.extend(_resources_body(snapshot, width))
     else:
         lines.extend(_logs_body(snapshot, width))
     lines.extend([
         _line("-" * width, width),
-        _line(str(snapshot.get("message") or "Ziv ready"), width),
-        _line("1-4 view  Tab/h/l switch  j/k move  a link  c channel  R run  q quit", width),
+        _line(str(snapshot.get("message") or "Ready"), width),
+        _line("1 links  2 queue  3 channels  4 logs   ↑/↓ move   a add   R run   d delete   q quit", width),
     ])
     if len(lines) < height:
         lines.extend([" " * width] * (height - len(lines)))
@@ -205,7 +244,7 @@ def render_frame(snapshot: dict[str, Any], width: int = 100, height: int = 30,
 class TuiModel:
     """Terminal-independent state machine for the dashboard."""
 
-    def __init__(self, catalog: SourceCatalog, *, initial_view: str = "sources"):
+    def __init__(self, catalog: SourceCatalog, *, initial_view: str = "links"):
         self.catalog = catalog
         self.active_view = initial_view if initial_view in VIEWS else VIEWS[0]
         self.selected = 0
@@ -224,9 +263,9 @@ class TuiModel:
         return self.snapshot
 
     def selected_source(self) -> dict[str, Any] | None:
-        if self.active_view != "sources":
+        if self.active_view not in SOURCE_VIEWS:
             return None
-        records = list(self.snapshot.get("statuses") or [])
+        records = _source_records(self.snapshot, self.active_view)
         return records[self.selected] if 0 <= self.selected < len(records) else None
 
     def poll_job(self) -> None:
@@ -283,8 +322,8 @@ class TuiModel:
         self.message = f"Asked {self.job_name} to stop safely; checkpoints remain"
 
     def _item_count(self) -> int:
-        if self.active_view == "sources":
-            return len(self.snapshot.get("statuses") or [])
+        if self.active_view in SOURCE_VIEWS:
+            return len(_source_records(self.snapshot, self.active_view))
         if self.active_view == "queue":
             return len((self.snapshot.get("queue") or {}).get("pending") or [])
         if self.active_view == "logs":
@@ -311,7 +350,7 @@ class TuiModel:
         elif key == "r":
             self.refresh()
         elif key in {"a", "A"}:
-            self.pending_action = "add_link"
+            self.pending_action = "add_channel" if self.active_view == "channels" else "add_link"
         elif key in {"c", "C"}:
             self.pending_action = "add_channel"
         elif key in {"d", "D"}:
@@ -330,6 +369,10 @@ class TuiModel:
             self.selected = min(max(0, self._item_count() - 1), self.selected + 1)
         elif isinstance(key, str) and key in {"1", "2", "3", "4"}:
             self._set_view(VIEWS[int(key) - 1])
+        elif key in {"[", "KEY_LEFT"} and self.active_view in SOURCE_VIEWS:
+            self._set_view("links" if self.active_view == "channels" else "channels")
+        elif key in {"]", "KEY_RIGHT"} and self.active_view in SOURCE_VIEWS:
+            self._set_view("channels" if self.active_view == "links" else "links")
         return True
 
     def render(self, width: int = 100, height: int = 30) -> list[str]:
@@ -346,17 +389,70 @@ def _normalize_curses_key(key: int, curses_module: Any) -> Any:
     return names.get(key, key if key >= 0 else "ESC")
 
 
+def _setup_colors(curses_module: Any) -> bool:
+    global _COLOR_READY
+    if _COLOR_READY:
+        return True
+    try:
+        if not curses_module.has_colors():
+            return False
+        curses_module.start_color()
+        try:
+            curses_module.use_default_colors()
+        except curses_module.error:
+            pass
+        pairs = {
+            1: (curses_module.CYAN, -1),
+            2: (curses_module.YELLOW, -1),
+            3: (curses_module.GREEN, -1),
+            4: (curses_module.YELLOW, -1),
+            5: (curses_module.RED, -1),
+            6: (curses_module.BLUE, -1),
+            7: (curses_module.BLACK, curses_module.CYAN),
+        }
+        for number, (foreground, background) in pairs.items():
+            curses_module.init_pair(number, foreground, background)
+        _COLOR_READY = True
+        return True
+    except Exception:
+        return False
+
+
+def _line_color(row: int, text: str, model: TuiModel, curses_module: Any) -> int:
+    if row == 0:
+        return curses_module.color_pair(_COLOR_PAIRS["title"]) | curses_module.A_BOLD
+    if row == 1:
+        return curses_module.color_pair(_COLOR_PAIRS["accent"]) | curses_module.A_BOLD
+    if "ACTIVE" in text or "READY" in text:
+        return curses_module.color_pair(_COLOR_PAIRS["success"])
+    if "DONE" in text:
+        return curses_module.color_pair(_COLOR_PAIRS["accent"])
+    if "MISSING" in text or "ERROR" in text:
+        return curses_module.color_pair(_COLOR_PAIRS["danger"])
+    if "SELECTED" in text or "Name     " in text or "Target   " in text:
+        return curses_module.color_pair(_COLOR_PAIRS["muted"])
+    if text.lstrip().startswith("▶"):
+        return curses_module.color_pair(_COLOR_PAIRS["selected"]) | curses_module.A_BOLD
+    return curses_module.color_pair(_COLOR_PAIRS["muted"])
+
+
 def draw_frame(screen: Any, model: TuiModel) -> None:
     """Draw one model frame on a curses-compatible or fake screen."""
 
     height, width = screen.getmaxyx()
     frame = model.render(width=max(24, width), height=max(6, height))
+    import curses
+    colors = _setup_colors(curses)
     screen.erase()
     for row, text in enumerate(frame[:height]):
         try:
-            screen.addnstr(row, 0, text, max(1, width - 1))
-        except AttributeError:
-            screen.addstr(row, 0, text[:max(1, width - 1)])
+            attr = _line_color(row, text, model, curses) if colors else 0
+            screen.addnstr(row, 0, text, max(1, width - 1), attr)
+        except (AttributeError, TypeError):
+            try:
+                screen.addstr(row, 0, text[:max(1, width - 1)])
+            except AttributeError:
+                screen.addnstr(row, 0, text, max(1, width - 1))
     screen.refresh()
 
 

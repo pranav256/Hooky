@@ -1,7 +1,7 @@
 """Offline checks for the guided terminal entry point."""
 from __future__ import annotations
 
-from reelclip.interactive import run
+from ziv.interactive import run
 
 
 def test_interactive_menu_can_exit_without_prompting_for_a_source():

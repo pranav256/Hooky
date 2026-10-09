@@ -4,8 +4,8 @@ The catalog is deliberately separate from the existing command-line workflow.
 It reads the project's line-oriented ``links.txt`` and ``channels.txt`` files,
 but it does not rewrite them and it never performs network requests. Named
 entries added through :class:`SourceCatalog` are stored in a small JSON file
-under ``.reelclip-state`` (or ``STATE_DIR``) so a later CLI can opt into the
-catalog without changing today's entry points.
+under ``.ziv-state`` (or ``STATE_DIR``) so the CLI can use the catalog without
+rewriting the source files.
 
 Only source metadata is stored here: names, URLs/paths, safe source options,
 and status. Credentials, environment variables, cookies, and session files
@@ -31,7 +31,6 @@ from .config import PROJECT_ROOT
 CATALOG_VERSION = 1
 DEFAULT_CATALOG_NAME = "catalog.json"
 STATE_DIR_NAME = ".ziv-state"
-LEGACY_STATE_DIR_NAME = ".reelclip-state"
 _KINDS = ("link", "channel")
 _STATUSES = {"active", "done", "missing", "disabled"}
 _SENSITIVE_OPTION_KEYS = {
@@ -303,25 +302,15 @@ class SourceCatalog:
                  links_path: Path | str | None = None,
                  channels_path: Path | str | None = None):
         self.path = Path(path) if path is not None else default_catalog_path()
-        self._legacy_path = PROJECT_ROOT / LEGACY_STATE_DIR_NAME / DEFAULT_CATALOG_NAME
         self.links_path = (Path(links_path) if links_path is not None
                            else _default_source_path("LINKS_FILE", "links.txt"))
         self.channels_path = (Path(channels_path) if channels_path is not None
                               else _default_source_path("CHANNELS_FILE", "channels.txt"))
         self._cpu_sample: tuple[int, int] | None = None
-        if path is None and not self.path.exists() and self._legacy_path.exists():
-            # Read legacy state once, then write all future mutations to the
-            # Ziv location. The old state is never deleted or modified.
-            self._state = _read_state(self._legacy_path)
-        else:
-            self._state = _read_state(self.path)
+        self._state = _read_state(self.path)
 
     def _reload(self) -> dict[str, Any]:
-        if not self.path.exists() and self.path == default_catalog_path() \
-                and self._legacy_path.exists():
-            self._state = _read_state(self._legacy_path)
-        else:
-            self._state = _read_state(self.path)
+        self._state = _read_state(self.path)
         return self._state
 
     def _save(self) -> None:
@@ -503,7 +492,7 @@ class SourceCatalog:
         return self._mutate(apply)
 
     def materialize(self, kind: str, name: str) -> Path:
-        """Append a named source to the legacy workflow file if it is absent.
+        """Append a named source to the pipeline input file if it is absent.
 
         The JSON catalog remains authoritative for names/statuses, while this
         small bridge lets the existing downloader and channel scanner consume
@@ -561,9 +550,6 @@ class SourceCatalog:
         queue_path = Path(path) if path is not None else (
             Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / STATE_DIR_NAME)
             / "queue.json")
-        legacy_queue = PROJECT_ROOT / LEGACY_STATE_DIR_NAME / "queue.json"
-        if path is None and not queue_path.exists() and legacy_queue.exists():
-            queue_path = legacy_queue
         empty = {
             "available": False, "path": str(queue_path),
             "counts": {"pending": 0, "posted": 0, "failed": 0, "in_flight": 0},
@@ -666,7 +652,7 @@ class SourceCatalog:
             try:
                 for item in output.rglob("*"):
                     if item.name in _SENSITIVE_FILE_NAMES or any(
-                             part in {".git", ".venv", ".reelclip-state", ".ziv-state"}
+                             part in {".git", ".venv", ".ziv-state"}
                              for part in item.parts):
                         continue
                     if item.is_file():

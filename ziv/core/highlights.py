@@ -522,7 +522,7 @@ def _semantic_highlights(transcript: list[dict], source: Path, duration: float,
     approved = []
     for batch_start in range(0, len(chosen), 6):
         batch = chosen[batch_start:batch_start + 6]
-        with tempfile.TemporaryDirectory(prefix="reelclip_review_") as tmp:
+        with tempfile.TemporaryDirectory(prefix="ziv_review_") as tmp:
             descriptions = []
             for index, clip in enumerate(batch):
                 descriptions.append({"index": index, **clip})
@@ -620,7 +620,7 @@ def find_highlights(video_path: Path, n_clips: int = 0, clip_min: int = 15,
           "judge spoken stories reliably.", file=sys.stderr)
     print(f"[gemini] Extracting {MAX_FRAMES} sample frames "
            f"({ 'analysis twin' if analysis_path else 'master' })...")
-    with tempfile.TemporaryDirectory(prefix="reelclip_frames_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="ziv_frames_") as tmp:
         frame_root = cache_dir / "analysis_frames" if cache_dir else Path(tmp)
         frames = _extract_frames(source, frame_root)
 

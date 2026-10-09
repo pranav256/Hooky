@@ -15,7 +15,7 @@ from .options import PartsOptions
 from .pipeline import PartsPipeline
 
 
-def build_parser(prog: str = "reelclip-parts") -> argparse.ArgumentParser:
+def build_parser(prog: str = "ziv-parts") -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=prog, description="Export condensed-story or number-only chronological vertical parts.")
     parser.add_argument("source", help="Local video file or single video URL")
@@ -40,7 +40,7 @@ def build_parser(prog: str = "reelclip-parts") -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None, *, prog: str = "reelclip-parts") -> int:
+def main(argv: list[str] | None = None, *, prog: str = "ziv-parts") -> int:
     try:
         args = build_parser(prog=prog).parse_args(argv)
         options = PartsOptions(mode=args.mode, target_seconds=args.part_seconds, background=args.background,

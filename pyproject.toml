@@ -30,15 +30,12 @@ all = ["instagrapi>=2.1.0", "yt-dlp>=2024.10.22"]
 [project.scripts]
 ziv = "ziv.cli:main"
 ziv-parts = "ziv.parts_cli:main"
-# Compatibility aliases. Keep these while existing automation migrates to Ziv.
-reelclip = "reelclip.cli:main"
-reelclip-parts = "reelclip.parts.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["reelclip*", "ziv*"]
+include = ["ziv*"]
 
 [tool.setuptools.package-data]
-"reelclip.parts" = ["README.md"]
+"ziv.parts" = ["README.md"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

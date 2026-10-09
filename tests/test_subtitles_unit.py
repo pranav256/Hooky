@@ -1,5 +1,5 @@
 """Fast regression tests for subtitle timeline normalization."""
-from reelclip.core.subtitles import build_ass
+from ziv.core.subtitles import build_ass
 
 
 def dialogue(ass: str) -> list[str]:

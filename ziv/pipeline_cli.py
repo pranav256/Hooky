@@ -1,4 +1,4 @@
-"""Command line entry point for the lean Instagram Reel workflow."""
+"""Command line entry point for Ziv's Instagram Reel workflow."""
 from __future__ import annotations
 
 import argparse
@@ -59,7 +59,7 @@ def gather_videos(sources: list[Path]) -> list[Path]:
     return unique
 
 
-def build_parser(prog: str = "reelclip") -> argparse.ArgumentParser:
+def build_parser(prog: str = "ziv") -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=prog,
         description="Ziv finds highlights, renders high-quality vertical clips, and posts them to Instagram.",
@@ -83,7 +83,7 @@ def build_parser(prog: str = "reelclip") -> argparse.ArgumentParser:
     parser.add_argument("--no-upload", action="store_true",
                         help="Render clips without adding them to the queue")
     parser.add_argument("--no-post", action="store_true",
-                        help="Legacy compatibility flag: make runs never post")
+                        help="Make runs never post")
     parser.add_argument("--dry-run", action="store_true",
                         help="Select moments without rendering or queueing")
     parser.add_argument("--no-captions", action="store_true",
@@ -469,7 +469,7 @@ def post_now() -> int:
     return 2 if stats["failed"] or stats["blocked"] else 0
 
 
-def main(argv: list[str] | None = None, *, prog: str = "reelclip") -> int:
+def main(argv: list[str] | None = None, *, prog: str = "ziv") -> int:
     try:
         return _main(argv, prog=prog)
     except (post_queue.QueueError, ValueError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
@@ -477,7 +477,7 @@ def main(argv: list[str] | None = None, *, prog: str = "reelclip") -> int:
         return 2
 
 
-def _main(argv: list[str] | None = None, *, prog: str = "reelclip") -> int:
+def _main(argv: list[str] | None = None, *, prog: str = "ziv") -> int:
     args = build_parser(prog=prog).parse_args(argv)
     if args.interactive:
         if not sys.stdin.isatty() or not sys.stdout.isatty():
@@ -585,7 +585,7 @@ def _main(argv: list[str] | None = None, *, prog: str = "reelclip") -> int:
             gc.collect()
 
     # Make is deliberately queue-only. Posting always requires a separate,
-    # explicit --post-now or --post-due action (legacy --no-post is a no-op).
+                    # explicit --post-now or --post-due action (--no-post is a no-op).
     return 0
 
 

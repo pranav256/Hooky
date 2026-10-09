@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from reelclip.core import downloader
+from ziv.core import downloader
 
 
 @pytest.fixture(autouse=True)

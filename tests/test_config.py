@@ -1,7 +1,7 @@
 """The documented .env syntax must work, including uncommented examples."""
 import pytest
 
-from reelclip.config import _dotenv_value
+from ziv.config import _dotenv_value
 
 
 @pytest.mark.parametrize("raw,expected", [
