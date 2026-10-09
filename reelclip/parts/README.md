@@ -8,23 +8,22 @@ condensed, chronological series of vertical parts.
 From the repository root, after the main project's setup:
 
 ```bash
-./parts.sh story.mp4
-./parts.sh 'https://www.youtube.com/watch?v=VIDEO_ID'
-./parts.sh story.mp4 --part-seconds 60 --labels
-./parts.sh story.mp4 --caption-file story.srt --dry-run
+./ziv.sh parts story.mp4
+./ziv.sh parts 'https://www.youtube.com/watch?v=VIDEO_ID'
+./ziv.sh parts story.mp4 --part-seconds 60 --labels
+./ziv.sh parts story.mp4 --caption-file story.srt --dry-run
 ```
 
-Python: `.venv/bin/python -m reelclip.parts story.mp4`.
-Windows: `parts.bat story.mp4`.
-Installed command: `reelclip-parts story.mp4`.
+Python: `.venv/bin/ziv-parts story.mp4`.
+Installed command: `ziv-parts story.mp4`.
 
 For cartoons, episodes, or any source where Gemini should find the funniest
 moments and the export should contain only numeric overlays, use the
 number-only variant:
 
 ```bash
-./number-parts.sh cartoon.mp4
-./parts.sh cartoon.mp4 --mode number-only --part-seconds 60
+./ziv.sh number-parts cartoon.mp4
+./ziv.sh parts cartoon.mp4 --mode number-only --part-seconds 60
 ```
 
 It runs Gemini over the source to find funny, surprising, absurd, reaction,
@@ -49,7 +48,7 @@ export-only and never queues to Instagram.
 `--mode number-only` changes these defaults to: use Gemini's content-based funny
 moment selection, skip Whisper/caption subtitle timing, force subtitles off,
 and burn numeric labels only. `PARTS_MODE=number-only` can make that variant
-the default for `reelclip-parts`.
+the default for `ziv-parts`.
 
 ## Options
 

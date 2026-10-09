@@ -4,6 +4,7 @@
 cookies.txt
 *.cookies.txt
 .reelclip-state/
+.ziv-state/
 
 # Local workspace instructions and context
 

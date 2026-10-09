@@ -11,7 +11,7 @@ from ..config import (CHANNELS_FILE, DELETE_POSTED_CLIPS,
 
 
 def _protected_paths() -> set[Path]:
-    state_dir = Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / ".reelclip-state")
+    state_dir = Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / ".ziv-state")
     return {
         PROJECT_ROOT / ".env",
         PROJECT_ROOT / ".git",
@@ -19,6 +19,7 @@ def _protected_paths() -> set[Path]:
         CHANNELS_FILE.resolve(),
         SESSION_FILE.resolve(),
         state_dir.resolve(),
+        (PROJECT_ROOT / ".reelclip-state").resolve(),
     }
 
 

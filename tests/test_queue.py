@@ -74,7 +74,7 @@ def test_default_state_is_outside_output_and_env_is_lazy(tmp_path, monkeypatch):
     monkeypatch.setattr(post_queue, "QUEUE_FILE", None)
     monkeypatch.setattr(config, "PROJECT_ROOT", tmp_path)
     monkeypatch.delenv("STATE_DIR")
-    assert post_queue.queue_path() == tmp_path / ".reelclip-state" / "queue.json"
+    assert post_queue.queue_path() == tmp_path / ".ziv-state" / "queue.json"
     monkeypatch.setenv("STATE_DIR", str(tmp_path / "custom"))
     assert post_queue.queue_path() == tmp_path / "custom" / "queue.json"
 

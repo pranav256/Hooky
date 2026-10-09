@@ -19,6 +19,7 @@ import os
 import re
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 from ..config import (OUTPUT_DIR, SOURCE_LONG_SECONDS, SOURCE_MAX_HEIGHT_LONG,
@@ -43,80 +44,210 @@ class YouTubeAuthRequired(RuntimeError):
     """YouTube refused an anonymous or invalidly authenticated request."""
 
 
+_YTDLP_BROWSERS = frozenset({
+    "brave", "chrome", "chromium", "edge", "firefox", "opera", "safari",
+    "vivaldi", "whale",
+})
+
+
 _AUTH_MARKERS = (
     "sign in to confirm", "cookies-from-browser", "cookies from browser",
     "confirm you’re not a bot", "confirm you're not a bot", "login required",
+    "authentication required",
 )
 
 
 def is_youtube_auth_error(error: BaseException) -> bool:
-    text = str(error).lower()
-    return any(marker in text for marker in _AUTH_MARKERS)
+    """Recognize YouTube auth failures, including wrapped downloader errors."""
+    seen: set[int] = set()
+    current: BaseException | None = error
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        text = " ".join(
+            value for value in (str(current), str(getattr(current, "msg", "")))
+            if value
+        ).lower()
+        if any(marker in text for marker in _AUTH_MARKERS):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def _env_value(env: Mapping[str, str], name: str) -> str:
+    value = env.get(name, "")
+    return str(value or "").strip()
+
+
+def _parse_browser_source(value: str) -> tuple[str, str | None, str | None, str | None]:
+    """Parse yt-dlp's browser[+keyring][:profile][::container] syntax."""
+    browser_and_profile, separator, container = value.partition("::")
+    if separator and "::" in container:
+        raise ValueError(
+            "YTDLP_COOKIES_FROM_BROWSER has more than one '::' container separator"
+        )
+    container = container.strip() or None if separator else None
+
+    browser_part, separator, profile = browser_and_profile.partition(":")
+    if separator and ":" in profile:
+        raise ValueError(
+            "YTDLP_COOKIES_FROM_BROWSER accepts one ':profile' segment; "
+            "use '::container' for a Firefox container"
+        )
+    profile = profile.strip() or None if separator else None
+
+    browser_parts = [part.strip() for part in browser_part.split("+")]
+    if len(browser_parts) > 2 or not browser_parts[0]:
+        raise ValueError(
+            "YTDLP_COOKIES_FROM_BROWSER must be "
+            "browser[+keyring][:profile][::container]"
+        )
+    browser = browser_parts[0].lower()
+    keyring = browser_parts[1].lower() if len(browser_parts) == 2 else None
+    if not browser or browser not in _YTDLP_BROWSERS:
+        raise ValueError(
+            f"Unsupported browser '{browser}' in YTDLP_COOKIES_FROM_BROWSER; "
+            f"choose one of {', '.join(sorted(_YTDLP_BROWSERS))}"
+        )
+    if len(browser_parts) == 2 and not keyring:
+        raise ValueError(
+            "YTDLP_COOKIES_FROM_BROWSER has an empty keyring after '+'"
+        )
+    return browser, profile, keyring, container
+
+
+def _auth_options_from_env(env: Mapping[str, str]) -> dict[str, object]:
+    """Build yt-dlp auth options using metadata only; never opens cookie data."""
+    browser_value = _env_value(env, "YTDLP_COOKIES_FROM_BROWSER")
+    cookie_value = _env_value(env, "YTDLP_COOKIES_FILE")
+    if browser_value and cookie_value:
+        raise ValueError(
+            "Set only one of YTDLP_COOKIES_FROM_BROWSER or "
+            "YTDLP_COOKIES_FILE; unset the other authentication method"
+        )
+
+    auth: dict[str, object] = {}
+    if browser_value:
+        auth["cookiesfrombrowser"] = _parse_browser_source(browser_value)
+    if cookie_value:
+        path = Path(os.path.expanduser(cookie_value))
+        if not path.exists():
+            raise FileNotFoundError(
+                f"YTDLP_COOKIES_FILE does not exist: {path}. "
+                "Set it to an existing Netscape/Mozilla cookies.txt export."
+            )
+        if not path.is_file():
+            raise ValueError(
+                f"YTDLP_COOKIES_FILE is not a regular file: {path}. "
+                "Set it to a Netscape/Mozilla cookies.txt export."
+            )
+        if not os.access(path, os.R_OK):
+            raise PermissionError(
+                f"YTDLP_COOKIES_FILE is not readable: {path}. "
+                "Grant read access or choose another cookies.txt export."
+            )
+        # Do not parse or print the file: it contains live session credentials.
+        auth["cookiefile"] = str(path)
+    return auth
+
+
+def youtube_auth_status(env: Mapping[str, str] | None = None) -> dict[str, object]:
+    """Return safe, offline-only cookie configuration diagnostics.
+
+    This validates environment syntax and cookie-file metadata only. It does not
+    import yt-dlp, open a browser database, read cookie contents, or make a
+    network request.
+    """
+    values = os.environ if env is None else env
+    try:
+        auth = _auth_options_from_env(values)
+    except (OSError, ValueError) as exc:
+        return {"ok": False, "method": "invalid", "message": str(exc)}
+
+    if not auth:
+        return {
+            "ok": True,
+            "method": "anonymous",
+            "message": "No YouTube cookie source is configured; requests will be anonymous.",
+        }
+    if "cookiesfrombrowser" in auth:
+        return {
+            "ok": True,
+            "method": "browser",
+            "message": (
+                "YTDLP_COOKIES_FROM_BROWSER is syntactically valid; browser cookie "
+                "storage was not opened."
+            ),
+        }
+    return {
+        "ok": True,
+        "method": "file",
+        "message": (
+            "YTDLP_COOKIES_FILE points to a readable regular file; cookie contents "
+            "were not inspected."
+        ),
+    }
 
 
 def youtube_auth_help() -> str:
-    browser = os.environ.get("YTDLP_COOKIES_FROM_BROWSER", "").strip()
-    cookie_file = os.environ.get("YTDLP_COOKIES_FILE", "").strip()
-    if browser:
-        return (f"YTDLP_COOKIES_FROM_BROWSER={browser!r} is configured, but "
-                "YouTube rejected those cookies. Open YouTube in that browser, "
-                "sign in, solve any CAPTCHA, close the browser, and retry; "
-                "otherwise export fresh Netscape cookies and use YTDLP_COOKIES_FILE.")
-    if cookie_file:
-        return (f"YTDLP_COOKIES_FILE points to {cookie_file!r}, but YouTube rejected "
-                "it. Export a fresh Netscape cookies.txt after signing in and retry.")
-    return ("YouTube needs authentication. Set YTDLP_COOKIES_FROM_BROWSER=firefox "
-            "(or chrome/brave/edge) after signing into YouTube, close that browser, "
-            "and retry. Alternatively export Netscape cookies.txt and set "
-            "YTDLP_COOKIES_FILE=/absolute/path/cookies.txt.")
+    status = youtube_auth_status()
+    if not status["ok"]:
+        return (
+            "Fix the local YouTube cookie configuration before retrying: "
+            f"{status['message']}"
+        )
+    if status["method"] == "browser":
+        return (
+            "YouTube rejected cookies loaded from YTDLP_COOKIES_FROM_BROWSER. "
+            "Check the browser/profile setting, sign in to YouTube manually in "
+            "that browser, close it completely, and retry. If browser storage "
+            "cannot be read here, export a fresh Netscape/Mozilla cookies.txt "
+            "file and set YTDLP_COOKIES_FILE instead."
+        )
+    if status["method"] == "file":
+        return (
+            "YouTube rejected YTDLP_COOKIES_FILE. Export a fresh Netscape/Mozilla "
+            "cookies.txt file after a manual YouTube sign-in, keep it outside the "
+            "repository, update YTDLP_COOKIES_FILE, and retry."
+        )
+    return (
+        "YouTube rejected an anonymous request. Sign in to YouTube manually in a "
+        "browser, close it, then set YTDLP_COOKIES_FROM_BROWSER=firefox (or "
+        "chrome/brave/edge) and retry. Alternatively set "
+        "YTDLP_COOKIES_FILE=/absolute/path/cookies.txt to a fresh Netscape/Mozilla "
+        "export."
+    )
 
 
 def _auth_failure(error: BaseException) -> YouTubeAuthRequired:
     return YouTubeAuthRequired(f"{error}\n\n[youtube] {youtube_auth_help()}")
 
 
-def yt_dlp_auth_opts() -> dict:
+def yt_dlp_auth_opts(env: Mapping[str, str] | None = None) -> dict[str, object]:
     """Optional yt-dlp authentication, shared by downloads and channel scans.
 
     YouTube often answers anonymous downloads with 'Sign in to confirm you're
     not a bot'. Set one of these in .env to fix it:
-      YTDLP_COOKIES_FROM_BROWSER=chrome        (chrome|firefox|brave|edge|...)
-      YTDLP_COOKIES_FROM_BROWSER=chrome:Profile 1   (with a profile name)
-      YTDLP_COOKIES_FILE=cookies.txt           (Netscape cookies.txt export)
+      YTDLP_COOKIES_FROM_BROWSER=chrome
+      YTDLP_COOKIES_FROM_BROWSER=chrome:Profile 1
+      YTDLP_COOKIES_FROM_BROWSER=chrome+gnomekeyring:Profile 1
+      YTDLP_COOKIES_FILE=cookies.txt
+
+    Configuration is checked locally without reading cookie contents.
     """
-    auth: dict = {}
-    browser = os.environ.get("YTDLP_COOKIES_FROM_BROWSER", "").strip()
-    cookie_file = os.path.expanduser(os.environ.get("YTDLP_COOKIES_FILE", "").strip())
-    if browser and cookie_file:
-        raise ValueError("Set only one of YTDLP_COOKIES_FROM_BROWSER or "
-                         "YTDLP_COOKIES_FILE")
-    if browser:
-        name, _, profile = browser.partition(":")
-        name = name.strip().lower()
-        allowed = {"brave", "chrome", "chromium", "edge", "firefox", "opera",
-                   "safari", "vivaldi"}
-        if name not in allowed:
-            raise ValueError(f"Unsupported browser '{name}' in "
-                             "YTDLP_COOKIES_FROM_BROWSER")
-        auth["cookiesfrombrowser"] = (
-            name, profile.strip() or None, None, None)
-    if cookie_file:
-        path = Path(cookie_file)
-        if not path.is_file():
-            raise FileNotFoundError(
-                f"YTDLP_COOKIES_FILE does not exist: {path}. "
-                "Export a Netscape cookies.txt file first.")
-        auth["cookiefile"] = str(path)
-    return auth
+    return _auth_options_from_env(os.environ if env is None else env)
 
 
 def check_youtube_access(url: str) -> bool:
     """Probe one URL without downloading and print an actionable diagnosis."""
+    status = youtube_auth_status()
+    if not status["ok"]:
+        print(f"[youtube] invalid cookie configuration: {status['message']}",
+              file=sys.stderr)
+        return False
     try:
         import yt_dlp
         auth = yt_dlp_auth_opts()
-        print("[youtube] authentication: " +
-              ("configured browser/cookie file" if auth else "anonymous (no cookies)"))
+        print(f"[youtube] authentication: {status['message']}")
         opts = {"quiet": True, "no_warnings": True, "noplaylist": True,
                 "skip_download": True, **auth}
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -130,6 +261,9 @@ def check_youtube_access(url: str) -> bool:
         if is_youtube_auth_error(exc):
             print(f"[youtube] AUTHENTICATION FAILED: {_auth_failure(exc)}",
                   file=sys.stderr)
+        elif isinstance(exc, ImportError):
+            print("[youtube] yt-dlp is not installed; install the download "
+                  "optional dependency before probing a URL", file=sys.stderr)
         else:
             print(f"[youtube] probe failed: {exc}", file=sys.stderr)
         return False
