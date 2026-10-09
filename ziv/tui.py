@@ -57,6 +57,16 @@ def _line(value: Any, width: int) -> str:
     return _clip(value, max(1, width))
 
 
+def _rule(width: int, label: str = "") -> str:
+    """Build a quiet panel rule with breathing room around its label."""
+
+    width = max(24, width)
+    if label:
+        content = f"─ {label} "
+        return _line("┌" + content + "─" * max(1, width - len(content) - 2) + "┐", width)
+    return _line("├" + "─" * max(1, width - 2) + "┤", width)
+
+
 def _human_bytes(value: Any) -> str:
     try:
         number = float(value)
@@ -92,8 +102,10 @@ def _header(width: int, active_view: str, snapshot: dict[str, Any]) -> list[str]
     )
     return [
         _line(title + " " + subtitle, width),
+        _line("", width),
         _line(tabs, width),
-        _line("─" * width, width),
+        _line("", width),
+        _rule(width),
     ]
 
 
@@ -120,32 +132,37 @@ def _sources_body(snapshot: dict[str, Any], width: int, selected: int,
     detail_width = max(28, width // 3)
     list_width = max(30, width - detail_width - 3)
     lines = [
-        _line(f"{label}   {len(records)} saved   {summary}", width),
-        _line("─" * list_width + "┬" + "─" * (width - list_width - 1), width),
+        _line("", width),
+        _line(f"  {label}   {len(records)} saved   {summary}", width),
+        _rule(width),
     ]
     if not records:
-        lines.append(_line(f"No {label.lower()} yet. Press a to add one or i to import text files.", width))
-        lines.append(_line("", width))
+        lines.extend([
+            _line("", width),
+            _line(f"  No {label.lower()} yet.", width),
+            _line("  Press a to add one or i to import text files.", width),
+        ])
         return lines
     for index, item in enumerate(records):
         marker = "▶" if index == selected else " "
         status = str(item.get("status", "active")).upper()
         name = str(item.get("name", "Unnamed"))
         target = str(item.get("target", ""))
-        row = f"{marker} {status:<8} {name}"
-        if index == selected:
-            row += " " * max(1, list_width - len(row) - 1) + "│ " + _clip(target, detail_width - 2)
-        lines.append(_line(_clip(row, width), width))
+        row = f"│ {marker}  {status:<8}  {name}"
+        lines.append(_line(row, width))
+        lines.append(_line(f"│      {_clip(target, width - 8)}", width))
+        lines.append(_line("│", width))
     selected_item = records[selected] if 0 <= selected < len(records) else None
-    lines.append(_line("─" * list_width + "┴" + "─" * (width - list_width - 1), width))
+    lines.append(_rule(width))
     if selected_item:
         options = selected_item.get("options") or {}
         lines.extend([
-            _line(f"SELECTED {label[:-1]}", width),
-            _line(f"  Name     {selected_item.get('name', '')}", width),
-            _line(f"  Status   {str(selected_item.get('status', '')).upper()}", width),
-            _line(f"  Target   {selected_item.get('target', '')}", width),
-            _line(f"  Options  {options or 'default'}", width),
+            _line("", width),
+            _line(f"  SELECTED {label[:-1]}", width),
+            _line(f"  Name      {selected_item.get('name', '')}", width),
+            _line(f"  Status    {str(selected_item.get('status', '')).upper()}", width),
+            _line(f"  Target    {selected_item.get('target', '')}", width),
+            _line(f"  Options   {options or 'default'}", width),
         ])
     return lines
 
@@ -154,24 +171,28 @@ def _queue_body(snapshot: dict[str, Any], width: int, selected: int) -> list[str
     queue = snapshot.get("queue") or {}
     counts = queue.get("counts") or {}
     lines = [
-        _line("QUEUE  " + "  ".join(f"{key}={counts.get(key, 0)}"
-                                   for key in ("pending", "posted", "failed", "in_flight")), width),
-        _line(f"path: {queue.get('path', '(default)')}", width),
+        _line("", width),
+        _line("  QUEUE", width),
+        _rule(width),
+        _line("  " + "   ".join(f"{key.upper()}  {counts.get(key, 0)}"
+                               for key in ("pending", "posted", "failed", "in_flight")), width),
+        _line("", width),
+        _line(f"  State file   {queue.get('path', '(default)')}", width),
     ]
     if queue.get("error"):
         lines.append(_line(f"ERROR: {queue['error']}", width))
     holds = queue.get("holds") or []
     if holds:
-        lines.append(_line("HOLDS: " + ", ".join(map(str, holds)), width))
+        lines.append(_line("  HOLDS  " + ", ".join(map(str, holds)), width))
     pending = list(queue.get("pending") or [])
     if not pending:
-        lines.append(_line("Queue is empty or has no pending clips.", width))
+        lines.extend([_line("", width), _line("  Queue is empty.", width)])
         return lines
-    lines.append(_line("PENDING", width))
+    lines.extend([_line("", width), _line("  PENDING", width)])
     for index, item in enumerate(pending):
         marker = ">" if index == selected else " "
         title = f"  {item.get('title')}" if item.get("title") else ""
-        lines.append(_line(f"{marker} {item.get('name', '')}  attempts={item.get('attempts', 0)}{title}", width))
+        lines.append(_line(f"  {marker}  {item.get('name', '')}  attempts={item.get('attempts', 0)}{title}", width))
     return lines
 
 
@@ -203,14 +224,17 @@ def _resources_body(snapshot: dict[str, Any], width: int) -> list[str]:
 
 def _logs_body(snapshot: dict[str, Any], width: int) -> list[str]:
     logs = snapshot.get("logs") or {}
-    lines = [_line(f"LOGS  {logs.get('path', '(logbook)')}", width)]
+    lines = [_line("", width), _line("  LOGS", width), _rule(width),
+             _line(f"  {logs.get('path', '(logbook)')}", width)]
     if logs.get("error"):
         lines.append(_line(f"ERROR: {logs['error']}", width))
     entries = list(logs.get("lines") or [])
     if not entries:
-        lines.append(_line("Logbook is empty.", width))
+        lines.append(_line("", width))
+        lines.append(_line("  Logbook is empty.", width))
     else:
-        lines.extend(_line(entry, width) for entry in entries)
+        lines.append(_line("", width))
+        lines.extend(_line(f"  {entry}", width) for entry in entries)
     return lines
 
 
@@ -232,8 +256,10 @@ def render_frame(snapshot: dict[str, Any], width: int = 100, height: int = 30,
     else:
         lines.extend(_logs_body(snapshot, width))
     lines.extend([
-        _line("-" * width, width),
+        _rule(width),
+        _line("", width),
         _line(str(snapshot.get("message") or "Ready"), width),
+        _line("", width),
         _line("1 links  2 queue  3 channels  4 logs   ↑/↓ move   a add   R run   d delete   q quit", width),
     ])
     if len(lines) < height:
@@ -423,6 +449,8 @@ def _line_color(row: int, text: str, model: TuiModel, curses_module: Any) -> int
         return curses_module.color_pair(_COLOR_PAIRS["title"]) | curses_module.A_BOLD
     if row == 1:
         return curses_module.color_pair(_COLOR_PAIRS["accent"]) | curses_module.A_BOLD
+    if "▶" in text[:12]:
+        return curses_module.color_pair(_COLOR_PAIRS["selected"]) | curses_module.A_BOLD
     if "ACTIVE" in text or "READY" in text:
         return curses_module.color_pair(_COLOR_PAIRS["success"])
     if "DONE" in text:
@@ -431,8 +459,6 @@ def _line_color(row: int, text: str, model: TuiModel, curses_module: Any) -> int
         return curses_module.color_pair(_COLOR_PAIRS["danger"])
     if "SELECTED" in text or "Name     " in text or "Target   " in text:
         return curses_module.color_pair(_COLOR_PAIRS["muted"])
-    if text.lstrip().startswith("▶"):
-        return curses_module.color_pair(_COLOR_PAIRS["selected"]) | curses_module.A_BOLD
     return curses_module.color_pair(_COLOR_PAIRS["muted"])
 
 
