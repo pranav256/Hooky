@@ -5,6 +5,7 @@ cookies.txt
 *.cookies.txt
 # Local application state (including state left by older releases)
 .*-state/
+.omnirush/
 
 # Local workspace instructions and context
 
@@ -28,3 +29,4 @@ dist/
 *.lock
 *.channels.lock
 *.post.lock
+!uv.lock
