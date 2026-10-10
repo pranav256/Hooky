@@ -53,19 +53,6 @@ def _parts(args: Sequence[str], *, number_only: bool = False) -> int:
     return parts_cli.main(forwarded, prog="ziv-parts")
 
 
-def _run_tui() -> int:
-    """Open the new dashboard, but never attempt curses on a redirected stdin."""
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        print("[ziv] The TUI needs an interactive terminal; use --help for scripts.",
-              file=sys.stderr)
-        return 2
-    from .tui import run_tui
-
-    catalog = SourceCatalog()
-    catalog.import_files()
-    return run_tui(catalog)
-
-
 def _catalog() -> SourceCatalog:
     catalog = SourceCatalog()
     # Import is explicit and idempotent: the TUI can show the files users
@@ -210,10 +197,10 @@ def _help() -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run Ziv, opening the TUI without arguments and forwarding CLI work."""
+    """Run Ziv's normal command-line workflows."""
     args = _raw_args(argv)
-    if not args or args in (["--interactive"], ["--tui"], ["tui"]):
-        return _run_tui()
+    if not args:
+        return _pipeline([])
 
     command, rest = args[0], args[1:]
     if command == "help" or args == ["--help"]:

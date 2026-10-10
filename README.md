@@ -139,7 +139,7 @@ Never commit `.env` or `.ig_session`.
 The public command is `ziv`. The one canonical Linux launcher is `ziv.sh`:
 
 ```bash
-./ziv.sh                         # open the TUI
+./ziv.sh --help                  # normal CLI help
 ./ziv.sh make video.mp4          # render and queue, never post
 ./ziv.sh parts story.mp4
 ./ziv.sh number-parts cartoon.mp4
@@ -167,23 +167,9 @@ the public commands and the workflow implementation.
 
 ## Make clips
 
-### Ziv terminal GUI
-
-For an easier first run, open the btop-style full-screen terminal GUI:
-
-```bash
-./ziv.sh
-# or:
-.venv/bin/ziv --tui
-```
-
-The GUI is intentionally a source browser first: it shows colored links and
-channels, friendly names, status badges, selected-source details, queue state,
-and logs. Press `a` to add a link, `c` to add a channel, `i` to import the
-traditional text files, `R` to run the selected source, `d` to remove it from
-the Ziv catalog, `x` to stop a running child process, and `q` to quit. It never
-automates browser login or CAPTCHA solving. Use `ziv` subcommands for pipes,
-cron, and other automated runs.
+Ziv is intentionally a normal command-line tool. Use explicit commands and
+flags from a shell, script, cron job, or terminal multiplexer. It does not open
+a full-screen UI or prompt for a workflow when called without arguments.
 
 ### Content-based automatic count
 
@@ -347,9 +333,9 @@ The equivalent Python command is:
 .venv/bin/ziv-parts story.mp4
 ```
 
-Use `ziv-parts story.mp4` when you need the direct parts entry point. The main
-TUI and `ziv parts` command are the recommended interfaces. An installed package also provides
-the `ziv-parts` command.
+Use `ziv-parts story.mp4` when you need the direct parts entry point. The
+normal `ziv parts` command is the recommended interface. An installed package
+also provides the `ziv-parts` command.
 
 ### How the story edit works
 
@@ -589,12 +575,11 @@ by the test suite.
 - `ziv/core/source_text.py` - WebVTT/SRT parsing and caption download cache
 - `ziv/core/transcripts.py` - bounded, cached full-source Whisper evidence
 - `ziv/parts/` - condensed-story planning, timeline mapping, and parts export
-- `ziv/interactive.py` - guided terminal helper; the public UI is `ziv/tui.py`
 - `ziv/core/cleanup.py` - successful-source and confirmed-post media cleanup
 - `ziv/core/profiling.py` - opt-in stage timing metrics
 - `ziv/core/queue.py` - durable Instagram-only queue and review holds
 - `ziv/platforms/instagram.py` - login and Reel upload
-- `ziv.sh` - the one canonical Linux launcher (TUI by default)
+- `ziv.sh` - the one canonical Linux CLI launcher
 - `ziv/` - the sole application package
 
 ## Recovery copy

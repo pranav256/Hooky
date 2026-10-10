@@ -29,7 +29,6 @@ def test_ziv_module_help_is_available_without_a_terminal() -> None:
     assert result.returncode == 0, result.stderr
     help_text = result.stdout.lower()
     assert "usage: ziv" in help_text
-    assert "--interactive" in help_text
     assert "--source" in help_text
     assert "--links" in help_text
     assert "--check-youtube" in help_text
@@ -42,7 +41,7 @@ def test_ziv_help_alias_is_available_without_a_terminal() -> None:
     assert "usage: ziv" in result.stdout.lower()
 
 
-def test_existing_launcher_passes_explicit_help_without_opening_the_tui() -> None:
+def test_launcher_passes_normal_cli_help() -> None:
     result = subprocess.run(
         [str(ROOT / "ziv.sh"), "--help"],
         cwd=ROOT,
@@ -55,7 +54,11 @@ def test_existing_launcher_passes_explicit_help_without_opening_the_tui() -> Non
     assert result.returncode == 0, result.stderr
     help_text = result.stdout.lower()
     assert "usage:" in help_text
-    assert "interactive mode needs a terminal" not in help_text
-    assert "--interactive" in help_text
     assert "--links" in help_text
     assert "--source" in help_text
+
+
+def test_no_arguments_use_normal_cli_error_instead_of_opening_a_tui() -> None:
+    result = _run_module()
+    assert result.returncode == 1
+    assert "video file/folder" in result.stderr.lower()
