@@ -12,10 +12,11 @@ from .core.captions import generate_captions
 from .core.checkpoints import (atomic_json, digest, file_revision, load_checkpoint,
                                save_checkpoint, source_id, clip_id)
 from .core.cutter import cut_all_clips
-from .core.highlights import find_highlights, plan_auto_clips, snap_clip_boundaries
+from .core.highlights import (AUTO_CANDIDATES_PER_CHUNK, AUTO_MAX_CLIPS,
+                              find_highlights, plan_auto_clips, snap_clip_boundaries)
 from .core.lowspec import WHISPER_MODEL, WHISPER_COMPUTE
 from .core.profiling import PipelineProfile
-from .core.queue import enqueue_clips
+from .core.queue import QueueFullError, enqueue_clips
 from .core.source_text import caption_words, load_caption_file, sidecar_caption_file
 from .core.subtitles import transcribe
 from .core.utils import get_duration
@@ -27,6 +28,7 @@ class Job:
     video: Path
     clips: list[dict] = field(default_factory=list)
     manifest: dict = field(default_factory=dict)
+    complete: bool = False
 
 
 class Pipeline:
@@ -170,19 +172,19 @@ class Pipeline:
             duration = get_duration(video)
         if duration < 3:
             raise ValueError("Source is too short for a Reel")
-        count, minimum, maximum = ((o.clips, o.min_len, o.max_len) if o.clips else
-                                   plan_auto_clips(duration))
-        # One very long source must not overfill the publishing backlog either.
-        if queue_state is not None and not o.no_upload:
-            room = max(0, int(os.environ.get("QUEUE_MAX_PENDING", "12"))
-                       - len(queue_state.get("pending", {})))
-            if room == 0:
-                raise RuntimeError("Posting queue is full; post/review it before making more clips")
-            count = min(count, room)
+        count, minimum, maximum = o.clips, o.min_len, o.max_len
+        if not count and o.auto_mode == "duration":
+            count = plan_auto_clips(duration)[0]
+        queued = queue_state is not None and not o.no_upload
+        queue_limit = int(os.environ.get("QUEUE_MAX_PENDING", "12"))
+        if queued and queue_limit < 1:
+            raise ValueError("QUEUE_MAX_PENDING must be a positive integer")
         transcript = source_transcript or load_caption_file(sidecar_caption_file(video))
         selection_signature = {
-            "version": 3, "source": revision, "transcript": digest(transcript),
+            "version": 4, "source": revision, "transcript": digest(transcript),
             "count": count, "min": minimum, "max": maximum, "context": context,
+            "auto_mode": o.auto_mode, "auto_ceiling": AUTO_MAX_CLIPS,
+            "candidates_per_chunk": AUTO_CANDIDATES_PER_CHUNK,
             "model": GEMINI_MODEL, "fallbacks": GEMINI_FALLBACK_MODELS,
         }
         cache_dir = out_dir / ".checkpoints" / digest(selection_signature)
@@ -192,10 +194,10 @@ class Pipeline:
                 clips = self.state["find_highlights"](
                     video, n_clips=count, clip_min=minimum, clip_max=maximum,
                     context=context, analysis_path=analysis_path,
-                    transcript=transcript, cache_dir=cache_dir)
+                    transcript=transcript, cache_dir=cache_dir, auto_mode=o.auto_mode)
                 if not clips:
                     raise RuntimeError("No highlights selected; source remains unprocessed")
-                clips = clips[:count]
+                clips = clips[:count or AUTO_MAX_CLIPS]
                 save_checkpoint(cache_dir / "highlights.json", selection_signature, clips)
             else:
                 profile.count("selection_cache_hits")
@@ -235,35 +237,73 @@ class Pipeline:
                 if not any(w["start"] < c["end"] and w["end"] > c["start"] for w in words):
                     raise RuntimeError("Selected clip has no subtitle words; review speech before queueing")
 
-        caption_signature = {"version": 2, "source": revision, "clips": clips,
+        # The selected plan is independent of queue capacity. A partially made
+        # source stays available until every selected clip is delivered.
+        plan_signature = digest({"selection": selection_signature, "clips": clips,
+                                 "subtitle_source": o.subtitle_source,
+                                 "sub_style": o.sub_style, "no_subs": o.no_subs,
+                                 "no_captions": o.no_captions})
+        manifest_path = out_dir / "manifest.json"
+        try:
+            previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            previous = {}
+        previous_items = (previous.get("clips", []) if isinstance(previous, dict)
+                          and previous.get("plan_signature") == plan_signature else [])
+        if not isinstance(previous_items, list):
+            previous_items = []
+        items = {item["clip_id"]: item for item in previous_items
+                 if isinstance(item, dict) and item.get("clip_id")}
+        delivered = {identity for identity, item in items.items()
+                     if queued and item.get("delivered")}
+        if queued:
+            # A confirmed post may have already removed the rendered MP4.
+            # Stable IDs, rather than file existence, acknowledge that work.
+            for bucket in ("pending", "posted", "in_flight", "failed"):
+                for path, entry in queue_state.get(bucket, {}).items():
+                    identity = entry.get("clip_id")
+                    if identity and any(c["clip_id"] == identity for c in clips):
+                        delivered.add(identity)
+                        items.setdefault(identity, {"clip_id": identity, "path": path,
+                                                    "caption": entry.get("caption", ""),
+                                                    "delivered": True})
+        remaining = [c for c in clips if c["clip_id"] not in delivered]
+        room = (max(0, queue_limit - len(queue_state.get("pending", {})))
+                if queued else len(remaining))
+        batch = remaining[:room]
+        manifest = {"version": 3, "source": str(video), "source_url": source_url,
+                    "source_id": ident, "plan_signature": plan_signature,
+                    "sub_style": None if o.no_subs else o.sub_style,
+                    "subtitle_source": self.last_subtitle_source,
+                    "selection_evidence": "source captions" if transcript else "visual/audio fallback",
+                    "planned_clips": clips, "clips": list(items.values()),
+                    "complete": False}
+        atomic_json(manifest_path, manifest)
+        caption_signature = {"version": 3, "source": revision, "clips": batch,
                              "context": context, "model": GEMINI_MODEL,
                              "fallbacks": GEMINI_FALLBACK_MODELS,
                              "spoken": digest(words)}
         with profile.stage("captions"):
-            meta = [{"caption": ""} for _ in clips] if o.no_captions else load_checkpoint(
+            meta = [{"caption": ""} for _ in batch] if o.no_captions or not batch else load_checkpoint(
                 cache_dir / "captions.json", caption_signature)
             if meta is None:
                 meta = self.state["generate_captions"](
                     [{"index": i + 1, **c,
                       "spoken": " ".join(w["word"] for w in words
                                           if w["start"] < c["end"] and w["end"] > c["start"])[:2500]}
-                     for i, c in enumerate(clips)], video.name, context=context)
-                if not isinstance(meta, list) or len(meta) != len(clips):
+                     for i, c in enumerate(batch)], video.name, context=context)
+                if not isinstance(meta, list) or len(meta) != len(batch):
                     raise ValueError("Invalid caption count")
                 save_checkpoint(cache_dir / "captions.json", caption_signature, meta)
         with profile.stage("render"):
-            results = self.state["cut_all_clips"](
-                video, clips, output_dir=out_dir, words=words, sub_style=o.sub_style,
-                make_covers=o.make_covers)
-        if len(results) != len(clips):
+            results = (self.state["cut_all_clips"](
+                video, batch, output_dir=out_dir, words=words, sub_style=o.sub_style,
+                make_covers=o.make_covers) if batch else [])
+        if len(results) != len(batch):
             raise RuntimeError("Renderer returned incomplete results; source remains unprocessed")
-        manifest = {"version": 2, "source": str(video), "source_url": source_url,
-                    "source_id": ident, "sub_style": None if o.no_subs else o.sub_style,
-                    "subtitle_source": self.last_subtitle_source,
-                    "selection_evidence": "source captions" if transcript else "visual/audio fallback",
-                    "clips": []}
         job = Job(video=video, manifest=manifest)
-        for result, caption, selected in zip(results, meta, clips):
+        order = {c["clip_id"]: i for i, c in enumerate(clips, 1)}
+        for result, caption, selected in zip(results, meta, batch):
             path = Path(result["path"])
             if not o.no_subs and not result.get("subtitled"):
                 raise RuntimeError("Subtitle burn-in missing; refusing to queue an uncaptioned clip")
@@ -274,17 +314,34 @@ class Pipeline:
             else:
                 text = sidecar.read_text(encoding="utf-8").strip()
             item = {**result, "clip_id": selected["clip_id"], "path": str(path),
-                    "caption": text, "cover": str(result.get("cover") or "")}
-            manifest["clips"].append(item)
+                    "index": order[selected["clip_id"]], "caption": text,
+                    "cover": str(result.get("cover") or ""), "delivered": False}
+            items[item["clip_id"]] = item
             job.clips.append({**item, "path": path})
         # Commit manifest before queueing; a rerun restores any missing queue entries.
-        atomic_json(out_dir / "manifest.json", manifest)
-        if queue_state is not None and not o.no_upload:
+        manifest["clips"] = sorted(items.values(), key=lambda item: order[item["clip_id"]])
+        atomic_json(manifest_path, manifest)
+        if queued:
             with profile.stage("queue"):
                 for item in job.clips:
-                    enqueue_clips([item["path"]], source_url=source_url, state=queue_state,
-                                  title=(context or {}).get("title", video.stem),
-                                  caption=item["caption"], clip_id=item["clip_id"])
+                    try:
+                        enqueue_clips([item["path"]], source_url=source_url, state=queue_state,
+                                      title=(context or {}).get("title", video.stem),
+                                      caption=item["caption"], clip_id=item["clip_id"],
+                                      max_pending=queue_limit)
+                    except QueueFullError:
+                        break
+                    items[item["clip_id"]]["delivered"] = True
+                    delivered.add(item["clip_id"])
+                    atomic_json(manifest_path, manifest)
+        job.complete = (len(delivered) == len(clips) if queued else
+                        len(results) == len(clips))
+        manifest["complete"] = job.complete
+        manifest["remaining"] = len(clips) - (len(delivered) if queued else len(results))
+        atomic_json(manifest_path, manifest)
+        if not job.complete:
+            print(f"[make] Selected {len(clips)} moments; {manifest['remaining']} remain. "
+                  "Run make again after posting to resume this source.")
         profile.data["source"] = str(video)
         profile.data["clips"] = len(job.clips)
         profile.data["total_seconds"] = round(time.perf_counter() - started, 4)

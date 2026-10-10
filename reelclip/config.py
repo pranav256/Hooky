@@ -6,6 +6,26 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
 
 
+def _dotenv_value(raw: str) -> str:
+    """Strip whitespace-delimited comments while preserving quoted/hash values."""
+    quote = ""
+    escaped = False
+    for index, char in enumerate(raw):
+        if char == "#" and not quote and (index == 0 or raw[index - 1].isspace()):
+            raw = raw[:index]
+            break
+        if char in {"'", '"'} and not escaped:
+            if quote == char:
+                quote = ""
+            elif not quote:
+                quote = char
+        escaped = char == "\\" and not escaped
+    value = raw.strip()
+    if len(value) >= 2 and value[0] in {"'", '"'} and value[-1] == value[0]:
+        value = value[1:-1]
+    return value
+
+
 def _load_dotenv() -> None:
     """Tiny .env loader (avoids extra dependency)."""
     if not ENV_FILE.exists():
@@ -16,7 +36,7 @@ def _load_dotenv() -> None:
             continue
         key, _, value = line.partition("=")
         key = key.strip()
-        value = value.strip().strip('"').strip("'")
+        value = _dotenv_value(value)
         if key and key not in os.environ:
             os.environ[key] = value
 
@@ -136,6 +156,7 @@ def _env_bool(key: str, default: bool) -> bool:
 SUBTITLE_SOURCE = os.environ.get("SUBTITLE_SOURCE", "auto").strip().lower()
 MAKE_COVERS = _env_bool("MAKE_COVERS", False)
 AUDIO_NORMALIZATION = _env_bool("AUDIO_NORMALIZATION", True)
+AUTO_CLIP_MODE = os.environ.get("AUTO_CLIP_MODE", "content").strip().lower()
 
 # These are intentionally enabled for the user's disposable-media workflow.
 # Queue history and manifests are always retained; only confirmed media files

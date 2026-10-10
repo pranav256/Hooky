@@ -344,3 +344,13 @@ for n in range(8):
         _, stderr = child.communicate(timeout=15)
         assert child.returncode == 0, stderr
     assert len(post_queue.load_queue(path)["pending"]) == 24
+def test_queue_limit_is_checked_against_fresh_state(tmp_path):
+    from reelclip.core.queue import QueueFullError, enqueue_clips, load_queue
+    import pytest
+
+    path = tmp_path / "bounded.json"
+    stale = load_queue(path)
+    enqueue_clips([tmp_path / "first.mp4"], path=path, max_pending=1)
+    with pytest.raises(QueueFullError):
+        enqueue_clips([tmp_path / "second.mp4"], state=stale, max_pending=1)
+    assert len(load_queue(path)["pending"]) == 1

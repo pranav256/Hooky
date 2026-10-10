@@ -21,7 +21,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from .lowspec import WHISPER_COMPUTE, WHISPER_MODEL
+from .lowspec import WHISPER_COMPUTE, WHISPER_MODEL, WHISPER_THREADS, lowspec_input_args
 
 _MODEL = None  # lazy singleton
 
@@ -87,7 +87,8 @@ def _get_model():
                   file=sys.stderr)
             raise SystemExit(1) from exc
         print(f"[subs] Loading whisper '{WHISPER_MODEL}' ({WHISPER_COMPUTE})...")
-        _MODEL = WhisperModel(WHISPER_MODEL, device="cpu", compute_type=WHISPER_COMPUTE)
+        _MODEL = WhisperModel(WHISPER_MODEL, device="cpu", compute_type=WHISPER_COMPUTE,
+                              cpu_threads=WHISPER_THREADS, num_workers=1)
     return _MODEL
 
 
@@ -135,7 +136,7 @@ def _transcribe_selected(model, video_path: Path, timestamps: list[float],
             if not math.isfinite(start + end) or start < 0 or end <= start:
                 raise ValueError("Invalid selected audio window")
             subprocess.run([
-                "ffmpeg", "-y", "-loglevel", "error", "-ss", str(start),
+                "ffmpeg", "-y", "-loglevel", "error", *lowspec_input_args(), "-ss", str(start),
                 "-i", str(video_path), "-t", str(end - start), "-map", "0:a:0",
                 "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", str(audio),
             ], check=True, capture_output=True, timeout=300)
@@ -359,4 +360,3 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 def words_for_window(words: list[dict], start: float, end: float) -> list[dict]:
     """Slice the global word list to a clip window."""
     return [w for w in words if w["end"] > start and w["start"] < end]
-

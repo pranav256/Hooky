@@ -21,7 +21,7 @@ def _get_duration_cached(path: str, _mtime_ns: int, _size: int) -> float:
     result = subprocess.run([
         "ffprobe", "-v", "error", "-select_streams", "v:0",
         "-show_entries", "format=duration", "-of", "json", path,
-    ], capture_output=True, text=True, check=True)
+    ], capture_output=True, text=True, check=True, timeout=30)
     return float(json.loads(result.stdout)["format"]["duration"])
 
 
@@ -65,7 +65,7 @@ def _has_audio_cached(path: str, _mtime_ns: int, _size: int) -> bool:
     result = subprocess.run([
         "ffprobe", "-v", "error", "-select_streams", "a:0",
         "-show_entries", "stream=index", "-of", "csv=p=0", path,
-    ], capture_output=True, text=True)
+    ], capture_output=True, text=True, timeout=30)
     return result.returncode == 0 and result.stdout.strip() != ""
 
 
@@ -88,7 +88,7 @@ def safe_duration_clamp(start: float, end: float, total: float) -> tuple[float, 
     return start, end
 
 
-def vertical_crop_filter(framing: str = "center") -> str:
+def vertical_crop_filter(framing: str = "center", background_height: int = 0) -> str:
     """Fit or center-crop a source onto the 1080x1920 Instagram canvas.
 
     ``fit`` is the safe selective smart-framing mode: it preserves the entire
@@ -97,13 +97,26 @@ def vertical_crop_filter(framing: str = "center") -> str:
     default for close-up/portrait material.
     """
     if framing == "fit":
+        if background_height:
+            height = max(2, int(background_height) // 2 * 2)
+            width = max(2, round(CLIP_WIDTH * height / CLIP_HEIGHT) // 2 * 2)
+            background = (
+                f"[a]scale={width}:{height}:force_original_aspect_ratio=increase,"
+                f"crop={width}:{height},gblur=sigma=12,eq=brightness=-0.10,"
+                f"scale={CLIP_WIDTH}:{CLIP_HEIGHT}[bg];")
+        else:
+            background = (
+                f"[a]scale={CLIP_WIDTH}:{CLIP_HEIGHT}:force_original_aspect_ratio=increase,"
+                f"crop={CLIP_WIDTH}:{CLIP_HEIGHT},gblur=sigma=24,eq=brightness=-0.10[bg];")
         return (
             f"split[a][b];"
-            f"[a]scale={CLIP_WIDTH}:{CLIP_HEIGHT}:force_original_aspect_ratio=increase,"
-            f"crop={CLIP_WIDTH}:{CLIP_HEIGHT},gblur=sigma=24,eq=brightness=-0.10[bg];"
+            + background +
             f"[b]scale={CLIP_WIDTH}:{CLIP_HEIGHT}:force_original_aspect_ratio=decrease[fg];"
             "[bg][fg]overlay=(W-w)/2:(H-h)/2"
         )
+    if framing == "pad":
+        return (f"scale={CLIP_WIDTH}:{CLIP_HEIGHT}:force_original_aspect_ratio=decrease,"
+                f"pad={CLIP_WIDTH}:{CLIP_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black")
     return (
         f"scale={CLIP_WIDTH}:{CLIP_HEIGHT}:force_original_aspect_ratio=increase,"
         f"crop={CLIP_WIDTH}:{CLIP_HEIGHT}"

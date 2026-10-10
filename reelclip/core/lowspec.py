@@ -17,6 +17,10 @@ try:
     FFMPEG_THREADS = max(1, int(os.environ.get("FFMPEG_THREADS", "2")))
 except ValueError:
     FFMPEG_THREADS = 2
+try:
+    WHISPER_THREADS = max(1, int(os.environ.get("WHISPER_THREADS", "2")))
+except ValueError:
+    WHISPER_THREADS = 2
 
 # --- Output quality tier -----------------------------------------------------
 # QUALITY=highest -> crf 15 / medium preset / 256k audio (Instagram master)
@@ -50,3 +54,9 @@ def lowspec_encode_args() -> list[str]:
         "-x264-params", f"scenecut=0:keyint={NGROUPS}",
         "-max_muxing_queue_size", MAX_MUX_QUEUE,
     ]
+
+
+def lowspec_input_args() -> list[str]:
+    """Place before -i: bound decoder and filter pools as well as the encoder."""
+    return ["-threads", str(FFMPEG_THREADS), "-filter_threads", str(FFMPEG_THREADS),
+            "-filter_complex_threads", str(FFMPEG_THREADS)]

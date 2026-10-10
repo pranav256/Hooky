@@ -4,12 +4,13 @@ from __future__ import annotations
 import argparse
 import gc
 import os
+import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
 
-from .config import (CHANNELS_FILE, LINKS_FILE, OUTPUT_DIR, POST_HOURS,
+from .config import (AUTO_CLIP_MODE, CHANNELS_FILE, LINKS_FILE, OUTPUT_DIR, POST_HOURS,
                       REELS_MAX_DURATION)
 from .core import queue as post_queue
 from .core.cleanup import delete_clip_artifacts, delete_source_artifacts
@@ -68,6 +69,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Video file(s) and/or folders")
     parser.add_argument("--clips", default="auto",
                         help="Clips per video: a number or 'auto' (default)")
+    parser.add_argument("--auto-mode", choices=("content", "duration"),
+                        default=AUTO_CLIP_MODE,
+                        help="Auto count by worthwhile moments (default) or source duration")
     parser.add_argument("--min", dest="min_len", type=int, default=15,
                         help="Minimum clip seconds (default: 15)")
     parser.add_argument("--max", dest="max_len", type=int, default=60,
@@ -412,7 +416,8 @@ def ingest_links(args) -> None:
                     analysis_path=video.get("analysis"),
                     source_transcript=video.get("source_transcript"),
                 )
-                if not args.dry_run and not job.clips and not job.manifest:
+                if not args.dry_run and (not getattr(job, "complete", True)
+                                         or (not job.clips and not job.manifest)):
                     succeeded = False
             except (KeyboardInterrupt, SystemExit):
                 raise
@@ -465,7 +470,7 @@ def post_now() -> int:
 def main(argv: list[str] | None = None) -> int:
     try:
         return _main(argv)
-    except (post_queue.QueueError, ValueError, OSError) as exc:
+    except (post_queue.QueueError, ValueError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 2
 
@@ -559,12 +564,12 @@ def _main(argv: list[str] | None = None) -> int:
         for video in videos:
             if not _make_has_capacity(args):
                 break
-            pipeline.run(
+            job = pipeline.run(
                 video,
                 queue_state=None if args.no_upload or args.dry_run else load_queue(),
                 source_transcript=load_caption_file(sidecar_caption_file(video)),
             )
-            if not args.dry_run:
+            if not args.dry_run and getattr(job, "complete", True):
                 removed = delete_source_artifacts(video)
                 if removed:
                     print(f"[cleanup] Removed source artifacts for {video.name}")

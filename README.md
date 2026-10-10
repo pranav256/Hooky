@@ -1,10 +1,16 @@
 # reelclip
 
-A lean pipeline for turning long videos into high-quality Instagram Reels.
-It selects moments with Gemini, uses available source captions for semantic
-selection and subtitle timing, falls back to selected-window Whisper when
-needed, burns karaoke subtitles, renders 1080x1920 H.264 clips, and posts
-through Instagram.
+A lean toolkit for turning long videos into high-quality vertical clips:
+
+| Workflow | Command | Result |
+| --- | --- | --- |
+| Podcast highlights | `./make.sh podcast.mp4 --clips auto` | AI chooses the worthwhile standalone moments; the count follows the content. |
+| Condensed story parts | `./parts.sh story.mp4` | AI retains a coherent story and exports chronological, roughly 60-second parts. |
+
+Both workflows use Gemini, timestamped source captions, karaoke subtitles,
+and 1080x1920 H.264 output. Podcast highlights feed the Instagram posting
+queue. The [parts subproject](reelclip/parts/README.md) exports numbered files
+with the full source picture over a blurred background.
 
 ## Workflow
 
@@ -60,7 +66,29 @@ For a weaker computer:
 
 ```dotenv
 QUALITY=high
+X264_PRESET=veryfast
+SOURCE_MAX_HEIGHT=1080
+FFMPEG_THREADS=2
+WHISPER_MODEL=tiny
+WHISPER_COMPUTE=int8
+WHISPER_THREADS=2
+SUBTITLE_SOURCE=auto
+MAKE_COVERS=false
+MAKE_MAX_SOURCES=1
+QUEUE_MAX_PENDING=4
+AUTO_MAX_CLIPS=40
 ```
+
+`QUALITY=high` uses CRF 17 and 192k audio; `X264_PRESET=veryfast` is the
+important encoding-speed override. The source-height setting reduces download
+and decoding work while output remains 1080x1920. Smaller sources look softer
+after a vertical crop. Decoder, filter, encoder, and Whisper pools are bounded;
+each fragment/clip renders sequentially. Set `AUDIO_NORMALIZATION=false` to
+skip loudness normalization if consistent volume is less important.
+
+Keep `AUTO_MAX_CLIPS` generous: it limits discovery, while `QUEUE_MAX_PENDING`
+limits how much is rendered and queued at a time. A small posting queue can
+still support ten good clips from a source over several make/post runs.
 
 ## Requirements
 
@@ -68,7 +96,7 @@ QUALITY=high
 - FFmpeg and FFprobe on `PATH`
 - Gemini API key
 - Instagram username and password for posting
-- yt-dlp only when discovering channels or processing URLs from `links.txt`
+- yt-dlp when discovering channels or processing video URLs in either workflow
 
 Install FFmpeg on Debian/Ubuntu:
 
@@ -104,6 +132,50 @@ verification code, set `IG_2FA_CODE` or enter it interactively.
 Never commit `.env` or `.ig_session`.
 
 ## Make clips
+
+### Content-based automatic count
+
+`--clips auto` is the default. Gemini reads the caption chunks, proposes
+complete standalone moments, and selects worthwhile, varied ideas without
+filling a fixed quota. One source may yield 3 clips and another 10. The default
+ceiling is 40, with up to 10 candidates proposed per transcript chunk.
+
+```bash
+./make.sh podcast.mp4 --clips auto
+./make.sh podcast.mp4 --clips auto --min 20 --max 75
+./make.sh podcast.mp4 --clips 5
+./make.sh podcast.mp4 --clips auto --auto-mode duration
+```
+
+Automatic highlights respect `--min` and `--max` (defaults: 15 and 60 seconds),
+as well as per-link overrides. `--auto-mode duration` uses the earlier estimate
+of roughly one clip per ten minutes, controlled by
+`AUTO_CLIP_DENSITY_MINUTES`. `AUTO_CLIP_MODE` sets the default strategy.
+
+Source captions provide the best spoken evidence. Without captions, the
+podcast workflow retains its visual/audio fallback and selected-window Whisper
+for subtitle timing; sparse frames cannot reliably judge spoken stories.
+
+### Queue-limited rendering and resume
+
+Selection is independent of queue capacity. The source manifest records the
+full `planned_clips` list, completed clips, `remaining`, and `complete` status.
+Make renders a batch that fits `QUEUE_MAX_PENDING`. After posting frees slots,
+rerun the same command to continue using cached selection and completed renders:
+
+```bash
+./make.sh podcast.mp4
+./post.sh
+./make.sh podcast.mp4
+```
+
+In link mode, an unfinished source stays active in `links.txt`. It becomes
+`# DONE`, and source cleanup becomes eligible, after every selected clip has
+been rendered and handed to the queue. Stable clip IDs acknowledge completed
+work even when posting cleanup has removed an earlier MP4. `--no-upload`
+exports all selected highlights in one sequential run without the queue bound.
+
+### Inputs and options
 
 Local video:
 
@@ -185,6 +257,85 @@ across individual words for karaoke highlighting. Set
 timing needs to be regenerated locally. `--subtitle-source source` requires a
 usable caption track.
 
+## Cut a condensed story into parts
+
+Use the separate parts workflow for challenge, adventure, documentary, and
+MrBeast-style story videos:
+
+```bash
+./parts.sh /path/to/story.mp4
+./parts.sh 'https://www.youtube.com/watch?v=VIDEO_ID'
+./parts.sh story.mp4 --part-seconds 60 --labels
+./parts.sh story.mp4 --dry-run
+```
+
+The equivalent Python command is:
+
+```bash
+.venv/bin/python -m reelclip.parts story.mp4
+```
+
+On Windows, use `parts.bat story.mp4`. An installed package also provides
+the `reelclip-parts` command.
+
+### How the story edit works
+
+1. Read source captions and sparsely sampled frames to identify story beats.
+2. Retain setup, rules/stakes, essential developments, causal context, and
+   the payoff; remove sponsors, filler, and repeated explanations.
+3. Arrange the retained original footage and audio in source order.
+4. Divide that edited timeline near 60 seconds, preferring nearby sentence
+   endings and edit joins. Part count follows the retained story length.
+5. Render numbered 1080x1920, 30 fps H.264 files with the full picture over a
+   blurred background. A part can contain several source ranges.
+
+Parts have a 90-second hard ceiling and may be shorter or longer than the
+target to accommodate natural boundaries or the final remainder. Subtitle
+timings are remapped onto the edited timeline so omitted speech disappears
+and the retained words remain aligned.
+
+YouTube captions or a local `.vtt`/`.srt` sidecar are preferred. Use
+`--caption-file captions.srt` to supply a specific track. When captions are
+missing, the parts workflow transcribes the source in sequential, cached
+five-minute Whisper windows to obtain spoken evidence. That adds processing
+time even with `--no-subs`, because the story planner still needs evidence.
+
+### Output and recovery
+
+```text
+output/parts/<source-id>/
+  story_plan.json
+  manifest.json
+  part_001.mp4
+  part_001.ass
+  part_002.mp4
+  ...
+```
+
+`story_plan.json` records retained source ranges and the part-to-source mapping.
+`--dry-run` generates this plan before rendering. `manifest.json` records
+completed exports. Rerun the same command after an interruption to reuse story
+selection, completed fragments, and completed parts. Temporary fragments are
+removed after their final part has been assembled and validated.
+
+The parts workflow exports files independently of the posting queue and
+preserves its input video. `--out DIR` selects an export directory.
+
+Useful options:
+
+```bash
+./parts.sh story.mp4 --labels                  # visible Part N / Total label
+./parts.sh story.mp4 --background plain        # lighter than blurred padding
+./parts.sh story.mp4 --subtitle-source whisper # regenerate retained word timing
+./parts.sh story.mp4 --sub-style clean
+./parts.sh story.mp4 --no-subs --profile
+```
+
+The blurred background is processed at a smaller resolution before scaling
+to the final canvas. Fragments render one at a time and are joined with stream
+copy, avoiding a second full video encode or a large full-story intermediate.
+For architecture and detailed usage, see [reelclip/parts/README.md](reelclip/parts/README.md).
+
 ## Post to Instagram
 
 Post the queue immediately:
@@ -250,6 +401,8 @@ QUALITY=highest
 # SOURCE_MAX_HEIGHT_SHORT=2160
 # WHISPER_MODEL=tiny
 # WHISPER_COMPUTE=int8
+# WHISPER_THREADS=2
+# X264_PRESET=veryfast
 # SUB_FONT=Arial
 # POST_HOURS=17-0
 # QUEUE_MIN_GAP_MINUTES=60
@@ -266,7 +419,18 @@ QUALITY=highest
 # FFMPEG_THREADS=2
 # GEMINI_MIN_INTERVAL_SECONDS=20
 # GEMINI_SELECTION_CHUNK_CHARS=18000
+# AUTO_CLIP_MODE=content
+# AUTO_MAX_CLIPS=40
+# AUTO_CANDIDATES_PER_CHUNK=10
+# AUTO_CLIP_DENSITY_MINUTES=10
+# PARTS_TARGET_SECONDS=60
+# PARTS_BACKGROUND=blur
 ```
+
+Unquoted inline comments separated by whitespace are supported, for example
+`SUBTITLE_SOURCE=auto # prefer source captions`. Quoted values preserve literal
+`#` characters. Already-exported shell environment variables take precedence
+over `.env` values.
 
 ## Disposable media cleanup
 
@@ -279,7 +443,9 @@ DELETE_SOURCE_AFTER_CLIP=true
 DELETE_POSTED_CLIPS=true
 ```
 
-Source cleanup happens only after the source's clips and manifest are complete.
+Podcast source cleanup happens only after the full selected plan and its
+manifest are complete, including all queue-limited batches. Parts exports retain
+the input source and clean up their generated assembly fragments.
 Posted-clip cleanup happens only after a valid Instagram media code has been
 durably recorded. An uncertain upload is held for review and is never cleaned
 up automatically. Set either value to `false` to retain that media.
@@ -321,7 +487,8 @@ Fast offline checks:
 .venv/bin/python -m pytest -q
 ```
 
-The optional synthetic FFmpeg test can be enabled with:
+The optional synthetic FFmpeg tests verify single-window clips and multi-range
+story-part assembly, including subtitles, labels, audio, and render resume:
 
 ```bash
 .venv/bin/python -m pytest -q --run-integration
@@ -339,11 +506,14 @@ by the test suite.
 - `reelclip/core/cutter.py` - center crop, render, and covers
 - `reelclip/core/downloader.py` - optional links.txt downloads and source captions
 - `reelclip/core/source_text.py` - WebVTT/SRT parsing and caption download cache
+- `reelclip/core/transcripts.py` - bounded, cached full-source Whisper evidence
+- `reelclip/parts/` - condensed-story planning, timeline mapping, and parts export
 - `reelclip/core/cleanup.py` - successful-source and confirmed-post media cleanup
 - `reelclip/core/profiling.py` - opt-in stage timing metrics
 - `reelclip/core/queue.py` - durable Instagram-only queue and review holds
 - `reelclip/platforms/instagram.py` - login and Reel upload
 - `make.sh` / `post.sh` - make-only and post-only entry points
+- `parts.sh` / `parts.bat` - separate story-parts export entry points
 
 ## Recovery copy
 

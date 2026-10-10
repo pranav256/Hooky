@@ -9,16 +9,16 @@ from argparse import Namespace
 from dataclasses import dataclass
 from pathlib import Path
 
-from .config import MAKE_COVERS, SUBTITLE_SOURCE
+from .config import AUTO_CLIP_MODE, MAKE_COVERS, SUBTITLE_SOURCE
 from .core.subtitles import STYLES
 
 
 @dataclass
 class PipelineOptions:
     """The remaining knobs for lean Instagram clip production."""
-    # --- clip selection (clips=0 -> AUTO: the AI decides count + lengths
-    # from the video's duration — a 5-hour source gets ~30 clips) ---
+    # clips=0 lets the content determine the count; duration mode is optional.
     clips: int = 0
+    auto_mode: str = AUTO_CLIP_MODE
     min_len: int = 15
     max_len: int = 60
     # --- output ---
@@ -35,6 +35,8 @@ class PipelineOptions:
     profile: bool = False
 
     def __post_init__(self) -> None:
+        if self.auto_mode not in {"content", "duration"}:
+            raise ValueError("auto_mode must be content or duration")
         if self.sub_style not in STYLES:
             raise ValueError(
                 f"Unknown sub_style '{self.sub_style}'. Options: {', '.join(STYLES)}")
@@ -46,6 +48,7 @@ class PipelineOptions:
         """Build options from the CLI argparse namespace."""
         return cls(
             clips=0 if str(args.clips).lower() in ("auto", "0") else args.clips,
+            auto_mode=getattr(args, "auto_mode", AUTO_CLIP_MODE),
             min_len=args.min_len,
             max_len=args.max_len,
             out=args.out,

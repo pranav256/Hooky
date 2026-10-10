@@ -112,3 +112,46 @@ def test_selected_word_checkpoints_are_reused_per_window(tmp_path: Path) -> None
 
     assert len(first) == 2 and len(second) == 1
     assert calls == [[8.0, 22.0, 38.0, 47.0]]
+
+
+def test_full_selection_resumes_across_queue_batches_and_deleted_posted_files(tmp_path, monkeypatch):
+    from reelclip.core import queue
+
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"source")
+    monkeypatch.setattr("reelclip.pipeline.get_duration", lambda path: 300.0)
+    monkeypatch.setattr(queue, "QUEUE_FILE", tmp_path / "queue.json")
+    monkeypatch.setenv("QUEUE_MAX_PENDING", "2")
+    pipeline = Pipeline(PipelineOptions(out=tmp_path / "out", no_subs=True, no_captions=True))
+    selections, rendered = [], []
+
+    def select(*args, **kwargs):
+        selections.append(kwargs["n_clips"])
+        return [{"start": i * 30, "end": i * 30 + 20} for i in range(5)]
+
+    def render(video, clips, output_dir, **kwargs):
+        results = []
+        for clip in clips:
+            path = output_dir / f"{clip['clip_id']}.mp4"
+            path.write_bytes(b"clip")
+            rendered.append(clip["start"])
+            results.append({**clip, "path": path, "subtitled": False})
+        return results
+
+    pipeline.state["find_highlights"] = select
+    pipeline.state["cut_all_clips"] = render
+    first = pipeline.run(source, queue_state=queue.load_queue())
+    assert not first.complete and len(first.manifest["planned_clips"]) == 5
+    assert first.manifest["remaining"] == 3
+    state = queue.load_queue()
+    for path in list(state["pending"]):
+        queue.mark_posted(Path(path), state, "confirmed")
+        Path(path).unlink()
+    second = pipeline.run(source, queue_state=queue.load_queue())
+    assert not second.complete and second.manifest["remaining"] == 1
+    state = queue.load_queue()
+    for path in list(state["pending"]):
+        queue.mark_posted(Path(path), state, "confirmed")
+    third = pipeline.run(source, queue_state=queue.load_queue())
+    assert third.complete and len(third.manifest["clips"]) == 5
+    assert selections == [0] and rendered == [0, 30, 60, 90, 120]

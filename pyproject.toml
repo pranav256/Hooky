@@ -29,9 +29,13 @@ all = ["instagrapi>=2.1.0", "yt-dlp>=2024.10.22"]
 
 [project.scripts]
 reelclip = "reelclip.cli:main"
+reelclip-parts = "reelclip.parts.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["reelclip*"]
+
+[tool.setuptools.package-data]
+"reelclip.parts" = ["README.md"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
