@@ -20,6 +20,8 @@ output/
 __pycache__/
 *.pyc
 .venv/
+venv/
+.tools/
 build/
 dist/
 *.egg-info/
@@ -29,4 +31,4 @@ dist/
 *.lock
 *.channels.lock
 *.post.lock
-!uv.lock
+!requirements.lock
