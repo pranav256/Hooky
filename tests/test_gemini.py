@@ -1,4 +1,4 @@
-"""Unit tests for reelclip/core/gemini.py error classification + rotation.
+"""Unit tests for ziv/core/gemini.py error classification + rotation.
 
 No network access: the client and every model call are faked. Run:
     python -m pytest tests/test_gemini.py   (or: python tests/test_gemini.py)
@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import reelclip.core.gemini as g  # noqa: E402
+import ziv.core.gemini as g  # noqa: E402
 
 
 @contextlib.contextmanager

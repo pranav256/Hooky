@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from reelclip.catalog import CatalogError, SourceCatalog
+from ziv.catalog import CatalogError, SourceCatalog
 
 
 def test_channels_and_links_can_share_a_display_name_but_keep_types_distinct(

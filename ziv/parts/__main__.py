@@ -1,4 +1,4 @@
-"""python -m reelclip.parts"""
+"""Run the Ziv story-parts workflow with ``python -m ziv.parts``."""
 import sys
 
 from .cli import main

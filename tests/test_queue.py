@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from reelclip import config
-from reelclip.core import queue as post_queue
+from ziv import config
+from ziv.core import queue as post_queue
 
 
 @pytest.fixture(autouse=True)
@@ -308,7 +308,7 @@ def test_cross_process_poster_lock_is_bounded_and_released(tmp_path):
     script = """
 import sys
 from pathlib import Path
-from reelclip.core import queue as q
+from ziv.core import queue as q
 try:
     with q.poster_lock(path=Path(sys.argv[1])):
         pass
@@ -331,7 +331,7 @@ def test_cross_process_mutations_do_not_lose_enqueues(tmp_path):
     script = """
 import sys
 from pathlib import Path
-from reelclip.core import queue as q
+from ziv.core import queue as q
 path, prefix = Path(sys.argv[1]), sys.argv[2]
 stale = q.load_queue(path)
 for n in range(8):
@@ -345,7 +345,7 @@ for n in range(8):
         assert child.returncode == 0, stderr
     assert len(post_queue.load_queue(path)["pending"]) == 24
 def test_queue_limit_is_checked_against_fresh_state(tmp_path):
-    from reelclip.core.queue import QueueFullError, enqueue_clips, load_queue
+    from ziv.core.queue import QueueFullError, enqueue_clips, load_queue
     import pytest
 
     path = tmp_path / "bounded.json"

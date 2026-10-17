@@ -95,5 +95,5 @@ temporary assembly fragments. Blurring runs at 480p before scaling up.
 - `renderer.py`: resumable per-fragment encoding and final assembly.
 - `pipeline.py`: evidence acquisition, checkpoints, manifests, and export orchestration.
 
-Shared utilities live in `reelclip/core/`; this subproject uses the main `.env`
+Shared utilities live in `ziv/core/`; this subproject uses the main `.env`
 and its Gemini, download authentication, encoding, and Whisper settings.

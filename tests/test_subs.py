@@ -1,7 +1,7 @@
 """Fast subtitle checks; media rendering is covered by test_smoke."""
 from __future__ import annotations
 
-from reelclip.core.subtitles import build_ass
+from ziv.core.subtitles import build_ass
 
 
 def test_ass_has_word_timing_and_no_overlay_style() -> None:

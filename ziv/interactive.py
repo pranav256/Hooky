@@ -90,7 +90,7 @@ def run(*, input_fn: Input | None = None, output_fn: Output = print) -> int:
             return 2
         input_fn = input
 
-    output_fn("ziv compatibility terminal workflow")
+    output_fn("ziv guided terminal workflow")
     output_fn("Choose a workflow; exports are safe by default and resume automatically.")
     while True:
         output_fn("")
@@ -119,7 +119,7 @@ def run(*, input_fn: Input | None = None, output_fn: Output = print) -> int:
                 output_fn("  ./ziv.sh make video.mp4 --no-upload")
                 output_fn("  ./ziv.sh parts story.mp4 --dry-run")
                 output_fn("  ./ziv.sh number-parts cartoon.mp4")
-                output_fn("  .venv/bin/python -m reelclip --queue-status")
+                output_fn("  .venv/bin/python -m ziv --queue-status")
                 continue
             else:
                 output_fn("Choose 1, 2, 3, 4, 5, or q.")

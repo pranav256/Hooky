@@ -1,8 +1,8 @@
 """Timestamped caption parsing tests; no network needed."""
 from pathlib import Path
 
-from reelclip.core.highlights import _build_prompt
-from reelclip.core.source_text import caption_words, parse_caption_file
+from ziv.core.highlights import _build_prompt
+from ziv.core.source_text import caption_words, parse_caption_file
 
 
 def test_parse_vtt_to_timestamped_text(tmp_path: Path) -> None:

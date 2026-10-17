@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from reelclip.core import downloader
+from ziv.core import downloader
 
 
 def test_parse_links_skips_both_done_markers(tmp_path: Path) -> None:

@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from reelclip.parts.options import PartsOptions
-from reelclip.parts.planner import normalize_story, plan_parts, remap_words, valid_ranges
+from ziv.parts.options import PartsOptions
+from ziv.parts.planner import normalize_story, plan_parts, remap_words, valid_ranges
 
 
 def test_story_merges_overlap_and_preserves_chronology():
@@ -59,7 +59,7 @@ def test_tail_and_platform_cap_preserve_every_retained_second(length, target):
 
 
 def test_story_ai_selects_a_coherent_subset_and_does_not_reorder_it(tmp_path, monkeypatch):
-    from reelclip.parts import planner
+    from ziv.parts import planner
     prompts = []
 
     def ask(prompt, *args, **kwargs):
@@ -78,8 +78,8 @@ def test_story_ai_selects_a_coherent_subset_and_does_not_reorder_it(tmp_path, mo
 
 
 def test_parts_export_is_independent_of_queue_and_preserves_source(tmp_path, monkeypatch):
-    from reelclip.core import queue
-    from reelclip.parts import pipeline as module
+    from ziv.core import queue
+    from ziv.parts import pipeline as module
 
     source = tmp_path / "source.mp4"
     source.write_bytes(b"source")
@@ -111,7 +111,7 @@ def test_parts_export_is_independent_of_queue_and_preserves_source(tmp_path, mon
 
 
 def test_fragment_resume_after_interruption_does_not_reencode_completed_fragments(tmp_path, monkeypatch):
-    from reelclip.parts import renderer
+    from ziv.parts import renderer
 
     source = tmp_path / "source.mp4"
     source.write_bytes(b"source")
@@ -144,7 +144,7 @@ def test_fragment_resume_after_interruption_does_not_reencode_completed_fragment
 
 
 def test_whisper_full_story_windows_are_bounded_cached_and_deduplicated(tmp_path, monkeypatch):
-    from reelclip.core import transcripts
+    from ziv.core import transcripts
 
     source = tmp_path / "video.mp4"
     source.write_bytes(b"video")
@@ -164,7 +164,7 @@ def test_whisper_full_story_windows_are_bounded_cached_and_deduplicated(tmp_path
 
 
 def test_parts_cli_validates_settings_before_download(tmp_path, monkeypatch):
-    from reelclip.parts import cli
+    from ziv.parts import cli
 
     monkeypatch.setattr(cli, "expand_and_download", lambda *a: pytest.fail("download"))
     assert cli.main(["https://example.test/video", "--part-seconds", "nan"]) == 2
@@ -172,7 +172,7 @@ def test_parts_cli_validates_settings_before_download(tmp_path, monkeypatch):
 
 
 def test_parts_url_acquisition_skips_full_length_analysis_proxy(tmp_path, monkeypatch):
-    from reelclip.parts import cli
+    from ziv.parts import cli
 
     captured = []
 

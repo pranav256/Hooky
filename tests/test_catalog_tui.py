@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from reelclip.catalog import CatalogError, SourceCatalog
-from reelclip.tui import TuiModel, render_frame, run
+from ziv.catalog import CatalogError, SourceCatalog
+from ziv.tui import TuiModel, render_frame, run
 
 
 def make_catalog(tmp_path: Path, monkeypatch) -> SourceCatalog:
@@ -87,11 +87,18 @@ def test_queue_resource_and_log_views_are_read_only_and_bounded(tmp_path, monkey
 def test_tui_renders_without_terminal_and_navigates_model(tmp_path, monkeypatch):
     catalog = make_catalog(tmp_path, monkeypatch)
     catalog.add_link("demo", "/tmp/demo.mp4")
+    catalog.add_channel("show", "https://youtube.com/@show")
     model = TuiModel(catalog)
     frame = render_frame(model.snapshot, width=72, height=12)
     assert len(frame) == 12
     assert any("ZIV" in line for line in frame)
+    assert any("LINKS" in line for line in frame)
     assert any("demo" in line for line in frame)
+    model.handle_key("]")
+    assert model.active_view == "channels"
+    channel_frame = model.render(width=72, height=12)
+    assert any("CHANNELS" in line for line in channel_frame)
+    assert any("show" in line for line in channel_frame)
     model.handle_key("2")
     assert model.active_view == "queue"
     model.handle_key("r")

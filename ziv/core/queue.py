@@ -197,15 +197,13 @@ def _atomic_write(path: Path, data: dict) -> None:
 def load_queue(path: Path | None = None) -> dict:
     qpath = state_path(path=path)
     with file_lock(qpath.with_suffix(".lock")):
+        # Migrate the pre-state-dir queue once without deleting the original.
         # Explicit paths (including QUEUE_FILE test overrides) never inspect
-        # live legacy output. Copy migration only; never delete the original.
+        # the old output location.
         if not qpath.exists() and path is None and QUEUE_FILE is None:
             from ..config import OUTPUT_DIR
-            legacy_paths = [OUTPUT_DIR / "queue.json",
-                            OUTPUT_DIR.parent / ".reelclip-state" / "queue.json"]
-            legacy = next((candidate for candidate in legacy_paths
-                           if candidate.resolve() != qpath and candidate.exists()), None)
-            if legacy is not None:
+            legacy = OUTPUT_DIR / "queue.json"
+            if legacy.resolve() != qpath and legacy.exists():
                 migrated = _read_state(legacy)
                 # Older queues had no pre-send journal. An old retryable flag
                 # alone is not proof that a failed request never reached IG.

@@ -1,7 +1,8 @@
-"""Public Ziv facade for the legacy-compatible pipeline implementation."""
+"""Ziv's public video clipping and Instagram workflow API."""
 from __future__ import annotations
 
-from reelclip import Job, Pipeline, PipelineOptions
+from .options import PipelineOptions
+from .pipeline import Job, Pipeline
 
 __version__ = "1.0.0"
 

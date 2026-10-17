@@ -35,7 +35,7 @@ def test_synthetic_clip_has_instagram_shape_subtitles_and_audio(tmp_path: Path) 
         "-c:a", "aac", "-shortest", str(source),
     ])
 
-    from reelclip.core.cutter import cut_all_clips
+    from ziv.core.cutter import cut_all_clips
 
     words = [
         {"start": 0.2, "end": 0.6, "word": "hello"},
@@ -70,10 +70,10 @@ def test_synthetic_clip_has_instagram_shape_subtitles_and_audio(tmp_path: Path) 
 
 def test_story_parts_join_ranges_preserve_audio_and_resume(tmp_path: Path) -> None:
     """Two numbered parts; the first joins two non-contiguous source ranges."""
-    from reelclip.core.utils import get_duration
-    from reelclip.parts.options import PartsOptions
-    from reelclip.parts.planner import plan_parts
-    from reelclip.parts.renderer import render_part
+    from ziv.core.utils import get_duration
+    from ziv.parts.options import PartsOptions
+    from ziv.parts.planner import plan_parts
+    from ziv.parts.renderer import render_part
 
     source = tmp_path / "story.mp4"
     _run([

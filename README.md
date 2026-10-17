@@ -11,7 +11,7 @@ vertical clips:
 
 Podcast highlights and condensed story parts use Gemini and caption timing;
 all workflows export 1080x1920 H.264 files. Podcast highlights feed the
-Instagram posting queue. The [parts workflow](reelclip/parts/README.md)
+Instagram posting queue. The [parts workflow](ziv/parts/README.md)
 exports files with the full source picture over a blurred background.
 
 ## Workflow
@@ -162,9 +162,8 @@ flag-based pipeline, so commands such as `ziv --links --no-post` and
 main CLI reference.
 
 There is intentionally only one shell launcher. The old shell and Windows
-launchers were removed; use `ziv` or `ziv.sh` instead. The old Python package
-remains as an internal compatibility layer so existing checkpoints and imports
-can migrate safely, but new commands and documentation use Ziv names.
+launchers were removed; use `ziv` or `ziv.sh` instead. The `ziv` package owns
+the public commands and the workflow implementation.
 
 ## Make clips
 
@@ -178,8 +177,9 @@ For an easier first run, open the btop-style full-screen terminal GUI:
 .venv/bin/ziv --tui
 ```
 
-The GUI shows CPU, memory, disk, queue state, logs, links, channels, and source
-statuses. Press `a` to add a link, `c` to add a channel, `i` to import the
+The GUI is intentionally a source browser first: it shows colored links and
+channels, friendly names, status badges, selected-source details, queue state,
+and logs. Press `a` to add a link, `c` to add a channel, `i` to import the
 traditional text files, `R` to run the selected source, `d` to remove it from
 the Ziv catalog, `x` to stop a running child process, and `q` to quit. It never
 automates browser login or CAPTCHA solving. Use `ziv` subcommands for pipes,
@@ -412,7 +412,7 @@ Useful options:
 The blurred background is processed at a smaller resolution before scaling
 to the final canvas. Fragments render one at a time and are joined with stream
 copy, avoiding a second full video encode or a large full-story intermediate.
-For architecture and detailed usage, see [reelclip/parts/README.md](reelclip/parts/README.md).
+For architecture and detailed usage, see [ziv/parts/README.md](ziv/parts/README.md).
 
 ## Post to Instagram
 
@@ -579,24 +579,23 @@ by the test suite.
 
 ## Project layout
 
-- `ziv/cli.py` - public command and workflow compatibility dispatch
-- `reelclip/cli.py` - pipeline implementation and Instagram posting
-- `reelclip/pipeline.py` - selection, selected transcription, rendering, queueing
-- `reelclip/core/highlights.py` - Gemini highlight selection
-- `reelclip/core/subtitles.py` - Whisper timing and ASS subtitles
-- `reelclip/core/cutter.py` - center crop, render, and covers
-- `reelclip/core/downloader.py` - optional links.txt downloads and source captions
-- `reelclip/core/source_text.py` - WebVTT/SRT parsing and caption download cache
-- `reelclip/core/transcripts.py` - bounded, cached full-source Whisper evidence
-- `reelclip/parts/` - condensed-story planning, timeline mapping, and parts export
-- `reelclip/interactive.py` - retained compatibility helper; the public UI is `reelclip/tui.py`
-- `reelclip/core/cleanup.py` - successful-source and confirmed-post media cleanup
-- `reelclip/core/profiling.py` - opt-in stage timing metrics
-- `reelclip/core/queue.py` - durable Instagram-only queue and review holds
-- `reelclip/platforms/instagram.py` - login and Reel upload
+- `ziv/cli.py` - public command and workflow dispatch
+- `ziv/pipeline_cli.py` - pipeline command implementation and Instagram posting
+- `ziv/pipeline.py` - selection, selected transcription, rendering, queueing
+- `ziv/core/highlights.py` - Gemini highlight selection
+- `ziv/core/subtitles.py` - Whisper timing and ASS subtitles
+- `ziv/core/cutter.py` - center crop, render, and covers
+- `ziv/core/downloader.py` - optional links.txt downloads and source captions
+- `ziv/core/source_text.py` - WebVTT/SRT parsing and caption download cache
+- `ziv/core/transcripts.py` - bounded, cached full-source Whisper evidence
+- `ziv/parts/` - condensed-story planning, timeline mapping, and parts export
+- `ziv/interactive.py` - guided terminal helper; the public UI is `ziv/tui.py`
+- `ziv/core/cleanup.py` - successful-source and confirmed-post media cleanup
+- `ziv/core/profiling.py` - opt-in stage timing metrics
+- `ziv/core/queue.py` - durable Instagram-only queue and review holds
+- `ziv/platforms/instagram.py` - login and Reel upload
 - `ziv.sh` - the one canonical Linux launcher (TUI by default)
-- `ziv/` - public Ziv package and command facade
-- `reelclip/` - internal compatibility implementation during migration
+- `ziv/` - the sole application package
 
 ## Recovery copy
 
