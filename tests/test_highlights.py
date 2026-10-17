@@ -116,6 +116,27 @@ def test_no_words_is_noop() -> None:
     print("NOOP_OK")
 
 
+def test_visual_analysis_frames_are_reused_for_retries(tmp_path, monkeypatch):
+    from reelclip.core import highlights
+
+    source = tmp_path / "video.mp4"
+    source.write_bytes(b"source")
+    calls = []
+
+    monkeypatch.setattr(highlights, "get_duration", lambda path: 30.0)
+
+    def fake_ffmpeg(command, **kwargs):
+        calls.append(command)
+        Path(command[-1]).write_bytes(b"jpeg")
+
+    monkeypatch.setattr(highlights.subprocess, "run", fake_ffmpeg)
+    first = highlights._extract_frames(source, tmp_path / "cache", n_frames=3)
+    second = highlights._extract_frames(source, tmp_path / "cache", n_frames=3)
+
+    assert first == second
+    assert len(calls) == 3
+
+
 if __name__ == "__main__":
     test_plan_auto_scales_with_duration()
     test_snap_start_lands_after_pause()

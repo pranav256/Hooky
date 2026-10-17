@@ -132,6 +132,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Probe a YouTube URL and verify cookie authentication without downloading")
     parser.add_argument("--check-gemini", action="store_true",
                         help="Verify the Gemini key and model chain")
+    parser.add_argument("--interactive", action="store_true",
+                        help="Open the guided terminal workflow")
     return parser
 
 
@@ -477,6 +479,9 @@ def main(argv: list[str] | None = None) -> int:
 
 def _main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.interactive:
+        from .interactive import run
+        return run()
     if args.list_styles:
         list_styles()
         return 0

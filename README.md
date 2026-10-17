@@ -134,6 +134,22 @@ Never commit `.env` or `.ig_session`.
 
 ## Make clips
 
+### Guided terminal workflow
+
+For an easier first run, use the dependency-free terminal wizard:
+
+```bash
+./run.sh
+# or:
+.venv/bin/python -m reelclip --interactive
+```
+
+It lets you choose highlights, story parts, funny number-only parts, queue
+status, and command help. It previews and exports without queueing by default;
+it only adds podcast clips to the Instagram queue after an explicit prompt.
+The wizard requires a real terminal. Use the script commands below for pipes,
+cron, and other automated runs.
+
 ### Content-based automatic count
 
 `--clips auto` is the default. Gemini reads the caption chunks, proposes
@@ -449,6 +465,7 @@ QUALITY=highest
 # AUTO_MAX_CLIPS=40
 # AUTO_CANDIDATES_PER_CHUNK=10
 # AUTO_CLIP_DENSITY_MINUTES=10
+# ANALYSIS_MAX_FRAMES=12       # visual fallback samples; lower for weak CPUs
 # PARTS_TARGET_SECONDS=60
 # PARTS_BACKGROUND=blur
 # PARTS_MODE=story
@@ -535,6 +552,7 @@ by the test suite.
 - `reelclip/core/source_text.py` - WebVTT/SRT parsing and caption download cache
 - `reelclip/core/transcripts.py` - bounded, cached full-source Whisper evidence
 - `reelclip/parts/` - condensed-story planning, timeline mapping, and parts export
+- `reelclip/interactive.py` - guided terminal wizard for common workflows
 - `reelclip/core/cleanup.py` - successful-source and confirmed-post media cleanup
 - `reelclip/core/profiling.py` - opt-in stage timing metrics
 - `reelclip/core/queue.py` - durable Instagram-only queue and review holds
@@ -542,6 +560,7 @@ by the test suite.
 - `make.sh` / `post.sh` - make-only and post-only entry points
 - `parts.sh` / `parts.bat` - separate story-parts export entry points
 - `number-parts.sh` / `number-parts.bat` - deterministic number-only variant
+- `run.sh` - guided terminal entry point (explicit arguments still pass through)
 
 ## Recovery copy
 

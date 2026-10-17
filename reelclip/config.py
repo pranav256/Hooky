@@ -79,6 +79,15 @@ try:
 except ValueError:
     GEMINI_SELECTION_CHUNK_CHARS = 18000
 
+# --- Local analysis budget --------------------------------------------------
+# Visual fallback analysis is intentionally sparse. Keeping this bounded makes
+# a retry cheap on small machines while still giving Gemini useful coverage.
+try:
+    ANALYSIS_MAX_FRAMES = max(4, min(32, int(
+        os.environ.get("ANALYSIS_MAX_FRAMES", "12"))))
+except ValueError:
+    ANALYSIS_MAX_FRAMES = 12
+
 # --- Instagram ------------------------------------------------------------
 IG_USERNAME = os.environ.get("IG_USERNAME", "")
 IG_PASSWORD = os.environ.get("IG_PASSWORD", "")
