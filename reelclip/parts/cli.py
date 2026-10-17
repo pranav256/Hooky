@@ -17,8 +17,11 @@ from .pipeline import PartsPipeline
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="reelclip-parts", description="Condense a video story and export chronological vertical parts.")
+        prog="reelclip-parts", description="Export condensed-story or number-only chronological vertical parts.")
     parser.add_argument("source", help="Local video file or single video URL")
+    parser.add_argument("--mode", choices=("story", "number-only"),
+                        default=os.environ.get("PARTS_MODE", "story"),
+                        help="story condenses with AI; number-only finds funny moments and burns only their numbers")
     parser.add_argument("--part-seconds", type=float,
                         default=float(os.environ.get("PARTS_TARGET_SECONDS", "60")),
                         help="Target part length, adjusted near speech/scene boundaries (default: 60)")
@@ -40,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     try:
         args = build_parser().parse_args(argv)
-        options = PartsOptions(target_seconds=args.part_seconds, background=args.background,
+        options = PartsOptions(mode=args.mode, target_seconds=args.part_seconds, background=args.background,
                                out=args.out, no_subs=args.no_subs, sub_style=args.sub_style,
                                sub_lang=args.sub_lang, labels=args.labels,
                                dry_run=args.dry_run, profile=args.profile)

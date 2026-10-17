@@ -7,10 +7,12 @@ from pathlib import Path
 from ..config import GEMINI_FALLBACK_MODELS, GEMINI_MODEL, OUTPUT_DIR
 from ..core.checkpoints import (atomic_json, digest, file_revision, load_checkpoint,
                                 save_checkpoint, source_id)
+from ..core.highlights import find_highlights
 from ..core.lowspec import WHISPER_COMPUTE, WHISPER_MODEL
 from ..core.profiling import PipelineProfile
 from ..core.queue import file_lock
-from ..core.source_text import caption_words, load_caption_file, sidecar_caption_file
+from ..core.source_text import (caption_words, load_caption_file,
+                                 sidecar_caption_file)
 from ..core.subtitles import build_ass, transcribe
 from ..core.transcripts import transcribe_source
 from ..core.utils import get_duration
@@ -23,6 +25,7 @@ class PartsPipeline:
     def __init__(self, options: PartsOptions | None = None):
         self.options = options or PartsOptions()
         self.state = {"select_story": select_story, "render_part": render_part,
+                      "find_highlights": find_highlights,
                       "transcribe_source": transcribe_source, "transcribe": transcribe}
 
     def run(self, video: Path, *, source_url: str = "", context: dict | None = None,
@@ -40,6 +43,10 @@ class PartsPipeline:
             duration = get_duration(video)
         if not math.isfinite(duration) or duration < 1:
             raise ValueError("Source must have at least one second of usable video")
+        if options.mode == "number-only":
+            return self._run_funny_number_only(
+                video, directory, source_url, duration, profile, context,
+                source_transcript)
         cache = directory / ".checkpoints"
         original_words = []
         transcript = source_transcript or load_caption_file(sidecar_caption_file(video))
@@ -113,4 +120,87 @@ class PartsPipeline:
         atomic_json(directory / "manifest.json", manifest)
         profile.save(directory / "profile.json")
         print(f"[parts] Exported {len(parts)} parts to {directory}")
+        return manifest
+
+    def _run_funny_number_only(self, video: Path, directory: Path, source_url: str,
+                               duration: float, profile: PipelineProfile,
+                               context: dict | None,
+                               source_transcript: list[dict] | None) -> dict:
+        """Gemini selects funny moments; only numeric part labels are rendered."""
+        options = self.options
+        transcript = source_transcript or load_caption_file(sidecar_caption_file(video))
+        evidence = "source captions + Gemini funny-moment selection" if transcript \
+            else "visual/audio evidence + Gemini funny-moment selection"
+        cache = directory / ".checkpoints"
+        selection_signature = {
+            "version": 2,
+            "source": file_revision(video),
+            "transcript": digest(transcript),
+            "target_seconds": options.target_seconds,
+            "focus": "funny, surprising, absurd, reaction, visual gag, or punchline moments",
+        }
+        selection_cache = cache / digest(selection_signature)
+        with profile.stage("funny_selection"):
+            selected = load_checkpoint(selection_cache / "highlights.json", selection_signature)
+            if not isinstance(selected, list) or not selected:
+                selected = self.state["find_highlights"](
+                    video,
+                    n_clips=0,
+                    clip_min=max(8, min(20, int(options.target_seconds * 0.35))),
+                    clip_max=max(10, int(options.target_seconds)),
+                    context=context,
+                    transcript=transcript,
+                    cache_dir=selection_cache,
+                    auto_mode="content",
+                    focus=selection_signature["focus"],
+                )
+                if not selected:
+                    raise RuntimeError("Gemini found no funny moments to export")
+                save_checkpoint(selection_cache / "highlights.json",
+                                selection_signature, selected)
+            else:
+                print("[parts] Reusing Gemini funny-moment selection")
+        story = normalize_story([
+            {"start": item["start"], "end": item["end"], "role": "funny moment",
+             "summary": item.get("reason", "")}
+            for item in selected
+            if isinstance(item, dict)
+        ], duration)
+        parts = plan_parts(story, [], options.target_seconds)
+        plan = {
+            "version": 1,
+            "mode": "number-only",
+            "source": str(video),
+            "source_url": source_url,
+            "source_duration": duration,
+            "selection_evidence": evidence,
+            "story_segments": story,
+            "retained_seconds": sum(segment["end"] - segment["start"] for segment in story),
+            "target_seconds": options.target_seconds,
+            "background": options.background,
+            "labels": "numeric part number only",
+            "parts": parts,
+        }
+        directory.mkdir(parents=True, exist_ok=True)
+        atomic_json(directory / "story_plan.json", plan)
+        print(f"[parts] NUMBER-ONLY: Gemini selected {plan['retained_seconds']:.1f}s "
+              f"of funny moments as {len(parts)} parts")
+        if options.dry_run:
+            profile.save(directory / "profile.json")
+            return plan
+
+        manifest = {**plan, "complete": False, "exports": []}
+        atomic_json(directory / "manifest.json", manifest)
+        with profile.stage("render"):
+            for part in parts:
+                path = self.state["render_part"](
+                    video, part, [], directory, options, len(parts))
+                manifest["exports"].append({"index": part["index"], "path": str(path),
+                                            "duration": part["duration"],
+                                            "segments": part["segments"]})
+                atomic_json(directory / "manifest.json", manifest)
+        manifest["complete"] = True
+        atomic_json(directory / "manifest.json", manifest)
+        profile.save(directory / "profile.json")
+        print(f"[parts] Exported {len(parts)} number-only parts to {directory}")
         return manifest
