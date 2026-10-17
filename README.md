@@ -1,16 +1,17 @@
-# reelclip
+# Ziv
 
-A lean toolkit for turning long videos into high-quality vertical clips:
+Ziv is a terminal-first toolkit for turning long videos into high-quality
+vertical clips:
 
 | Workflow | Command | Result |
 | --- | --- | --- |
-| Podcast highlights | `./make.sh podcast.mp4 --clips auto` | AI chooses the worthwhile standalone moments; the count follows the content. |
-| Condensed story parts | `./parts.sh story.mp4` | AI retains a coherent story and exports chronological, roughly 60-second parts. |
-| Number-only parts | `./number-parts.sh cartoon.mp4` | Gemini finds funny moments, then the export burns only `1`, `2`, `3`… as part labels. |
+| Podcast highlights | `./ziv.sh make podcast.mp4 --clips auto` | AI chooses the worthwhile standalone moments; the count follows the content. |
+| Condensed story parts | `./ziv.sh parts story.mp4` | AI retains a coherent story and exports chronological, roughly 60-second parts. |
+| Number-only parts | `./ziv.sh number-parts cartoon.mp4` | Gemini finds funny moments, then the export burns only `1`, `2`, `3`… as part labels. |
 
 Podcast highlights and condensed story parts use Gemini and caption timing;
 all workflows export 1080x1920 H.264 files. Podcast highlights feed the
-Instagram posting queue. The [parts subproject](reelclip/parts/README.md)
+Instagram posting queue. The [parts workflow](reelclip/parts/README.md)
 exports files with the full source picture over a blurred background.
 
 ## Workflow
@@ -30,7 +31,7 @@ FFmpeg center-crops or selectively fits clips into 1080x1920
       ↓
 clips enter the Instagram queue
       ↓
-post.sh uploads them at a paced interval
+Ziv's `post` workflow uploads them at a paced interval
 ```
 
 The pipeline does not include YouTube uploads, TikTok uploads, multi-account
@@ -116,6 +117,7 @@ winget install ffmpeg
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -e .
 cp .env.example .env
 ```
 
@@ -132,22 +134,55 @@ verification code, set `IG_2FA_CODE` or enter it interactively.
 
 Never commit `.env` or `.ig_session`.
 
-## Make clips
+## Ziv command and launcher
 
-### Guided terminal workflow
-
-For an easier first run, use the dependency-free terminal wizard:
+The public command is `ziv`. The one canonical Linux launcher is `ziv.sh`:
 
 ```bash
-./run.sh
-# or:
-.venv/bin/python -m reelclip --interactive
+./ziv.sh                         # open the TUI
+./ziv.sh make video.mp4          # render and queue, never post
+./ziv.sh parts story.mp4
+./ziv.sh number-parts cartoon.mp4
+./ziv.sh add link interview URL  # add a named source
+./ziv.sh add channel comedy URL  # add a named channel
+./ziv.sh links                   # list links and statuses
+./ziv.sh channels                # list channels and statuses
+./ziv.sh doctor youtube          # validate local cookie configuration
+./ziv.sh post                    # post the queue now
+./ziv.sh post --due              # post only when the schedule allows
+./ziv.sh source                  # scan configured channels
+./ziv.sh queue                   # show queue status
 ```
 
-It lets you choose highlights, story parts, funny number-only parts, queue
-status, and command help. It previews and exports without queueing by default;
-it only adds podcast clips to the Instagram queue after an explicit prompt.
-The wizard requires a real terminal. Use the script commands below for pipes,
+With the project installed in the active virtual environment, the same
+workflows are available as `ziv`, for example `ziv make video.mp4`. Arguments
+that are not one of the named workflows are forwarded to the existing
+flag-based pipeline, so commands such as `ziv --links --no-post` and
+`ziv --dry-run video.mp4` retain their current behavior. `ziv --help` is the
+main CLI reference.
+
+There is intentionally only one shell launcher. The old shell and Windows
+launchers were removed; use `ziv` or `ziv.sh` instead. The old Python package
+remains as an internal compatibility layer so existing checkpoints and imports
+can migrate safely, but new commands and documentation use Ziv names.
+
+## Make clips
+
+### Ziv terminal GUI
+
+For an easier first run, open the btop-style full-screen terminal GUI:
+
+```bash
+./ziv.sh
+# or:
+.venv/bin/ziv --tui
+```
+
+The GUI shows CPU, memory, disk, queue state, logs, links, channels, and source
+statuses. Press `a` to add a link, `c` to add a channel, `i` to import the
+traditional text files, `R` to run the selected source, `d` to remove it from
+the Ziv catalog, `x` to stop a running child process, and `q` to quit. It never
+automates browser login or CAPTCHA solving. Use `ziv` subcommands for pipes,
 cron, and other automated runs.
 
 ### Content-based automatic count
@@ -158,10 +193,10 @@ filling a fixed quota. One source may yield 3 clips and another 10. The default
 ceiling is 40, with up to 10 candidates proposed per transcript chunk.
 
 ```bash
-./make.sh podcast.mp4 --clips auto
-./make.sh podcast.mp4 --clips auto --min 20 --max 75
-./make.sh podcast.mp4 --clips 5
-./make.sh podcast.mp4 --clips auto --auto-mode duration
+./ziv.sh make podcast.mp4 --clips auto
+./ziv.sh make podcast.mp4 --clips auto --min 20 --max 75
+./ziv.sh make podcast.mp4 --clips 5
+./ziv.sh make podcast.mp4 --clips auto --auto-mode duration
 ```
 
 Automatic highlights respect `--min` and `--max` (defaults: 15 and 60 seconds),
@@ -181,9 +216,9 @@ Make renders a batch that fits `QUEUE_MAX_PENDING`. After posting frees slots,
 rerun the same command to continue using cached selection and completed renders:
 
 ```bash
-./make.sh podcast.mp4
-./post.sh
-./make.sh podcast.mp4
+./ziv.sh make podcast.mp4
+./ziv.sh post
+./ziv.sh make podcast.mp4
 ```
 
 In link mode, an unfinished source stays active in `links.txt`. It becomes
@@ -197,22 +232,22 @@ exports all selected highlights in one sequential run without the queue bound.
 Local video:
 
 ```bash
-./make.sh /path/to/video.mp4
+./ziv.sh make /path/to/video.mp4
 ```
 
 Multiple local files or a folder:
 
 ```bash
-./make.sh /path/to/videos --clips auto
+./ziv.sh make /path/to/videos --clips auto
 ```
 
 Channel mode uses `channels.txt`:
 
 ```bash
-./make.sh
+./ziv.sh make
 ```
 
-With no arguments, `make.sh` first scans every configured channel, ranks its
+With no arguments, `./ziv.sh make` first scans every configured channel, ranks its
 videos by view count regardless of upload date, appends unseen winners to
 `links.txt`, and then processes those links. It does not choose only recent
 uploads. The scan stores selected video IDs in `output/channel_history.json`
@@ -224,7 +259,7 @@ machine with unprocessed sources.
 Run discovery without processing:
 
 ```bash
-.venv/bin/python -m reelclip --source
+.venv/bin/ziv source
 ```
 
 Configure channels in this format:
@@ -246,7 +281,7 @@ when you lower that setting. Copy `channels.example.txt` for the format.
 Direct link mode remains available:
 
 ```bash
-.venv/bin/python -m reelclip --links --no-post
+.venv/bin/ziv --links --no-post
 ```
 
 Each link is marked `# DONE` after successful processing. Copy
@@ -256,12 +291,12 @@ Each link is marked `# DONE` after successful processing. Copy
 Useful options:
 
 ```bash
-./make.sh video.mp4 --no-subs
-./make.sh video.mp4 --no-captions
-./make.sh video.mp4 --sub-style clean
-./make.sh video.mp4 --dry-run
-./make.sh video.mp4 --subtitle-source source
-./make.sh video.mp4 --no-covers --profile
+./ziv.sh make video.mp4 --no-subs
+./ziv.sh make video.mp4 --no-captions
+./ziv.sh make video.mp4 --sub-style clean
+./ziv.sh make video.mp4 --dry-run
+./ziv.sh make video.mp4 --subtitle-source source
+./ziv.sh make video.mp4 --no-covers --profile
 ```
 
 `--dry-run` writes `selection.json` under the source output directory so the
@@ -280,19 +315,19 @@ Use the separate parts workflow for challenge, adventure, documentary, and
 MrBeast-style story videos:
 
 ```bash
-./parts.sh /path/to/story.mp4
-./parts.sh 'https://www.youtube.com/watch?v=VIDEO_ID'
-./parts.sh story.mp4 --part-seconds 60 --labels
-./parts.sh story.mp4 --dry-run
+./ziv.sh parts /path/to/story.mp4
+./ziv.sh parts 'https://www.youtube.com/watch?v=VIDEO_ID'
+./ziv.sh parts story.mp4 --part-seconds 60 --labels
+./ziv.sh parts story.mp4 --dry-run
 ```
 
 For cartoons, episodes, or any video that must not be condensed, use the
 number-only variant:
 
 ```bash
-./number-parts.sh cartoon.mp4
-./number-parts.sh cartoon.mp4 --part-seconds 60 --background blur
-./parts.sh cartoon.mp4 --mode number-only --dry-run
+./ziv.sh number-parts cartoon.mp4
+./ziv.sh number-parts cartoon.mp4 --part-seconds 60 --background blur
+./ziv.sh parts cartoon.mp4 --mode number-only --dry-run
 ```
 
 This variant runs Gemini over the long video to find funny, surprising, absurd,
@@ -309,11 +344,12 @@ FFmpeg directly or the existing story workflow with an appropriate plan.
 The equivalent Python command is:
 
 ```bash
-.venv/bin/python -m reelclip.parts story.mp4
+.venv/bin/ziv-parts story.mp4
 ```
 
-On Windows, use `parts.bat story.mp4`. An installed package also provides
-the `reelclip-parts` command.
+Use `ziv-parts story.mp4` when you need the direct parts entry point. The main
+TUI and `ziv parts` command are the recommended interfaces. An installed package also provides
+the `ziv-parts` command.
 
 ### How the story edit works
 
@@ -365,12 +401,12 @@ Its output is export-only and never enters the Instagram queue.
 Useful options:
 
 ```bash
-./parts.sh story.mp4 --labels                  # visible Part N / Total label
-./parts.sh story.mp4 --background plain        # lighter than blurred padding
-./parts.sh story.mp4 --subtitle-source whisper # regenerate retained word timing
-./parts.sh story.mp4 --sub-style clean
-./parts.sh story.mp4 --no-subs --profile
-./parts.sh cartoon.mp4 --mode number-only --no-subs
+./ziv.sh parts story.mp4 --labels                  # visible Part N / Total label
+./ziv.sh parts story.mp4 --background plain        # lighter than blurred padding
+./ziv.sh parts story.mp4 --subtitle-source whisper # regenerate retained word timing
+./ziv.sh parts story.mp4 --sub-style clean
+./ziv.sh parts story.mp4 --no-subs --profile
+./ziv.sh parts cartoon.mp4 --mode number-only --no-subs
 ```
 
 The blurred background is processed at a smaller resolution before scaling
@@ -383,18 +419,18 @@ For architecture and detailed usage, see [reelclip/parts/README.md](reelclip/par
 Post the queue immediately:
 
 ```bash
-./post.sh
+./ziv.sh post
 ```
 
 Post only when the configured window and cooldown allow:
 
 ```bash
-./post.sh --due
+./ziv.sh post --due
 ```
 
 The queue stores a JSON-safe Instagram media code after every successful
 upload, so a successful post cannot be mistaken for a failed upload because of
-Media-object serialization. Posting state now lives in `.reelclip-state/`,
+Media-object serialization. Posting state now lives in `.ziv-state/`,
 separate from disposable rendered/downloaded media. Before each upload it
 writes a durable safety hold. If the request outcome is unknown, posting stops
 instead of automatically risking a duplicate.
@@ -402,33 +438,33 @@ instead of automatically risking a duplicate.
 After checking Instagram, resolve a hold explicitly:
 
 ```bash
-.venv/bin/python -m reelclip --confirm-posted /path/to/reel.mp4 MEDIA_CODE
+.venv/bin/ziv --confirm-posted /path/to/reel.mp4 MEDIA_CODE
 # or, only after confirming no Reel exists:
-.venv/bin/python -m reelclip --retry-after-review /path/to/reel.mp4
+.venv/bin/ziv --retry-after-review /path/to/reel.mp4
 ```
 
 Inspect the queue:
 
 ```bash
-.venv/bin/python -m reelclip --queue-status
+.venv/bin/ziv queue
 ```
 
 Reset the cooldown:
 
 ```bash
-.venv/bin/python -m reelclip --reset-gap
+.venv/bin/ziv --reset-gap
 ```
 
 Remove a clip from the queue:
 
 ```bash
-.venv/bin/python -m reelclip --ignore /absolute/path/to/reel.mp4
+.venv/bin/ziv --ignore /absolute/path/to/reel.mp4
 ```
 
 Clean up clips that were already recorded as posted:
 
 ```bash
-.venv/bin/python -m reelclip --cleanup-posted
+.venv/bin/ziv --cleanup-posted
 ```
 
 ## Configuration
@@ -514,7 +550,7 @@ YTDLP_COOKIES_FROM_BROWSER=firefox
 Do not set both methods. Verify authentication without downloading a video:
 
 ```bash
-.venv/bin/python -m reelclip --check-youtube \
+.venv/bin/ziv --check-youtube \
   'https://www.youtube.com/watch?v=h5NvTTOlOtI'
 ```
 
@@ -543,7 +579,8 @@ by the test suite.
 
 ## Project layout
 
-- `reelclip/cli.py` - lean command-line workflow and Instagram posting
+- `ziv/cli.py` - public command and workflow compatibility dispatch
+- `reelclip/cli.py` - pipeline implementation and Instagram posting
 - `reelclip/pipeline.py` - selection, selected transcription, rendering, queueing
 - `reelclip/core/highlights.py` - Gemini highlight selection
 - `reelclip/core/subtitles.py` - Whisper timing and ASS subtitles
@@ -552,15 +589,14 @@ by the test suite.
 - `reelclip/core/source_text.py` - WebVTT/SRT parsing and caption download cache
 - `reelclip/core/transcripts.py` - bounded, cached full-source Whisper evidence
 - `reelclip/parts/` - condensed-story planning, timeline mapping, and parts export
-- `reelclip/interactive.py` - guided terminal wizard for common workflows
+- `reelclip/interactive.py` - retained compatibility helper; the public UI is `reelclip/tui.py`
 - `reelclip/core/cleanup.py` - successful-source and confirmed-post media cleanup
 - `reelclip/core/profiling.py` - opt-in stage timing metrics
 - `reelclip/core/queue.py` - durable Instagram-only queue and review holds
 - `reelclip/platforms/instagram.py` - login and Reel upload
-- `make.sh` / `post.sh` - make-only and post-only entry points
-- `parts.sh` / `parts.bat` - separate story-parts export entry points
-- `number-parts.sh` / `number-parts.bat` - deterministic number-only variant
-- `run.sh` - guided terminal entry point (explicit arguments still pass through)
+- `ziv.sh` - the one canonical Linux launcher (TUI by default)
+- `ziv/` - public Ziv package and command facade
+- `reelclip/` - internal compatibility implementation during migration
 
 ## Recovery copy
 

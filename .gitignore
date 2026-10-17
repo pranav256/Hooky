@@ -4,6 +4,7 @@
 cookies.txt
 *.cookies.txt
 .reelclip-state/
+.ziv-state/
 __agent__/
 
 # Local agent/AI handoff instructions and context

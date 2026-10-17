@@ -59,10 +59,10 @@ def gather_videos(sources: list[Path]) -> list[Path]:
     return unique
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(prog: str = "reelclip") -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="reelclip",
-        description="Find highlights, render high-quality vertical clips, and post them to Instagram.",
+        prog=prog,
+        description="Ziv finds highlights, renders high-quality vertical clips, and posts them to Instagram.",
         epilog="Pipeline: analyze -> source captions/selected Whisper -> render -> queue -> Instagram.",
     )
     parser.add_argument("sources", nargs="*", type=Path,
@@ -133,7 +133,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--check-gemini", action="store_true",
                         help="Verify the Gemini key and model chain")
     parser.add_argument("--interactive", action="store_true",
-                        help="Open the guided terminal workflow")
+                        help="Open the full-screen Ziv terminal GUI")
     return parser
 
 
@@ -469,19 +469,23 @@ def post_now() -> int:
     return 2 if stats["failed"] or stats["blocked"] else 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, prog: str = "reelclip") -> int:
     try:
-        return _main(argv)
+        return _main(argv, prog=prog)
     except (post_queue.QueueError, ValueError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
         print(f"[error] {exc}", file=sys.stderr)
         return 2
 
 
-def _main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+def _main(argv: list[str] | None = None, *, prog: str = "reelclip") -> int:
+    args = build_parser(prog=prog).parse_args(argv)
     if args.interactive:
-        from .interactive import run
-        return run()
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            print("[ziv] The TUI needs an interactive terminal; use --help for scripts.",
+                  file=sys.stderr)
+            return 2
+        from .tui import run_tui
+        return run_tui()
     if args.list_styles:
         list_styles()
         return 0

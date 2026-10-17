@@ -86,11 +86,11 @@ def run(*, input_fn: Input | None = None, output_fn: Output = print) -> int:
     """
     if input_fn is None:
         if not sys.stdin.isatty():
-            output_fn("[reelclip] Interactive mode needs a terminal; use --help for scripts.")
+            output_fn("[ziv] Interactive mode needs a terminal; use --help for scripts.")
             return 2
         input_fn = input
 
-    output_fn("reelclip terminal workflow")
+    output_fn("ziv compatibility terminal workflow")
     output_fn("Choose a workflow; exports are safe by default and resume automatically.")
     while True:
         output_fn("")
@@ -116,17 +116,17 @@ def run(*, input_fn: Input | None = None, output_fn: Output = print) -> int:
                 continue
             elif choice == "5":
                 output_fn("CLI examples:")
-                output_fn("  ./make.sh video.mp4 --no-upload")
-                output_fn("  ./parts.sh story.mp4 --dry-run")
-                output_fn("  ./number-parts.sh cartoon.mp4")
+                output_fn("  ./ziv.sh make video.mp4 --no-upload")
+                output_fn("  ./ziv.sh parts story.mp4 --dry-run")
+                output_fn("  ./ziv.sh number-parts cartoon.mp4")
                 output_fn("  .venv/bin/python -m reelclip --queue-status")
                 continue
             else:
                 output_fn("Choose 1, 2, 3, 4, 5, or q.")
                 continue
         except (EOFError, KeyboardInterrupt):
-            output_fn("\n[reelclip] Cancelled.")
+            output_fn("\n[ziv] Cancelled.")
             return 130
-        output_fn(f"[reelclip] Workflow finished with exit code {result}.")
+        output_fn(f"[ziv] Workflow finished with exit code {result}.")
         if not _yes_no(input_fn, output_fn, "Run another workflow", default=True):
             return result

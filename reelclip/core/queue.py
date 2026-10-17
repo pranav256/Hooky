@@ -54,7 +54,7 @@ def queue_path() -> Path:
     if QUEUE_FILE is not None:
         return Path(QUEUE_FILE)
     from ..config import PROJECT_ROOT
-    return Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / ".reelclip-state") / "queue.json"
+    return Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / ".ziv-state") / "queue.json"
 
 
 def state_path(state: dict | None = None, path: Path | None = None) -> Path:
@@ -201,8 +201,11 @@ def load_queue(path: Path | None = None) -> dict:
         # live legacy output. Copy migration only; never delete the original.
         if not qpath.exists() and path is None and QUEUE_FILE is None:
             from ..config import OUTPUT_DIR
-            legacy = OUTPUT_DIR / "queue.json"
-            if legacy.resolve() != qpath and legacy.exists():
+            legacy_paths = [OUTPUT_DIR / "queue.json",
+                            OUTPUT_DIR.parent / ".reelclip-state" / "queue.json"]
+            legacy = next((candidate for candidate in legacy_paths
+                           if candidate.resolve() != qpath and candidate.exists()), None)
+            if legacy is not None:
                 migrated = _read_state(legacy)
                 # Older queues had no pre-send journal. An old retryable flag
                 # alone is not proof that a failed request never reached IG.
