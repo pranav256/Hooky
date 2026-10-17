@@ -61,7 +61,9 @@ def _run_tui() -> int:
         return 2
     from .tui import run_tui
 
-    return run_tui()
+    catalog = SourceCatalog()
+    catalog.import_files()
+    return run_tui(catalog)
 
 
 def _catalog() -> SourceCatalog:
