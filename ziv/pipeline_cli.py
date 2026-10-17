@@ -132,8 +132,6 @@ def build_parser(prog: str = "ziv") -> argparse.ArgumentParser:
                         help="Probe a YouTube URL and verify cookie authentication without downloading")
     parser.add_argument("--check-gemini", action="store_true",
                         help="Verify the Gemini key and model chain")
-    parser.add_argument("--interactive", action="store_true",
-                        help="Open the full-screen Ziv terminal GUI")
     return parser
 
 
@@ -479,13 +477,6 @@ def main(argv: list[str] | None = None, *, prog: str = "ziv") -> int:
 
 def _main(argv: list[str] | None = None, *, prog: str = "ziv") -> int:
     args = build_parser(prog=prog).parse_args(argv)
-    if args.interactive:
-        if not sys.stdin.isatty() or not sys.stdout.isatty():
-            print("[ziv] The TUI needs an interactive terminal; use --help for scripts.",
-                  file=sys.stderr)
-            return 2
-        from .tui import run_tui
-        return run_tui()
     if args.list_styles:
         list_styles()
         return 0

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Canonical Linux launcher for Ziv.
-# No arguments open the TUI; explicit workflows are forwarded to ``ziv``.
+# Canonical Linux launcher for Ziv's normal CLI.
+# Explicit workflows and flags are forwarded to ``ziv``.
 set -eu
 ROOT="$(dirname "$(readlink -f "$0")")"
 cd "$ROOT"
