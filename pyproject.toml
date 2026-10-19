@@ -22,9 +22,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pranav256/Clipper"
-Issues = "https://github.com/pranav256/Clipper/issues"
-Repository = "https://github.com/pranav256/Clipper"
+Homepage = "https://github.com/prnv44/Clipper"
+Issues = "https://github.com/prnv44/Clipper/issues"
+Repository = "https://github.com/prnv44/Clipper"
 
 [project.optional-dependencies]
 core = [
