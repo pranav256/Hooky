@@ -31,38 +31,54 @@ _MODEL = None  # lazy singleton
 # PrimaryColour is the highlight once spoken. So the pair must always be
 # (primary=highlight, secondary=base).
 STYLES: dict[str, dict] = {
-    # Exact-copy Hormozi look: heavy ALL-CAPS Montserrat, white fill, thick
-    # black stroke (no box), one yellow word-pop per beat, 1-3 words on screen,
-    # lower-middle of the frame (60-70% down), instant pop, no fades.
-    # Spec: font 80-120px on 1080x1920, stroke 8-12px, highlight #FFD93D.
+    # Modern punchy Hormozi look: bold Montserrat, white fill, crisp black stroke,
+    # one yellow word-pop per beat, 1-3 words on screen, lower-middle of the frame,
+    # dynamically fitted to phone screens without overflowing.
     "hormozi": {
-        "font": "Montserrat", "font_size": 96, "bold": True,
+        "font": "Montserrat", "font_size": 68, "bold": True,
         "primary": "&H003DD9FF",     # yellow highlight  (RGB #FFD93D)
         "secondary": "&H00FFFFFF",   # white base
         "outline_color": "&H00000000", "back": "&H00000000",
-        "border_style": 1, "outline": 10, "shadow": 0, "alignment": 2,
-        "margin_v": 576,             # baseline ~70% down the 1920px frame
-        "max_words": 3, "uppercase": True, "scale": 108,
+        "border_style": 1, "outline": 7, "shadow": 0, "alignment": 2,
+        "margin_v": 520,             # baseline ~72% down the frame
+        "max_words": 3, "uppercase": True, "scale": 100,
     },
     "clean": {    # smaller white line near the bottom; soft amber highlight
-        "font": "Arial", "font_size": 52, "bold": False,
+        "font": "Arial", "font_size": 46, "bold": False,
         "primary": "&H0050D2FF",     # soft amber        (RGB 255,210,80)
         "secondary": "&H00FFFFFF",   # white base
         "outline_color": "&H00101010", "back": "&H80000000",
         "border_style": 1, "outline": 3, "shadow": 1, "alignment": 2,
-        "margin_v": 620, "max_words": 7, "uppercase": False,
+        "margin_v": 560, "max_words": 6, "uppercase": False,
     },
-    "yellow": {   # bright yellow highlight pop, no box
-        "font": "Montserrat", "font_size": 62, "bold": True,
+    "yellow": {   # bright yellow highlight pop, lower-middle frame
+        "font": "Montserrat", "font_size": 54, "bold": True,
         "primary": "&H0000E5FF",     # yellow highlight  (RGB 255,229,0)
         "secondary": "&H00FFFFFF",   # white base
         "outline_color": "&H00000000", "back": "&H00000000",
-        "border_style": 1, "outline": 4, "shadow": 2, "alignment": 5,
-        "margin_v": 0, "max_words": 4, "uppercase": False,
+        "border_style": 1, "outline": 4, "shadow": 1, "alignment": 2,
+        "margin_v": 520, "max_words": 4, "uppercase": False,
     },
 }
 
 FONT_OVERRIDE = os.environ.get("SUB_FONT", "")
+
+
+def _font_size_override() -> int:
+    try:
+        val = int(os.environ.get("SUB_FONT_SIZE", 0))
+        return val if val > 0 else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+def _max_words_override() -> int:
+    try:
+        val = int(os.environ.get("SUB_MAX_WORDS", 0))
+        return val if val > 0 else 0
+    except (ValueError, TypeError):
+        return 0
+
 
 # --- Timing tuning -----------------------------------------------------------
 LINE_SPLIT_GAP = 0.7        # pause (s) long enough to start a new caption line
@@ -71,9 +87,14 @@ WORD_GLOW = 0.30            # keep a finished line up this long after its last w
 MIN_WORD_LEN = 0.05         # never let a word's spoken span be shorter than this
 MAX_WORD_LEN = 1.5          # ...or longer than this (guards bad whisper end stamps)
 FADE_MS = 60                # line fade, only on edges that don't touch another line
-MAX_LINE_CHARS = 25         # max chars per caption row (font is BIG — this keeps
-                            # even "EXTRAORDINARILY"-style lines inside the frame)
 _PUNCT_EDGES = "\"'\u201c\u201d\u2018\u2019.!?…,;:-\u2014()[]"  # stripped off word edges
+
+
+def _dynamic_max_chars(width: int, font_size: int, is_bold: bool = True) -> int:
+    """Calculate the max characters per line that safely fit inside the screen width."""
+    safe_pixel_width = max(300.0, width * 0.82)
+    char_width = max(10.0, font_size * (0.64 if is_bold else 0.54))
+    return max(8, int(safe_pixel_width / char_width))
 
 
 def _get_model():
@@ -241,12 +262,11 @@ def _group_lines(window: list[dict], max_words: int) -> list[list[dict]]:
 
 
 def _split_rows(chunk: list[dict], max_words: int,
-                max_chars: int = MAX_LINE_CHARS) -> list[list[dict]]:
+                max_chars: int = 18) -> list[list[dict]]:
     """Split a caption chunk into display rows that fit the frame.
 
-    The Hormozi look uses a huge font, so long groups wrap onto a second row
-    (stacked with a hard newline) instead of shrinking or overflowing: the
-    highlight flows row to row exactly like the original edits.
+    Long phrases wrap onto a second row so the highlight flows row to row
+    without ever overflowing the visible video width.
     """
     rows: list[list[dict]] = [[]]
     row_chars = 0
@@ -263,7 +283,8 @@ def _split_rows(chunk: list[dict], max_words: int,
 
 def _karaoke_line(rows: list[list[dict]], next_start: float | None, clip_len: float,
                   fade_in: int, fade_out: int, upper: bool,
-                  pop_scale: int | None = None) -> tuple[float, float, str]:
+                  pop_scale: int | None = None,
+                  font_size: int | None = None) -> tuple[float, float, str]:
     r"""Build one Dialogue line. Returns (start, end, text).
 
     ASS `\k` advances the karaoke cursor through the following syllable. Word
@@ -298,12 +319,12 @@ def _karaoke_line(rows: list[list[dict]], next_start: float | None, clip_len: fl
         return start, start, ""
 
     prefix = ""
+    if font_size:
+        prefix += r"{\fs%d}" % font_size
     if pop_scale:
-        # instant (no fade) scale pop: every word lands with a tiny 1.08x snap,
-        # settling immediately — the Hormozi "punch" without animation smear
         pop_ms = 90
-        prefix = (r"{\fscx%d\fscy%d\t(0,%d,\fscx100\fscy100)}"
-                  % (pop_scale, pop_scale, pop_ms))
+        prefix += (r"{\fscx%d\fscy%d\t(0,%d,\fscx100\fscy100)}"
+                   % (pop_scale, pop_scale, pop_ms))
     fade = r"{\fad(%d,%d)}" % (fade_in, fade_out)
     return start, end, prefix + fade + joined
 
@@ -311,24 +332,41 @@ def _karaoke_line(rows: list[list[dict]], next_start: float | None, clip_len: fl
 def build_ass(words: list[dict], clip_start: float, clip_end: float,
               style_name: str, width: int = 1080, height: int = 1920) -> str:
     """Build a full ASS subtitle file for one clip window."""
-    style = STYLES.get(style_name, STYLES["hormozi"])
+    style = STYLES.get(style_name, STYLES["hormozi"]).copy()
     font = FONT_OVERRIDE or style["font"]
+
+    font_override = _font_size_override()
+    if font_override:
+        style["font_size"] = font_override
+
+    words_override = _max_words_override()
+    if words_override:
+        style["max_words"] = words_override
 
     window, clip_len = _prepare_window(words, clip_start, clip_end)
     if not window:
         return ""
     lines = _group_lines(window, style["max_words"])
 
+    base_font_size = style["font_size"]
+    is_bold = bool(style.get("bold"))
+    char_width_ratio = 0.62 if is_bold else 0.52
+    outline_px = style.get("outline", 0) * 2
+
+    # Safe horizontal viewing boundary (leaves safe margin for phone overlays)
+    safe_pixel_width = max(300.0, width * 0.82)
+    max_chars_per_row = _dynamic_max_chars(width, base_font_size, is_bold)
+
     header = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {width}
 PlayResY: {height}
-WrapStyle: 2
+WrapStyle: 0
 ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Sub,{font},{style['font_size']},{style['primary']},{style['secondary']},{style['outline_color']},{style['back']},{-1 if style['bold'] else 0},0,0,0,100,100,0,0,{style['border_style']},{style['outline']},{style['shadow']},{style['alignment']},60,60,{style['margin_v']},1
+Style: Sub,{font},{base_font_size},{style['primary']},{style['secondary']},{style['outline_color']},{style['back']},{-1 if style['bold'] else 0},0,0,0,100,100,0,0,{style['border_style']},{style['outline']},{style['shadow']},{style['alignment']},80,80,{style['margin_v']},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -338,17 +376,30 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     for i, chunk in enumerate(lines):
         next_start = lines[i + 1][0]["_s"] if i + 1 < len(lines) else None
         prev_end = lines[i - 1][-1]["_e"] if i > 0 else None
-        # fade only on edges that don't touch another line (no blinking
-        # between back-to-back lines)
         fade_in = FADE_MS if (prev_end is None or chunk[0]["_s"] - prev_end > 0.25) else 0
         fade_out = FADE_MS if (next_start is None or next_start - chunk[-1]["_e"] > 0.25) else 0
 
         if style_name == "hormozi":
             fade_in = fade_out = 0  # avoid blinking on rapid speech
-        rows = _split_rows(chunk, style["max_words"])
+        rows = _split_rows(chunk, style["max_words"], max_chars=max_chars_per_row)
+
+        # Dynamic scaling: check if any row in this dialogue exceeds the safe pixel width
+        widest_row_px = 0.0
+        for row in rows:
+            row_chars = sum(len(w["word"]) for w in row) + max(0, len(row) - 1)
+            est_px = (row_chars * base_font_size * char_width_ratio) + outline_px
+            if est_px > widest_row_px:
+                widest_row_px = est_px
+
+        dynamic_font_size = None
+        if widest_row_px > safe_pixel_width:
+            shrink_ratio = safe_pixel_width / widest_row_px
+            dynamic_font_size = max(32, int(base_font_size * shrink_ratio))
+
         start, end, text = _karaoke_line(rows, next_start, clip_len,
                                          fade_in, fade_out, style["uppercase"],
-                                         pop_scale=None)
+                                         pop_scale=None,
+                                         font_size=dynamic_font_size)
         if int(end * 100) <= int(start * 100):
             continue
         events.append(
