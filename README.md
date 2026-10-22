@@ -17,13 +17,13 @@
 
 ---
 
-## 🌟 Why Ziv?
+## 🌟 Why Hooky?
 
-Most clipping tools are either expensive monthly subscriptions or clunky scripts that cut random timestamps. **Ziv** is a production-grade, terminal-first automation engine designed for creators, podcast managers, and faceless channel builders.
+Most clipping tools are either expensive monthly subscriptions or clunky scripts that cut random timestamps. **Hooky** is a production-grade, terminal-first automation engine designed for creators, podcast managers, and faceless channel builders.
 
 * 🧠 **AI Viral Highlight Detection**: Uses Google Gemini to analyze transcripts, detect narrative hooks, and pick high-retention moments (not just audio peaks).
 * 📝 **Animated Hormozi-Style Captions**: Powered by `faster-whisper` and source captions with karaoke-style highlight words, custom fonts, and multiple preset styles (`hormozi`, `clean`, `yellow`).
-* 📺 **Automated Channel Monitor**: Simply drop channel handles in `channels.txt` — Ziv discovers high-performing winners based on view count and feeds them directly to the render pipeline.
+* 📺 **Automated Channel Monitor**: Simply drop channel handles in `channels.txt` — Hooky discovers high-performing winners based on view count and feeds them directly to the render pipeline.
 * 🛡️ **Anti-Ban Instagram Publisher**: Built-in scheduler with safe pacing, cooldown jitter, upload checkpoints, and duplicate prevention to protect account health.
 * 📁 **Zero Database Overhead**: Zero SQL or heavy docker setup. Driven cleanly by two text files (`channels.txt` and `links.txt`).
 * ⚡ **Lightning Fast & Hardware Adaptive**: Leverages GPU acceleration (CUDA) and multi-threaded FFmpeg presets with automatic memory/CPU profiling.
@@ -117,28 +117,28 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ | clips=auto | style=hormozi
 
 ```bash
 # Verify your installation & dependencies
-./ziv.sh doctor
+./hooky.sh doctor
 
 # Preview what will be processed without downloading or rendering
-./ziv.sh preview
+./hooky.sh preview
 
 # Fetch winning channel videos, extract highlights, and render clips
-./ziv.sh make
+./hooky.sh make
 
 # Inspect generated clips in your file explorer
-./ziv.sh open
+./hooky.sh open
 
 # Post queued clips safely to Instagram (optional)
-./ziv.sh post
+./hooky.sh post
 ```
 
-*(On Windows, replace `./ziv.sh` with `.\ziv.ps1`)*
+*(On Windows, replace `./hooky.sh` with `.\hooky.ps1`. Legacy `./ziv.sh` / `.\ziv.ps1` commands are also supported.)*
 
 ---
 
 ## 🎨 Subtitle Styles
 
-Ziv includes high-converting subtitle templates inspired by top creators:
+Hooky includes high-converting subtitle templates inspired by top creators:
 
 | Style | Description | Preview / Font |
 |---|---|---|
@@ -148,7 +148,7 @@ Ziv includes high-converting subtitle templates inspired by top creators:
 
 List all available styles:
 ```bash
-./ziv.sh styles
+./hooky.sh styles
 ```
 
 ---
@@ -157,16 +157,16 @@ List all available styles:
 
 | Command | Action |
 |---|---|
-| `./ziv.sh` | Process pending items in `links.txt` |
-| `./ziv.sh make` | Scan channels, add winners to `links.txt`, and render all clips |
-| `./ziv.sh preview` | Dry-run: view pending jobs and highlights without touching files |
-| `./ziv.sh post` | Drain the Instagram queue with safety cooldown intervals |
-| `./ziv.sh status` | Show current queue state, render progress, and recent errors |
-| `./ziv.sh retry` | Re-attempt failed links or rendering tasks |
-| `./ziv.sh cleanup` | Preview and safely remove raw source files after posting |
-| `./ziv.sh parts <file>` | Split long videos into sequential episodes/parts |
-| `./ziv.sh doctor` | Diagnostic health check (FFmpeg, Gemini key, yt-dlp, cookies) |
-| `./ziv.sh doctor youtube` | Verify YouTube cookies and test bypass on age-gated videos |
+| `./hooky.sh` | Process pending items in `links.txt` |
+| `./hooky.sh make` | Scan channels, add winners to `links.txt`, and render all clips |
+| `./hooky.sh preview` | Dry-run: view pending jobs and highlights without touching files |
+| `./hooky.sh post` | Drain the Instagram queue with safety cooldown intervals |
+| `./hooky.sh status` | Show current queue state, render progress, and recent errors |
+| `./hooky.sh retry` | Re-attempt failed links or rendering tasks |
+| `./hooky.sh cleanup` | Preview and safely remove raw source files after posting |
+| `./hooky.sh parts <file>` | Split long videos into sequential episodes/parts |
+| `./hooky.sh doctor` | Diagnostic health check (FFmpeg, Gemini key, yt-dlp, cookies) |
+| `./hooky.sh doctor youtube` | Verify YouTube cookies and test bypass on age-gated videos |
 
 ---
 
@@ -214,14 +214,14 @@ Need to split a long masterclass or movie clip into sequential parts?
 
 ```bash
 # Auto-split into clean numbered 60s segments with part badges
-./ziv.sh parts interview.mp4 --part-duration 60
+./hooky.sh parts interview.mp4 --part-duration 60
 ```
 
 ---
 
 ## 🧪 Testing & Code Quality
 
-Ziv is rigorously tested across operating systems (Ubuntu, Windows, macOS) with 250+ unit and safety tests:
+Hooky is rigorously tested across operating systems (Ubuntu, Windows, macOS) with 250+ unit and safety tests:
 
 ```bash
 # Sync dependencies
