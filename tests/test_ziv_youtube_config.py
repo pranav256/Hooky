@@ -55,6 +55,7 @@ def test_cookie_file_must_exist_and_tilde_paths_are_expanded(tmp_path: Path, mon
     cookie_file = tmp_path / "cookies.txt"
     cookie_file.write_text("# Netscape HTTP Cookie File\n", encoding="utf-8")
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     monkeypatch.setenv("YTDLP_COOKIES_FILE", "~/cookies.txt")
 
     assert downloader.yt_dlp_auth_opts() == {"cookiefile": str(cookie_file)}

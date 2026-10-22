@@ -165,12 +165,18 @@ def _unique_object(pairs: list[tuple]) -> dict:
 
 
 def _read_state(path: Path) -> dict:
-    try:
-        return _validate(json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object))
-    except FileNotFoundError:
-        return _empty_state()
-    except (OSError, ValueError, TypeError) as exc:
-        raise QueueError(f"Cannot read queue history {path}; refusing to reset it: {exc}") from exc
+    for attempt in range(5):
+        try:
+            return _validate(json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object))
+        except FileNotFoundError:
+            return _empty_state()
+        except PermissionError:
+            if attempt == 4:
+                raise QueueError(f"Cannot read queue history {path}; refusing to reset it: permission denied")
+            time.sleep(0.02)
+        except (OSError, ValueError, TypeError) as exc:
+            raise QueueError(f"Cannot read queue history {path}; refusing to reset it: {exc}") from exc
+    return _empty_state()
 
 
 def _atomic_write(path: Path, data: dict) -> None:
@@ -183,7 +189,14 @@ def _atomic_write(path: Path, data: dict) -> None:
             json.dump(data, handle, indent=2, allow_nan=False)
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(temp, path)
+        for attempt in range(5):
+            try:
+                os.replace(temp, path)
+                break
+            except PermissionError:
+                if attempt == 4:
+                    raise
+                time.sleep(0.02)
         if os.name != "nt":
             directory = os.open(path.parent, os.O_RDONLY)
             try:
@@ -266,13 +279,13 @@ def save_queue(state: dict, path: Path | None = None) -> None:
 
 
 def _key(clip_path: Path | str) -> str:
-    return os.path.normcase(str(Path(clip_path).resolve()))
+    return str(Path(clip_path).resolve())
 
 
 def _matching_key(clip_path: Path | str, entries: dict, clip_id: str = "") -> str | None:
-    key = _key(clip_path)
+    norm = os.path.normcase(_key(clip_path))
     for old, entry in entries.items():
-        if (key == _key(old) or key in {_key(p) for p in entry.get("aliases", [])}
+        if (norm == os.path.normcase(old) or norm in {os.path.normcase(p) for p in entry.get("aliases", [])}
                 or (clip_id and entry.get("clip_id") == clip_id)):
             return old
     return None
@@ -310,7 +323,7 @@ def enqueue_clips(clip_paths: list[Path], source_url: str = "",
                         existing.setdefault("aliases", []).append(match)
                         fresh["pending"][key] = fresh["pending"].pop(match)
                     break
-            if existing is not None or key in {_key(p) for p in fresh["ignored"]}:
+            if existing is not None or os.path.normcase(key) in {os.path.normcase(p) for p in fresh["ignored"]}:
                 continue
             if max_pending is not None and len(fresh["pending"]) >= max_pending:
                 raise QueueFullError("Posting queue is full; remaining clips are saved for resume")

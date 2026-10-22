@@ -248,8 +248,8 @@ def test_comments_done_and_history_urls_are_seen_and_original_bytes_preserved(tm
             ["manual", "done", "commented", "inline", "historical", "fresh"])])
     selected = channels.scan_channels(spec, links, backlog_max=1)
     assert [entry["video_id"] for entry in selected] == ["fresh"]
-    assert links.read_text() == original + "\nhttps://www.youtube.com/watch?v=fresh\n"
-    assert json.loads(channels.SEEN_FILE.read_text())["legacy-key"] == old_history["legacy-key"]
+    assert links.read_text(encoding="utf-8") == original + "\nhttps://www.youtube.com/watch?v=fresh\n"
+    assert json.loads(channels.SEEN_FILE.read_text(encoding="utf-8"))["legacy-key"] == old_history["legacy-key"]
 
 
 def test_cache_ttl_key_and_compact_fields(tmp_path, monkeypatch):
