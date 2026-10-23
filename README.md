@@ -78,17 +78,17 @@ Most clipping tools are either expensive monthly subscriptions or clunky scripts
 ### Linux & macOS
 
 ```bash
-git clone https://github.com/pranav256/Clipper.git
-cd Clipper
-chmod +x setup.sh ziv.sh
+git clone https://github.com/pranav256/Hooky.git
+cd Hooky
+chmod +x setup.sh hooky.sh
 ./setup.sh
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-git clone https://github.com/pranav256/Clipper.git
-cd Clipper
+git clone https://github.com/pranav256/Hooky.git
+cd Hooky
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup.ps1
 ```
