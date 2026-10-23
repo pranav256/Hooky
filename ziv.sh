@@ -20,4 +20,4 @@ if [ -z "$PYTHON" ]; then
     echo "[ziv] No project Python environment found (.venv or venv); see README.md Setup." >&2
     exit 1
 fi
-exec "$PYTHON" -m ziv "$@"
+exec "$PYTHON" -m hooky "$@"

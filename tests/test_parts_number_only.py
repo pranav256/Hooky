@@ -1,9 +1,9 @@
-"""Targeted checks for Gemini-selected cartoon/episode parts."""
+﻿"""Targeted checks for Gemini-selected cartoon/episode parts."""
 from pathlib import Path
 
 import pytest
 
-from ziv.parts.options import PartsOptions
+from hooky.parts.options import PartsOptions
 
 
 def test_number_only_options_force_numeric_label_and_no_subtitles():
@@ -13,7 +13,7 @@ def test_number_only_options_force_numeric_label_and_no_subtitles():
 
 
 def test_number_only_pipeline_uses_gemini_and_skips_whisper(tmp_path, monkeypatch):
-    from ziv.parts import pipeline as module
+    from hooky.parts import pipeline as module
 
     source = tmp_path / "cartoon.mp4"
     source.write_bytes(b"source")
@@ -57,7 +57,7 @@ def test_number_only_pipeline_uses_gemini_and_skips_whisper(tmp_path, monkeypatc
 
 
 def test_number_only_renderer_sends_only_numeric_label(tmp_path, monkeypatch):
-    from ziv.parts import renderer
+    from hooky.parts import renderer
 
     source = tmp_path / "cartoon.mp4"
     source.write_bytes(b"source")
@@ -81,3 +81,4 @@ def test_number_only_renderer_sends_only_numeric_label(tmp_path, monkeypatch):
         [], tmp_path / "out", PartsOptions(mode="number-only"), 12)
     assert labels == ["7"]
     assert output.exists()
+

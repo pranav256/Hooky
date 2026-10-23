@@ -8,6 +8,8 @@ cookies.txt
 .omnirush/
 
 # Local workspace instructions and context
+.agents/
+skills-lock.json
 
 # User inputs and generated output
 links.txt

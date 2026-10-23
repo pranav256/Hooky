@@ -1,4 +1,4 @@
-"""Offline discovery tests: every mutable path is temporary, all network mocked."""
+﻿"""Offline discovery tests: every mutable path is temporary, all network mocked."""
 import json
 import sys
 import threading
@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ziv.core import channels
+from hooky.core import channels
 
 _REAL_ENRICH = channels._enrich_shortlist
 _REAL_FETCH = channels._fetch_channel_entries
@@ -528,3 +528,4 @@ def test_history_write_failure_keeps_durable_links(tmp_path, monkeypatch):
     assert len(channels.scan_channels(spec, links)) == 1
     assert links.read_text() == "https://www.youtube.com/watch?v=fresh\n"
     assert channels.scan_channels(spec, links) == []
+

@@ -1,8 +1,8 @@
-"""Downloader cache parsing regressions; no network required."""
+﻿"""Downloader cache parsing regressions; no network required."""
 import json
 from pathlib import Path
 
-from ziv.core import downloader
+from hooky.core import downloader
 
 
 def test_parse_links_skips_both_done_markers(tmp_path: Path) -> None:
@@ -103,3 +103,4 @@ def test_cache_lookup_returns_matching_metadata(tmp_path: Path, monkeypatch) -> 
     }))
 
     assert downloader._already_downloaded("https://example.test/video") == video
+

@@ -1,12 +1,12 @@
-"""Offline tests for setup validation and local configuration storage."""
+﻿"""Offline tests for setup validation and local configuration storage."""
 from __future__ import annotations
 
 from pathlib import Path
 
-from ziv.setup import cli as setup_cli
-from ziv.setup.profiler import SystemProfile, ToolInfo
-from ziv.setup.settings import profile_defaults
-from ziv.setup.storage import read_env, settings_for_display, write_env
+from hooky.setup import cli as setup_cli
+from hooky.setup.profiler import SystemProfile, ToolInfo
+from hooky.setup.settings import profile_defaults
+from hooky.setup.storage import read_env, settings_for_display, write_env
 
 
 def _profile(*, threads: int = 8, ram_gb: int = 16) -> SystemProfile:
@@ -34,12 +34,12 @@ def test_noninteractive_setup_selects_profile_and_writes_only_requested_file(
     assert setup_cli.main(["--non-interactive", "--profile", "low"]) == 0
 
     saved = read_env(env_path)
-    assert saved["ZIV_SETUP_COMPLETE"] == "1"
-    assert saved["ZIV_PROFILE"] == "low"
+    assert saved["HOOKY_SETUP_COMPLETE"] == "1"
+    assert saved["HOOKY_PROFILE"] == "low"
     assert saved["QUALITY"] == "low"
     assert saved["WHISPER_MODEL"] == "tiny"
     assert env_path.parent == tmp_path
-    assert "Saved Ziv configuration" in capsys.readouterr().out
+    assert "Saved Hooky configuration" in capsys.readouterr().out
 
 
 def test_setup_validation_rejects_conflicting_auth_metadata_without_reading_cookies(
@@ -91,3 +91,5 @@ def test_profile_recommendation_is_deterministic_for_mocked_hardware() -> None:
     assert low["WHISPER_THREADS"] == "2"
     assert quality["QUALITY"] == "highest"
     assert quality["WHISPER_MODEL"] == "small"
+
+

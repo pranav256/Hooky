@@ -1,4 +1,4 @@
-# ⚡ Ziv — Autonomous AI Video Clipper & Shorts/Reels Generator
+# ⚡ Hooky — Autonomous AI Video Clipper & Shorts/Reels Generator
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue?logo=python&logoColor=white" alt="Python Versions">

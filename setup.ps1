@@ -66,4 +66,4 @@ if ($null -eq $uvCommand) {
 # uv selects the compatible Python available on this machine. The project
 # supports Python 3.10 and newer; do not force a particular minor release.
 Invoke-Checked $uvCommand @("sync", "--locked", "--extra", "all")
-Invoke-Checked (Join-Path $Root ".venv\Scripts\python.exe") (@("-m", "ziv", "setup") + $SetupArgs)
+Invoke-Checked (Join-Path $Root ".venv\Scripts\python.exe") (@("-m", "hooky", "setup") + $SetupArgs)

@@ -1,4 +1,4 @@
-"""Durable Instagram queue semantics; all state is temporary and offline."""
+﻿"""Durable Instagram queue semantics; all state is temporary and offline."""
 import json
 import os
 import subprocess
@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from ziv import config
-from ziv.core import queue as post_queue
+from hooky import config
+from hooky.core import queue as post_queue
 
 
 @pytest.fixture(autouse=True)
@@ -74,7 +74,7 @@ def test_default_state_is_outside_output_and_env_is_lazy(tmp_path, monkeypatch):
     monkeypatch.setattr(post_queue, "QUEUE_FILE", None)
     monkeypatch.setattr(config, "PROJECT_ROOT", tmp_path)
     monkeypatch.delenv("STATE_DIR")
-    assert post_queue.queue_path() == tmp_path / ".ziv-state" / "queue.json"
+    assert post_queue.queue_path() == tmp_path / ".hooky-state" / "queue.json"
     monkeypatch.setenv("STATE_DIR", str(tmp_path / "custom"))
     assert post_queue.queue_path() == tmp_path / "custom" / "queue.json"
 
@@ -308,7 +308,7 @@ def test_cross_process_poster_lock_is_bounded_and_released(tmp_path):
     script = """
 import sys
 from pathlib import Path
-from ziv.core import queue as q
+from hooky.core import queue as q
 try:
     with q.poster_lock(path=Path(sys.argv[1])):
         pass
@@ -331,7 +331,7 @@ def test_cross_process_mutations_do_not_lose_enqueues(tmp_path):
     script = """
 import sys
 from pathlib import Path
-from ziv.core import queue as q
+from hooky.core import queue as q
 path, prefix = Path(sys.argv[1]), sys.argv[2]
 stale = q.load_queue(path)
 for n in range(8):
@@ -345,7 +345,7 @@ for n in range(8):
         assert child.returncode == 0, stderr
     assert len(post_queue.load_queue(path)["pending"]) == 24
 def test_queue_limit_is_checked_against_fresh_state(tmp_path):
-    from ziv.core.queue import QueueFullError, enqueue_clips, load_queue
+    from hooky.core.queue import QueueFullError, enqueue_clips, load_queue
     import pytest
 
     path = tmp_path / "bounded.json"
@@ -354,3 +354,4 @@ def test_queue_limit_is_checked_against_fresh_state(tmp_path):
     with pytest.raises(QueueFullError):
         enqueue_clips([tmp_path / "second.mp4"], state=stale, max_pending=1)
     assert len(load_queue(path)["pending"]) == 1
+

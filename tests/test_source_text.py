@@ -1,8 +1,8 @@
-"""Timestamped caption parsing tests; no network needed."""
+﻿"""Timestamped caption parsing tests; no network needed."""
 from pathlib import Path
 
-from ziv.core.highlights import _build_prompt
-from ziv.core.source_text import caption_words, parse_caption_file
+from hooky.core.highlights import _build_prompt
+from hooky.core.source_text import caption_words, parse_caption_file
 
 
 def test_parse_vtt_to_timestamped_text(tmp_path: Path) -> None:
@@ -48,3 +48,4 @@ def test_caption_words_derive_usable_word_timing_from_phrase_cues() -> None:
     assert words[0]["start"] == 10.0
     assert words[-1]["end"] == 12.0
     assert all(word["end"] > word["start"] for word in words)
+

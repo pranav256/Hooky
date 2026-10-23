@@ -1,7 +1,7 @@
-"""The documented .env syntax must work, including uncommented examples."""
+﻿"""The documented .env syntax must work, including uncommented examples."""
 import pytest
 
-from ziv.config import _dotenv_value
+from hooky.config import _dotenv_value
 
 
 @pytest.mark.parametrize("raw,expected", [
@@ -14,3 +14,4 @@ from ziv.config import _dotenv_value
 ])
 def test_dotenv_comments_preserve_literal_hashes(raw, expected):
     assert _dotenv_value(raw) == expected
+
