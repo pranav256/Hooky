@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
+import { Analytics } from "@vercel/analytics/react";
 import {
   Copy,
   Check,
@@ -1113,6 +1114,8 @@ export function App() {
         </div>
       </footer>
 
+      {/* Vercel Web Analytics */}
+      <Analytics />
     </div>
   );
 }
