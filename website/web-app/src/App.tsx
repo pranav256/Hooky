@@ -14,7 +14,6 @@ import {
   Cpu,
   Volume2,
   VolumeX,
-  Maximize2,
   ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -108,76 +107,84 @@ export function App() {
 
     const renderScreen = () => {
       waveOffset += 0.08;
-      // Background gradient
+      // 1. Dark video canvas background with deep cinematic studio gradient
       const bgGrad = ctx.createLinearGradient(0, 0, 0, 960);
-      bgGrad.addColorStop(0, "#0f172a");
-      bgGrad.addColorStop(0.5, "#090d16");
-      bgGrad.addColorStop(1, "#020408");
+      bgGrad.addColorStop(0, "#0a0d14");
+      bgGrad.addColorStop(0.35, "#131824");
+      bgGrad.addColorStop(0.7, "#0b0e17");
+      bgGrad.addColorStop(1, "#040609");
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, 540, 960);
 
-      // Radial spotlight in center
-      const radGrad = ctx.createRadialGradient(270, 480, 20, 270, 480, 280);
-      radGrad.addColorStop(0, "rgba(139, 92, 246, 0.25)");
+      // Studio spotlight glow
+      const radGrad = ctx.createRadialGradient(270, 380, 30, 270, 380, 260);
+      radGrad.addColorStop(0, "rgba(99, 102, 241, 0.22)");
+      radGrad.addColorStop(0.6, "rgba(59, 130, 246, 0.07)");
       radGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
       ctx.fillStyle = radGrad;
       ctx.fillRect(0, 0, 540, 960);
 
-      // Top Notch & Status bar
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 20px monospace";
-      ctx.fillText("9:41", 40, 50);
-      ctx.fillText("5G 100%", 420, 50);
-
-      // Instagram Reels Header
-      ctx.font = "bold 26px sans-serif";
-      ctx.fillText("Reels", 40, 110);
-
-      // Speaker Avatar in 3D frame
+      // 2. Speaker Silhouette & Studio Microphone setup
       ctx.save();
+      // Host / Speaker silhouette in spotlight
       ctx.beginPath();
-      ctx.arc(270, 360, 90, 0, Math.PI * 2);
-      ctx.fillStyle = "#1e293b";
+      ctx.arc(270, 340, 80, 0, Math.PI * 2);
+      ctx.fillStyle = "#1e2638";
       ctx.fill();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "#8b5cf6";
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(147, 197, 253, 0.35)";
       ctx.stroke();
 
-      // Speaker tracking box
-      ctx.strokeStyle = "rgba(16, 185, 129, 0.6)";
+      // Shoulders
+      ctx.beginPath();
+      ctx.ellipse(270, 480, 130, 75, 0, Math.PI, 0);
+      ctx.fillStyle = "#151b28";
+      ctx.fill();
+
+      // Studio podcast microphone
+      ctx.beginPath();
+      ctx.roundRect(245, 370, 50, 75, 25);
+      ctx.fillStyle = "#2d3748";
+      ctx.fill();
       ctx.lineWidth = 2;
-      ctx.strokeRect(150, 240, 240, 250);
-      ctx.fillStyle = "rgba(16, 185, 129, 0.9)";
-      ctx.font = "14px monospace";
-      ctx.fillText("AUTO-TRACK: 98.4%", 160, 230);
+      ctx.strokeStyle = "#4a5568";
+      ctx.stroke();
       ctx.restore();
 
-      // Live animated audio spectrum bars
-      const barCount = 28;
-      const barWidth = 10;
-      const startX = (540 - barCount * 14) / 2;
-      for (let i = 0; i < barCount; i++) {
-        const height = Math.sin(waveOffset + i * 0.4) * 35 + Math.cos(waveOffset * 1.5 + i * 0.2) * 25 + 40;
-        const barGrad = ctx.createLinearGradient(0, 680 - height, 0, 680);
-        barGrad.addColorStop(0, highlightColor);
-        barGrad.addColorStop(1, "rgba(139, 92, 246, 0.2)");
-        ctx.fillStyle = barGrad;
-        ctx.fillRect(startX + i * 14, 680 - height, barWidth, height);
-      }
+      // 3. Active Speaker Face Tracking Bounding Box with Corner Brackets
+      const bx = 165, by = 240, bw = 210, bh = 220;
+      ctx.save();
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 3.5;
+      const cornerLen = 22;
+      // Top-Left
+      ctx.beginPath(); ctx.moveTo(bx, by + cornerLen); ctx.lineTo(bx, by); ctx.lineTo(bx + cornerLen, by); ctx.stroke();
+      // Top-Right
+      ctx.beginPath(); ctx.moveTo(bx + bw - cornerLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + cornerLen); ctx.stroke();
+      // Bottom-Left
+      ctx.beginPath(); ctx.moveTo(bx, by + bh - cornerLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cornerLen, by + bh); ctx.stroke();
+      // Bottom-Right
+      ctx.beginPath(); ctx.moveTo(bx + bw - cornerLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cornerLen); ctx.stroke();
 
-      // Hormozi Subtitles in Center
+      // Tracking Pill
+      ctx.fillStyle = "#0284c7";
+      ctx.roundRect(bx + 12, by - 14, 130, 24, 6);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText("● FACE LOCK 99.4%", bx + 20, by + 2);
+      ctx.restore();
+
+      // 4. Alex Hormozi Dynamic Kinetic Captions
       const currentPhrase = CAPTION_SCRIPT[phraseIdx];
       if (currentPhrase) {
         ctx.save();
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = `900 36px ${selectedFont}, sans-serif`;
+        ctx.font = `900 38px ${selectedFont}, Impact, sans-serif`;
 
-        // Render current phrase words
         const words = currentPhrase.words;
-        const lineY = 560;
-
-        // Word spacing calculation
+        const lineY = 600;
         const fullText = words.join(" ");
         const metrics = ctx.measureText(fullText);
         let curX = 270 - metrics.width / 2;
@@ -187,13 +194,19 @@ export function App() {
           const isCurrent = i === wordIdx;
 
           if (isCurrent) {
-            ctx.fillStyle = highlightColor;
             ctx.shadowColor = highlightColor;
-            ctx.shadowBlur = 18;
+            ctx.shadowBlur = 24;
+            ctx.fillStyle = highlightColor;
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 6;
+            ctx.strokeText(w, curX + wWidth / 2, lineY);
             ctx.fillText(w, curX + wWidth / 2, lineY);
             ctx.shadowBlur = 0;
           } else {
             ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 6;
+            ctx.strokeText(w, curX + wWidth / 2, lineY);
             ctx.fillText(w, curX + wWidth / 2, lineY);
           }
           curX += wWidth;
@@ -201,15 +214,79 @@ export function App() {
         ctx.restore();
       }
 
-      // Bottom User bar
-      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-      ctx.font = "bold 20px sans-serif";
-      ctx.fillText("@hooky_ai", 40, 880);
-      ctx.font = "16px sans-serif";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-      ctx.fillText("Gemini 2.0 Flash • 9:16 Auto-Crop", 40, 910);
+      // 5. Right-side Vertical Action Column (Reels / Shorts buttons)
+      const actions = [
+        { icon: "♥", count: "184K" },
+        { icon: "💬", count: "2.8K" },
+        { icon: "🔖", count: "31K" },
+        { icon: "↗", count: "19K" }
+      ];
+      ctx.save();
+      ctx.textAlign = "center";
+      actions.forEach((act, idx) => {
+        const ay = 520 + idx * 68;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.beginPath();
+        ctx.arc(495, ay, 20, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Tell Three.js texture to update
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillText(act.icon, 495, ay + 6);
+
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillText(act.count, 495, ay + 30);
+      });
+      ctx.restore();
+
+      // 6. Live Audio Equalizer Waveform & Track Metadata
+      ctx.save();
+      const barCount = 28;
+      const barWidth = 6;
+      for (let i = 0; i < barCount; i++) {
+        const height = Math.sin(waveOffset + i * 0.45) * 20 + Math.cos(waveOffset * 1.8 + i * 0.3) * 14 + 24;
+        ctx.fillStyle = i % 2 === 0 ? highlightColor : "rgba(255, 255, 255, 0.6)";
+        ctx.fillRect(40 + i * 10, 830 - height, barWidth, height);
+      }
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("@hooky_ai • 9:16 Auto-Crop", 40, 875);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      ctx.font = "13px sans-serif";
+      ctx.fillText("♫ Faster-Whisper int8 • Hook Score 98.6%", 40, 902);
+      ctx.restore();
+
+      // 7. Dynamic Island & Top iOS Status Bar
+      ctx.save();
+      // Dynamic Island Pill
+      ctx.fillStyle = "#000000";
+      ctx.beginPath();
+      ctx.roundRect(210, 20, 120, 30, 15);
+      ctx.fill();
+      // Camera dot
+      ctx.fillStyle = "#1e293b";
+      ctx.beginPath();
+      ctx.arc(305, 35, 5, 0, Math.PI * 2);
+      ctx.fill();
+      // Orange mic privacy indicator dot
+      ctx.fillStyle = "#f97316";
+      ctx.beginPath();
+      ctx.arc(285, 35, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Status Bar
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("9:41", 44, 42);
+
+      // Battery & Signal icons
+      ctx.font = "14px monospace";
+      ctx.fillText("5G  100%", 435, 42);
+      ctx.restore();
+
       if (screenTextureRef.current) {
         screenTextureRef.current.needsUpdate = true;
       }
@@ -255,50 +332,109 @@ export function App() {
     amberLight.position.set(0, -5, 10);
     scene.add(amberLight);
 
-    // 4. Smartphone Construction
+    // 4. Luxury Smartphone Construction (Rounded Titanium Frame)
     const phoneGroup = new THREE.Group();
     scene.add(phoneGroup);
 
-    // Phone Body Chassis (Dark Titanium Ceramic)
-    const phoneGeo = new THREE.BoxGeometry(6.4, 13.0, 0.6);
+    // Helper: Rounded Rectangle 2D Path
+    const createRoundedRect = (w: number, h: number, r: number) => {
+      const shape = new THREE.Shape();
+      shape.moveTo(-w / 2 + r, -h / 2);
+      shape.lineTo(w / 2 - r, -h / 2);
+      shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+      shape.lineTo(w / 2, h / 2 - r);
+      shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+      shape.lineTo(-w / 2 + r, h / 2);
+      shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+      shape.lineTo(-w / 2, -h / 2 + r);
+      shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+      return shape;
+    };
+
+    // Extruded Rounded Titanium Chassis with Chamfers
+    const phoneGeo = new THREE.ExtrudeGeometry(createRoundedRect(6.3, 12.8, 0.75), {
+      depth: 0.44,
+      bevelEnabled: true,
+      bevelSegments: 6,
+      steps: 1,
+      bevelSize: 0.1,
+      bevelThickness: 0.1,
+    });
     const phoneMat = new THREE.MeshStandardMaterial({
-      color: 0x0f1118,
-      metalness: 0.92,
-      roughness: 0.18,
+      color: 0x141822,
+      metalness: 0.88,
+      roughness: 0.22,
     });
     const phoneMesh = new THREE.Mesh(phoneGeo, phoneMat);
+    phoneMesh.position.z = -0.22;
     phoneGroup.add(phoneMesh);
 
-    // Screen Texture Plane
+    // Inner Black Bezel Rim
+    const bezelGeo = new THREE.ShapeGeometry(createRoundedRect(6.0, 12.5, 0.65));
+    const bezelMesh = new THREE.Mesh(bezelGeo, new THREE.MeshBasicMaterial({ color: 0x05070a }));
+    bezelMesh.position.z = 0.24;
+    phoneGroup.add(bezelMesh);
+
+    // Screen Texture Plane (Rounded Glass Screen)
     if (screenCanvasRef.current) {
       const screenTex = new THREE.CanvasTexture(screenCanvasRef.current);
       screenTex.minFilter = THREE.LinearFilter;
       screenTextureRef.current = screenTex;
 
-      const screenGeo = new THREE.PlaneGeometry(5.9, 12.5);
+      const screenGeo = new THREE.ShapeGeometry(createRoundedRect(5.82, 12.32, 0.6));
       const screenMat = new THREE.MeshBasicMaterial({
         map: screenTex,
         toneMapped: false,
       });
       const screenMesh = new THREE.Mesh(screenGeo, screenMat);
-      screenMesh.position.z = 0.31;
+      screenMesh.position.z = 0.25;
       phoneGroup.add(screenMesh);
     }
 
+    // Hardware Side Buttons
+    const btnMat = new THREE.MeshStandardMaterial({ color: 0x222938, metalness: 0.9, roughness: 0.2 });
+    // Power button (right)
+    const pwrMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.2, 0.18), btnMat);
+    pwrMesh.position.set(3.28, 1.8, 0);
+    phoneGroup.add(pwrMesh);
+
+    // Volume Up (left)
+    const volUpMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.18), btnMat);
+    volUpMesh.position.set(-3.28, 2.2, 0);
+    phoneGroup.add(volUpMesh);
+
+    // Volume Down (left)
+    const volDownMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.18), btnMat);
+    volDownMesh.position.set(-3.28, 1.0, 0);
+    phoneGroup.add(volDownMesh);
+
     // Camera Bump on Back
-    const bumpGeo = new THREE.BoxGeometry(2.4, 2.6, 0.3);
-    const bumpMat = new THREE.MeshStandardMaterial({ color: 0x161922, metalness: 0.8, roughness: 0.2 });
+    const bumpGeo = new THREE.ExtrudeGeometry(createRoundedRect(2.4, 2.5, 0.4), {
+      depth: 0.25,
+      bevelEnabled: true,
+      bevelSegments: 4,
+      bevelSize: 0.06,
+      bevelThickness: 0.06,
+    });
+    const bumpMat = new THREE.MeshStandardMaterial({ color: 0x1c212e, metalness: 0.85, roughness: 0.2 });
     const bumpMesh = new THREE.Mesh(bumpGeo, bumpMat);
-    bumpMesh.position.set(-1.6, 4.8, -0.35);
+    bumpMesh.position.set(-1.6, 4.6, -0.47);
     phoneGroup.add(bumpMesh);
 
-    // Camera Lenses
+    // 3 Sapphire Optical Camera Lenses
     for (let r = 0; r < 3; r++) {
-      const lensGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.15, 24);
-      const lensMat = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.95, roughness: 0.05 });
+      const ringGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.12, 24);
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0x333c4f, metalness: 0.95, roughness: 0.1 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(-1.6 + (r % 2) * 0.85, 4.2 + Math.floor(r / 2) * 0.85, -0.58);
+      phoneGroup.add(ring);
+
+      const lensGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.13, 24);
+      const lensMat = new THREE.MeshStandardMaterial({ color: 0x05070a, metalness: 0.98, roughness: 0.05 });
       const lens = new THREE.Mesh(lensGeo, lensMat);
       lens.rotation.x = Math.PI / 2;
-      lens.position.set(-1.6 + (r % 2) * 0.85, 4.4 + Math.floor(r / 2) * 0.9, -0.5);
+      lens.position.copy(ring.position);
       phoneGroup.add(lens);
     }
 
@@ -428,13 +564,23 @@ export function App() {
       phoneGroup.rotation.x += (targetRotX - phoneGroup.rotation.x) * 0.06;
       phoneGroup.rotation.y += (targetRotY - phoneGroup.rotation.y) * 0.06;
 
-      // Floating gentle oscillation
-      phoneGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.35;
+      // Responsive Stage Layout (Phone sits gracefully on the right half on desktop)
+      const isDesktop = window.innerWidth >= 1024;
+      const targetPosX = isDesktop ? 4.2 : 0;
+      const targetPosY = isDesktop ? Math.sin(elapsedTime * 1.5) * 0.3 : -1.0 + Math.sin(elapsedTime * 1.5) * 0.25;
+      const targetScale = isDesktop ? 1.05 : 0.72;
 
-      // Orbiting Badges
-      badge1.position.y = 3.5 + Math.sin(elapsedTime * 2.0) * 0.25;
-      badge2.position.y = -2.5 + Math.cos(elapsedTime * 2.2) * 0.25;
-      badge3.position.y = -4.5 + Math.sin(elapsedTime * 1.8) * 0.25;
+      phoneGroup.position.x += (targetPosX - phoneGroup.position.x) * 0.08;
+      phoneGroup.position.y = targetPosY;
+      phoneGroup.scale.set(targetScale, targetScale, targetScale);
+
+      badgeGroup.position.x = phoneGroup.position.x;
+      badgeGroup.scale.set(targetScale, targetScale, targetScale);
+
+      // Floating Badges
+      badge1.position.y = (isDesktop ? 3.5 : 2.5) + Math.sin(elapsedTime * 2.0) * 0.25;
+      badge2.position.y = (isDesktop ? -2.5 : -1.8) + Math.cos(elapsedTime * 2.2) * 0.25;
+      badge3.position.y = (isDesktop ? -4.5 : -3.8) + Math.sin(elapsedTime * 1.8) * 0.25;
 
       // Slow particle field rotation
       particleSystem.rotation.y = elapsedTime * 0.03;
@@ -524,10 +670,11 @@ export function App() {
         <span className="text-purple-400 font-bold">$ ./hooky.sh preview</span>
         <br /><br />
         <span className="text-slate-400">[Dry-Run Mode: Zero disk writes or rendering]</span><br />
-        • Parsing pending video: https://www.youtube.com/watch?v=dQw4w9WgXcQ<br />
+        • Parsing pending video: https://www.youtube.com/watch?v=3qHkcs3kG44<br />
+        • Title: Naval Ravikant - How to Get Rich Without Getting Lucky<br />
         • Gemini 2.0 Hook Extraction (completed in 1.1s):<br />
-        &nbsp;&nbsp;1. [02:14 - 02:55] &quot;The $100M mindset pivot&quot; (Virality: 96%)<br />
-        &nbsp;&nbsp;2. [14:10 - 14:48] &quot;Why 99% fail early&quot; (Virality: 93%)<br />
+        &nbsp;&nbsp;1. [04:12 - 04:48] &quot;Specific knowledge vs competition&quot; (Virality: 98%)<br />
+        &nbsp;&nbsp;2. [18:30 - 19:15] &quot;Code and media are permissionless leverage&quot; (Virality: 95%)<br />
         Ready to process. Run <span className="text-purple-300">./hooky.sh</span> to render.
       </>
     ),
@@ -699,14 +846,8 @@ export function App() {
 
             </div>
 
-            {/* Right Side: Interactive 3D Orbiting Hint */}
-            <div className="lg:col-span-6 flex flex-col items-center justify-end pointer-events-auto h-full pb-8">
-              <div className="p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 text-center flex items-center gap-3 text-xs font-mono text-purple-200">
-                <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping" />
-                <span>Drag with mouse to rotate 3D phone 360°</span>
-                <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
-              </div>
-            </div>
+            {/* Right Side: Clear space for the 3D WebGL Phone Stage */}
+            <div className="lg:col-span-6 hidden lg:block pointer-events-none" />
 
           </div>
         </div>
@@ -907,6 +1048,46 @@ export function App() {
             </summary>
             <p className="mt-3 text-xs text-slate-300 leading-relaxed">
               Google Gemini 2.0 Flash has a generous free tier in Google AI Studio. Since Hooky passes only timestamps and text transcripts (not giant multi-gigabyte video files), token consumption is minimal and fits within free quotas.
+            </p>
+          </details>
+
+          <details className="p-5 rounded-2xl bg-[#090c14] border border-white/10 group cursor-pointer">
+            <summary className="flex items-center justify-between font-bold text-white list-none">
+              <span>How does the automated YouTube channel discovery work?</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" />
+            </summary>
+            <p className="mt-3 text-xs text-slate-300 leading-relaxed">
+              Drop YouTube channel handles or URLs into <code className="text-purple-300">channels.txt</code> (e.g. <code className="text-cyan-300">@hubermanlab | limit=3 min_views=250000</code>). When you run <code className="text-purple-300">./hooky.sh make</code>, Hooky queries the channel's uploads with yt-dlp, calculates view velocity spikes, and queues winning high-retention candidates automatically.
+            </p>
+          </details>
+
+          <details className="p-5 rounded-2xl bg-[#090c14] border border-white/10 group cursor-pointer">
+            <summary className="flex items-center justify-between font-bold text-white list-none">
+              <span>How does the anti-ban Instagram queue keep accounts safe?</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" />
+            </summary>
+            <p className="mt-3 text-xs text-slate-300 leading-relaxed">
+              Automated spammers get banned for fixed-interval posts. Hooky randomizes delays between uploads (configurable in <code className="text-purple-300">.env</code> between 30 mins and 2 hours), restricts uploads to active daylight hours (e.g. 9 AM – 10 PM), and tracks posted video IDs to prevent duplicates.
+            </p>
+          </details>
+
+          <details className="p-5 rounded-2xl bg-[#090c14] border border-white/10 group cursor-pointer">
+            <summary className="flex items-center justify-between font-bold text-white list-none">
+              <span>Can I split long masterclasses or podcasts into Part 1, Part 2, etc.?</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" />
+            </summary>
+            <p className="mt-3 text-xs text-slate-300 leading-relaxed">
+              Yes! Run <code className="text-purple-300">./hooky.sh parts &lt;video.mp4&gt; --part-duration 60</code>. Hooky automatically calculates segment boundaries, burns sequential "Part N" badges into the video header, and outputs clean 60-second vertical reels.
+            </p>
+          </details>
+
+          <details className="p-5 rounded-2xl bg-[#090c14] border border-white/10 group cursor-pointer">
+            <summary className="flex items-center justify-between font-bold text-white list-none">
+              <span>Which subtitle styles and fonts are available?</span>
+              <ChevronDown className="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" />
+            </summary>
+            <p className="mt-3 text-xs text-slate-300 leading-relaxed">
+              Hooky includes three built-in subtitle styles: <code className="text-purple-300">hormozi</code> (bold uppercase with dynamic spoken word highlights), <code className="text-yellow-300">yellow</code> (high-contrast yellow keyword highlights), and <code className="text-slate-200">clean</code> (modern minimalist with subtle background box). Run <code className="text-purple-300">./hooky.sh styles</code> to preview them.
             </p>
           </details>
         </div>
