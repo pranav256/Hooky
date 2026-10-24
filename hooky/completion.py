@@ -128,8 +128,8 @@ def candidates(words: Sequence[str], index: int) -> list[str]:
         return list(COMMANDS) + list(PIPELINE_FLAGS)
     index = max(0, min(index, len(values)))
     current = values[index] if index < len(values) else ""
-    args = values[1:] if values and values[0].lower() in {"hooky", "hooky.sh", "ziv", "ziv.sh"} else values
-    args_index = max(0, index - 1) if values and values[0].lower() in {"hooky", "hooky.sh", "ziv", "ziv.sh"} else index
+    args = values[1:] if values and values[0].lower() in {"hooky", "hooky.sh"} else values
+    args_index = max(0, index - 1) if values and values[0].lower() in {"hooky", "hooky.sh"} else index
     before = args[:args_index]
 
     if not before:
@@ -168,12 +168,11 @@ _hooky_completion() {
     mapfile -t COMPREPLY < <(command hooky __complete bash "$COMP_CWORD" "${words[@]}")
 }
 complete -o bashdefault -F _hooky_completion hooky
-complete -o bashdefault -F _hooky_completion ziv
 '''
 
 
 def _zsh_script() -> str:
-    return r'''#compdef hooky ziv
+    return r'''#compdef hooky
 # Hooky completion for Zsh. Install with: eval "$(hooky completion zsh)"
 _hooky() {
     local -a reply
@@ -181,7 +180,6 @@ _hooky() {
     (( ${#reply[@]} )) && compadd -- "${reply[@]}"
 }
 compdef _hooky hooky
-compdef _hooky ziv
 '''
 
 
@@ -197,13 +195,12 @@ function __hooky_complete
     hooky __complete fish (math (count $words) - 1) $words
 end
 complete -c hooky -a '(__hooky_complete)'
-complete -c ziv -a '(__hooky_complete)'
 '''
 
 
 def _powershell_script() -> str:
     return r'''# Hooky completion for PowerShell. Install by invoking this output once.
-Register-ArgumentCompleter -CommandName @('hooky', 'ziv') -ScriptBlock {
+Register-ArgumentCompleter -CommandName 'hooky' -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $words = @($commandAst.CommandElements | ForEach-Object { $_.Extent.Text })
     if ($words.Count -eq 0) { return }
