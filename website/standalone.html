@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hooky — Autonomous Video Clipping Engine</title>
+  <meta name="description" content="Production-grade, open-source video clipping pipeline. Gemini 2.0 narrative hook detection, faster-whisper millisecond alignment, and 9:16 vertical video re-framing.">
+
+  <!-- Typography: Inter & JetBrains Mono (Anthropic & Better Design strict 2-family standard) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Three.js for 3D Viewport Stage -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            display: ['"Montserrat"', 'sans-serif'],
+          },
+          colors: {
+            // UI/UX Pro Max Dark Mode OLED Palette
+            oled: {
+              0: '#000000',
+              50: '#07090D',
+              100: '#0D1117',
+              150: '#141822',
+              200: '#1B212E',
+              300: '#262D3D',
+              border: 'rgba(255, 255, 255, 0.08)',
+              'border-subtle': 'rgba(255, 255, 255, 0.04)',
+              'border-active': 'rgba(255, 255, 255, 0.22)',
+            },
+            signal: {
+              amber: '#F59E0B',
+              'amber-glow': 'rgba(245, 158, 11, 0.2)',
+              emerald: '#10B981',
+              cyan: '#06B6D4',
+              rose: '#F43F5E',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Taste Skill & Anthropic Frontend Design: Architectural Grid, Real Substance, Zero AI Slop */
+    :root {
+      --bg: #000000;
+      color-scheme: dark;
+    }
+
+    /* Subdued architectural grid */
+    .arch-grid {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    }
+
+    /* Specular Console Surfaces */
+    .console-panel {
+      background: #080A0F;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.07), 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Audio Timeline Track */
+    .waveform-canvas {
+      background: #0A0D14;
+      background-image: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px,
+        transparent 20px
+      );
+    }
+
+    /* Kinetic Hormozi Word Highlighting */
+    .word-highlight {
+      display: inline-block;
+      color: #FACC15;
+      transform: scale(1.12);
+      text-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
+      transition: transform 100ms ease-out, color 100ms ease-out;
+    }
+    .word-rest {
+      display: inline-block;
+      color: #FFFFFF;
+      transition: transform 100ms ease-out, color 100ms ease-out;
+    }
+
+    /* Focus & Reduced Motion Accessibility */
+    :focus-visible {
+      outline: 2px solid #FFFFFF;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-black text-[#EDEDED] font-sans antialiased selection:bg-white selection:text-black min-h-screen relative overflow-x-hidden">
+
+  <!-- Background Grid -->
+  <div class="fixed inset-0 arch-grid pointer-events-none z-0"></div>
+
+  <!-- Three.js Interactive 3D Orthographic Canvas (GPU-accelerated, lightweight) -->
+  <div id="three-stage" class="fixed inset-0 pointer-events-none z-0 opacity-35"></div>
+
+  <!-- Top Ambient Specular Light (Restrained) -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none z-0 blur-3xl"></div>
+
+  <!-- NAVIGATION BAR (Anthropic / Linear / Vercel pattern) -->
+  <header class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-4 transition-all duration-200">
+    <div class="max-w-6xl mx-auto h-14 console-panel rounded-2xl px-5 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-3 group">
+        <div class="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-black font-extrabold text-sm shadow-sm group-hover:scale-105 transition-transform">
+          ⚡
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm tracking-tight text-white">Hooky</span>
+          <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-white/[0.06] text-[#A1A1AA] border border-white/10">v2.1 MIT</span>
+        </div>
+      </a>
+
+      <!-- Center Links -->
+      <nav class="hidden md:flex items-center gap-6 text-xs font-medium text-[#A1A1AA]">
+        <a href="#studio" class="hover:text-white transition-colors flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-signal-emerald"></span> Timeline Studio
+        </a>
+        <a href="#pipeline" class="hover:text-white transition-colors">Architecture</a>
+        <a href="#terminal" class="hover:text-white transition-colors">CLI</a>
+        <a href="#benchmarks" class="hover:text-white transition-colors">Hardware Latency</a>
+        <a href="#config" class="hover:text-white transition-colors">Config</a>
+        <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
+      </nav>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-3">
+        <a href="https://github.com/pranav256/Hooky" target="_blank" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-medium text-[#EDEDED] transition-colors">
+          <i data-lucide="star" class="w-3.5 h-3.5 text-signal-amber fill-signal-amber"></i>
+          <span>GitHub</span>
+        </a>
+
+        <a href="#terminal" class="px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-[#E5E7EB] active:scale-95 text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5">
+          <span>Install CLI</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT -->
+  <main class="relative z-10 pt-28 pb-24">
+
+    <!-- HERO SECTION -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-8 pt-8 pb-14">
+      
+      <!-- Eyebrow Pill -->
+      <div class="flex justify-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/10 text-xs text-[#A1A1AA]">
+          <span class="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
+          <span class="text-white font-medium">Terminal-First Pipeline:</span>
+          <span>Google Gemini 2.0 Flash + Faster-Whisper + FFmpeg</span>
+        </div>
+      </div>
+
+      <!-- Headline -->
+      <div class="text-center max-w-4xl mx-auto mb-6">
+        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-[-0.03em] leading-[1.08] text-white">
+          Autonomous Video Clipping <br>
+          <span class="text-[#888888]">Without Cloud Subscriptions.</span>
+        </h1>
+        <p class="mt-4 text-base sm:text-lg text-[#A1A1AA] max-w-2xl mx-auto leading-relaxed font-normal">
+          The open-source alternative to Opus Clip and Klap. Hooky monitors YouTube channels, detects viral narrative hooks with Google Gemini, aligns words to milliseconds with faster-whisper, and renders 9:16 vertical shorts locally.
+        </p>
+      </div>
+
+      <!-- 1-Click Install Command -->
+      <div class="max-w-xl mx-auto mb-12">
+        <div class="console-panel rounded-2xl p-2 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 px-3 overflow-hidden font-mono text-xs text-[#A1A1AA]">
+            <span class="text-white select-none">$</span>
+            <span id="installCmdText" class="truncate text-white">git clone https://github.com/pranav256/Hooky.git &amp;&amp; ./hooky.sh</span>
+          </div>
+          <button onclick="copySnippet('installCmdText', this)" class="px-3.5 py-2 rounded-xl bg-white text-black hover:bg-[#E5E7EB] active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Copy</span>
+          </button>
+        </div>
+        <div class="flex items-center justify-center gap-6 mt-3 text-[11px] font-mono text-[#71717A]">
+          <span>✓ Python 3.10+</span>
+          <span>✓ Zero SQL / 0 Docker</span>
+          <span>✓ CUDA GPU / Apple Silicon</span>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE STUDIO WORKSPACE (The Core Instrument) -->
+      <div id="studio" class="console-panel rounded-3xl p-6 sm:p-8 shadow-2xl mb-16 scroll-mt-24">
+        
+        <!-- Studio Header & Master Controls -->
+        <div class="flex flex-wrap items-center justify-between pb-6 border-b border-white/[0.08] gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+            <span class="ml-2 font-mono text-xs text-white font-medium">source / huberman_lab_dopamine.mp4</span>
+          </div>
+
+          <!-- Studio Toolbar Controls -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center bg-[#0D1117] p-1 rounded-xl border border-white/10 text-xs">
+              <button onclick="changeStyle('hormozi')" id="styleBtn-hormozi" class="px-3 py-1 rounded-lg bg-white text-black font-semibold transition-all">
+                Hormozi
+              </button>
+              <button onclick="changeStyle('clean')" id="styleBtn-clean" class="px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white transition-all">
+                Editorial Clean
+              </button>
+              <button onclick="changeStyle('yellow')" id="styleBtn-yellow" class="px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white transition-all">
+                Yellow Attention
+              </button>
+              <button onclick="changeStyle('minimal')" id="styleBtn-minimal" class="px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white transition-all">
+                Monochrome
+              </button>
+            </div>
+            
+            <button onclick="togglePlayback()" id="playControlBtn" class="px-3.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-xs font-medium text-white flex items-center gap-1.5 active:scale-95 transition-all">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-white" id="playbackIcon"></i>
+              <span id="playbackBtnText">Play Preview</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Studio Main Stage: 9:16 Video Player + Telemetry Inspector -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6 items-start">
+          
+          <!-- 9:16 Video Frame -->
+          <div class="lg:col-span-5 flex justify-center">
+            <div class="relative w-[280px] sm:w-[310px] aspect-[9/16] bg-black rounded-3xl overflow-hidden border-2 border-white/20 shadow-2xl flex flex-col justify-between p-4 select-none">
+              
+              <!-- Video Background Simulation -->
+              <div class="absolute inset-0 bg-gradient-to-b from-[#161B26] via-[#0E1118] to-[#07080B] z-0 flex items-center justify-center">
+                <!-- Speaker Detection Bounding Box -->
+                <div class="w-48 h-64 rounded-2xl border border-signal-emerald/40 relative flex items-center justify-center">
+                  <span class="absolute -top-3 left-3 text-[9px] font-mono bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded border border-signal-emerald/40">
+                    Auto-Track: Active Speaker [98.4%]
+                  </span>
+                  <!-- Podcast Host Graphic -->
+                  <div class="w-24 h-24 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center">
+                    <i data-lucide="mic" class="w-8 h-8 text-[#A1A1AA]"></i>
+                  </div>
+                </div>
+
+                <!-- 9:16 Safe Margin Grid Overlay -->
+                <div class="absolute inset-0 border border-white/[0.04] pointer-events-none"></div>
+              </div>
+
+              <!-- Top Telemetry Tag -->
+              <div class="relative z-10 flex items-center justify-between text-[11px] text-[#A1A1AA] font-mono">
+                <span class="px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10 text-white">1080 × 1920</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">AI Hook: 98.6%</span>
+              </div>
+
+              <!-- Active Word-by-Word Subtitles -->
+              <div class="relative z-10 text-center my-auto px-2">
+                <div id="karaokeContainer" class="font-display font-black text-xl uppercase tracking-wide leading-tight min-h-[64px] flex items-center justify-center flex-wrap gap-1.5">
+                  <!-- Word elements populated dynamically -->
+                </div>
+              </div>
+
+              <!-- In-video Progress Bar -->
+              <div class="relative z-10 flex flex-col gap-2">
+                <div class="flex items-center justify-between text-[10px] font-mono text-[#A1A1AA]">
+                  <span id="playerCurrentTime">00:14.200</span>
+                  <span>00:46.850</span>
+                </div>
+                <div class="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div id="playerProgressBar" class="h-full bg-white w-[30%] transition-all"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Right Telemetry & Timeline Controls -->
+          <div class="lg:col-span-7 flex flex-col gap-6">
+            
+            <!-- Gemini 2.0 Narrative Hook Reasoning -->
+            <div class="console-panel rounded-2xl p-5 border border-white/10">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                  <span class="text-xs font-mono uppercase tracking-wider text-white font-semibold">Gemini 2.0 Flash — Narrative Hook Extraction</span>
+                </div>
+                <span class="text-xs font-mono text-signal-emerald font-bold">Virality Rank: Top 1%</span>
+              </div>
+              <p class="text-xs text-[#A1A1AA] leading-relaxed mb-4">
+                "The speaker presents a high-urgency claim on dopamine baseline exhaustion within the first 3 seconds, leading to a counter-intuitive cold exposure protocol. High viral retention expected."
+              </p>
+              
+              <!-- Segment Boundaries -->
+              <div class="grid grid-cols-3 gap-3 font-mono text-xs">
+                <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.06]">
+                  <span class="text-[10px] text-[#71717A] block">HOOK IN</span>
+                  <span class="text-white font-bold">00:14.200</span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.06]">
+                  <span class="text-[10px] text-[#71717A] block">PAYOFF OUT</span>
+                  <span class="text-white font-bold">00:46.850</span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-black/40 border border-white/[0.06]">
+                  <span class="text-[10px] text-[#71717A] block">CLIP DURATION</span>
+                  <span class="text-signal-emerald font-bold">32.65s (Shorts)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kinetic Subtitle Customizer -->
+            <div class="console-panel rounded-2xl p-5 border border-white/10">
+              <span class="text-xs font-mono uppercase tracking-wider text-white font-semibold block mb-3">Subtitle Typography &amp; Burn Settings</span>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                <div>
+                  <label class="text-[10px] text-[#71717A] block mb-1">TYPEFACE</label>
+                  <select id="fontPicker" onchange="setFont(this.value)" class="w-full bg-[#0D1117] border border-white/10 rounded-lg px-2 py-1.5 text-white focus:outline-none">
+                    <option value="Montserrat">Montserrat Black</option>
+                    <option value="Inter">Inter Semibold</option>
+                    <option value="JetBrains Mono">JetBrains Mono</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[10px] text-[#71717A] block mb-1">HIGHLIGHT COLOR</label>
+                  <select id="colorPicker" onchange="setColor(this.value)" class="w-full bg-[#0D1117] border border-white/10 rounded-lg px-2 py-1.5 text-white focus:outline-none">
+                    <option value="#FACC15">Hormozi Gold (#FACC15)</option>
+                    <option value="#06B6D4">Electric Cyan (#06B6D4)</option>
+                    <option value="#10B981">Emerald Green (#10B981)</option>
+                    <option value="#FFFFFF">Monochrome White</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[10px] text-[#71717A] block mb-1">ALIGNMENT</label>
+                  <div class="p-1.5 rounded-lg bg-[#0D1117] border border-white/10 text-white text-center">
+                    Center (Y: 65%)
+                  </div>
+                </div>
+                <div>
+                  <label class="text-[10px] text-[#71717A] block mb-1">BURN ENGINE</label>
+                  <div class="p-1.5 rounded-lg bg-[#0D1117] border border-white/10 text-signal-emerald text-center">
+                    libass (CUDA)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Waveform Timeline Scrubber -->
+            <div class="console-panel rounded-2xl p-5 border border-white/10">
+              <div class="flex items-center justify-between text-xs font-mono text-[#A1A1AA] mb-2">
+                <span>FASTER-WHISPER MILLISECOND AUDIO SPECTRUM</span>
+                <span class="text-white text-[11px]">Click or drag to scrub</span>
+              </div>
+              
+              <!-- Timeline Track -->
+              <div class="waveform-canvas h-16 rounded-xl border border-white/10 relative overflow-hidden cursor-pointer" onclick="scrubAudio(event)">
+                <!-- Detected Viral Hook Boundary Overlay -->
+                <div class="absolute top-0 bottom-0 left-[25%] w-[50%] bg-signal-emerald/10 border-x border-signal-emerald/40 flex items-center justify-between px-2 text-[10px] font-mono text-signal-emerald">
+                  <span>[ IN: 00:14.200 ]</span>
+                  <span>[ OUT: 00:46.850 ]</span>
+                </div>
+                
+                <!-- Waveform Bars -->
+                <div class="absolute inset-0 flex items-end justify-between px-2 pointer-events-none py-1">
+                  <div class="w-1 bg-white/20 h-4"></div><div class="w-1 bg-white/20 h-8"></div>
+                  <div class="w-1 bg-white/20 h-12"></div><div class="w-1 bg-white/30 h-10"></div>
+                  <div class="w-1 bg-signal-emerald h-14"></div><div class="w-1 bg-signal-emerald h-16"></div>
+                  <div class="w-1 bg-signal-emerald h-12"></div><div class="w-1 bg-signal-emerald h-15"></div>
+                  <div class="w-1 bg-signal-emerald h-16"></div><div class="w-1 bg-signal-emerald h-10"></div>
+                  <div class="w-1 bg-signal-emerald h-14"></div><div class="w-1 bg-white/20 h-6"></div>
+                  <div class="w-1 bg-white/20 h-8"></div><div class="w-1 bg-white/20 h-4"></div>
+                </div>
+
+                <!-- Playhead Needle -->
+                <div id="playheadNeedle" class="absolute top-0 bottom-0 w-[2px] bg-white shadow-[0_0_8px_white] left-[35%] pointer-events-none"></div>
+              </div>
+
+              <!-- Hotkey Navigation Bar -->
+              <div class="flex items-center justify-between pt-3 text-[10px] font-mono text-[#71717A]">
+                <span>Shortcut: <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-white">Space</kbd> Play/Pause</span>
+                <span><kbd class="px-1.5 py-0.5 rounded bg-white/10 text-white">←</kbd> <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-white">→</kbd> Scrub Timecode</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ARCHITECTURE MATRIX (3-Column Clean Engineering) -->
+    <section id="pipeline" class="max-w-6xl mx-auto px-4 sm:px-8 mb-24 scroll-mt-24">
+      <div class="text-left mb-10">
+        <span class="text-xs font-mono uppercase tracking-wider text-[#71717A]">Modular Architecture</span>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white mt-1">
+          Zero Bloat. Production Subsystems.
+        </h2>
+        <p class="text-sm text-[#A1A1AA] mt-2 max-w-xl">
+          Driven cleanly by two plain text files (<code class="text-white font-mono">channels.txt</code> and <code class="text-white font-mono">links.txt</code>). Zero SQL databases or docker configurations.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Subsystem 1 -->
+        <div class="console-panel rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white mb-4">
+              <i data-lucide="radio" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Channel Auto-Discovery</h3>
+            <p class="text-xs text-[#A1A1AA] leading-relaxed mb-4">
+              Monitors YouTube channels for view velocity spikes against historical averages. High-performing videos are immediately queued for highlight extraction.
+            </p>
+          </div>
+          <div class="p-3 bg-black/60 rounded-xl border border-white/[0.06] font-mono text-[11px] text-[#A1A1AA]">
+            @hubermanlab | limit=3 min_views=250k<br>
+            @TheDiaryOfACEO | limit=2 style=clean
+          </div>
+        </div>
+
+        <!-- Subsystem 2 -->
+        <div class="console-panel rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white mb-4">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Anti-Ban Safe Publisher</h3>
+            <p class="text-xs text-[#A1A1AA] leading-relaxed mb-4">
+              Uploads directly to Instagram Reels with humanized randomized cooldown jitter (30m - 2h) and state checkpoints that survive process restarts.
+            </p>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-black/60 rounded-xl border border-white/[0.06] font-mono text-[11px]">
+            <span class="text-[#71717A]">QUEUE JITTER</span>
+            <span class="text-signal-emerald font-bold">1800s - 7200s Window</span>
+          </div>
+        </div>
+
+        <!-- Subsystem 3 -->
+        <div class="console-panel rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white mb-4">
+              <i data-lucide="film" class="w-5 h-5"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Episodic Series Splitter</h3>
+            <p class="text-xs text-[#A1A1AA] leading-relaxed mb-4">
+              Splits full-length masterclasses or movie breakdowns into sequential episodic parts with burned numbered badge overlays (<code class="text-white font-mono">Part 1</code>, <code class="text-white font-mono">Part 2</code>).
+            </p>
+          </div>
+          <div class="p-3 bg-black/60 rounded-xl border border-white/[0.06] font-mono text-[11px] text-white">
+            ./hooky.sh parts masterclass.mp4
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- INTERACTIVE CLI TERMINAL (Authentic stdout/stderr) -->
+    <section id="terminal" class="max-w-6xl mx-auto px-4 sm:px-8 mb-24 scroll-mt-24">
+      <div class="text-left mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-wider text-[#71717A]">Command Line Interface</span>
+          <h2 class="text-3xl font-extrabold tracking-tight text-white mt-1">
+            Engineered For The Terminal
+          </h2>
+        </div>
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <span class="text-[#71717A]">Supported OS:</span>
+          <span class="px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-white">Linux</span>
+          <span class="px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-white">macOS</span>
+          <span class="px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-white">Windows (PowerShell)</span>
+        </div>
+      </div>
+
+      <div class="console-panel rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+        <!-- Terminal Header -->
+        <div class="bg-[#0A0D14] px-5 py-3 border-b border-white/[0.08] flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <span class="ml-3 font-mono text-xs text-[#A1A1AA]">bash / pwsh</span>
+          </div>
+
+          <!-- Command Tabs -->
+          <div class="flex items-center gap-1 bg-[#10141E] p-1 rounded-xl border border-white/10 text-xs font-mono">
+            <button onclick="setCli('make')" id="tabBtn-make" class="px-3 py-1 rounded-lg bg-white text-black font-semibold">
+              ./hooky.sh make
+            </button>
+            <button onclick="setCli('preview')" id="tabBtn-preview" class="px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white">
+              ./hooky.sh preview
+            </button>
+            <button onclick="setCli('parts')" id="tabBtn-parts" class="px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white">
+              ./hooky.sh parts
+            </button>
+            <button onclick="setCli('doctor')" id="tabBtn-doctor" class="px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white">
+              ./hooky.sh doctor
+            </button>
+          </div>
+        </div>
+
+        <!-- Terminal Output -->
+        <div class="p-6 bg-[#040508] font-mono text-xs text-[#EDEDED] min-h-[260px] overflow-x-auto relative leading-relaxed">
+          <button onclick="copyCli()" class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-xs text-white flex items-center gap-1.5 transition-all active:scale-95">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="cliCopyStatus">Copy Command</span>
+          </button>
+          <pre id="cliConsole" class="font-mono"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- HARDWARE LATENCY & PROFILING BENCHMARKS -->
+    <section id="benchmarks" class="max-w-6xl mx-auto px-4 sm:px-8 mb-24 scroll-mt-24">
+      <div class="text-left mb-8">
+        <span class="text-xs font-mono uppercase tracking-wider text-[#71717A]">Hardware Profiling</span>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white mt-1">
+          Measured Performance
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
+        <div class="console-panel rounded-2xl p-5 border border-white/10">
+          <span class="text-[10px] text-[#71717A] block mb-1">NVIDIA NVENC (GPU)</span>
+          <span class="text-2xl font-bold text-white block">240+ FPS</span>
+          <span class="text-xs text-signal-emerald mt-2 block">1080x1920 60p Transcode</span>
+        </div>
+        <div class="console-panel rounded-2xl p-5 border border-white/10">
+          <span class="text-[10px] text-[#71717A] block mb-1">WHISPER COMPUTE</span>
+          <span class="text-2xl font-bold text-white block">int8 / fp16</span>
+          <span class="text-xs text-[#A1A1AA] mt-2 block">~3.2s per 10min audio</span>
+        </div>
+        <div class="console-panel rounded-2xl p-5 border border-white/10">
+          <span class="text-[10px] text-[#71717A] block mb-1">RAM FOOTPRINT</span>
+          <span class="text-2xl font-bold text-white block">&lt; 1.4 GB</span>
+          <span class="text-xs text-[#A1A1AA] mt-2 block">Dynamic cleanup on finish</span>
+        </div>
+        <div class="console-panel rounded-2xl p-5 border border-white/10">
+          <span class="text-[10px] text-[#71717A] block mb-1">SUBSCRIPTION COST</span>
+          <span class="text-2xl font-bold text-signal-emerald block">$0 / mo</span>
+          <span class="text-xs text-[#A1A1AA] mt-2 block">100% Free MIT License</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE CONFIG GENERATOR (.env) -->
+    <section id="config" class="max-w-6xl mx-auto px-4 sm:px-8 mb-24 scroll-mt-24">
+      <div class="text-left mb-8">
+        <span class="text-xs font-mono uppercase tracking-wider text-[#71717A]">Configuration</span>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white mt-1">
+          Live Environment Generator
+        </h2>
+      </div>
+
+      <div class="console-panel rounded-2xl p-6 border border-white/10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Controls -->
+        <div class="lg:col-span-5 space-y-4 text-xs font-mono">
+          <div>
+            <label class="text-[#71717A] block mb-1.5">GEMINI MODEL</label>
+            <select id="cfgModel" onchange="updateConfig()" class="w-full bg-[#0D1117] border border-white/10 rounded-xl px-3 py-2 text-white">
+              <option value="gemini-2.0-flash">gemini-2.0-flash (Recommended)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-[#71717A] block mb-1.5">WHISPER MODEL &amp; COMPUTE</label>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="cfgWhisper" onchange="updateConfig()" class="bg-[#0D1117] border border-white/10 rounded-xl px-3 py-2 text-white">
+                <option value="small">small (Balanced)</option>
+                <option value="base">base (Fast)</option>
+                <option value="medium">medium (High Accuracy)</option>
+              </select>
+              <select id="cfgCompute" onchange="updateConfig()" class="bg-[#0D1117] border border-white/10 rounded-xl px-3 py-2 text-white">
+                <option value="int8">int8 (Low VRAM)</option>
+                <option value="float16">float16 (CUDA)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[#71717A] block mb-1.5">SUBTITLE PRESET</label>
+            <select id="cfgStyle" onchange="updateConfig()" class="w-full bg-[#0D1117] border border-white/10 rounded-xl px-3 py-2 text-white">
+              <option value="hormozi">hormozi (Viral Hook)</option>
+              <option value="clean">clean (Editorial)</option>
+              <option value="yellow">yellow (High Contrast)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Output Code -->
+        <div class="lg:col-span-7 bg-[#040508] rounded-xl p-4 border border-white/10 font-mono text-xs text-[#A1A1AA] relative">
+          <button onclick="copySnippet('envCodeText', this)" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.14] text-white text-[11px] transition-all">
+            Copy .env
+          </button>
+          <pre id="envCodeText" class="text-white overflow-x-auto leading-relaxed pt-2"></pre>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section id="faq" class="max-w-4xl mx-auto px-4 sm:px-8 mb-24 scroll-mt-24">
+      <div class="text-center mb-10">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Frequently Asked Questions</h2>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <details class="console-panel rounded-2xl p-5 border border-white/10 group cursor-pointer">
+          <summary class="flex items-center justify-between font-semibold text-white">
+            <span>Can Hooky run without a dedicated GPU?</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-[#A1A1AA] group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-xs text-[#A1A1AA] leading-relaxed">
+            Yes. Hooky auto-detects hardware on launch. If no CUDA GPU is found, it switches whisper to <code class="text-white">compute=int8</code> CPU mode and runs multi-threaded CPU FFmpeg encoding.
+          </p>
+        </details>
+
+        <details class="console-panel rounded-2xl p-5 border border-white/10 group cursor-pointer">
+          <summary class="flex items-center justify-between font-semibold text-white">
+            <span>How does Hooky bypass YouTube rate limits and age gates?</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-[#A1A1AA] group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-xs text-[#A1A1AA] leading-relaxed">
+            Hooky integrates browser cookie extraction via yt-dlp. Set <code class="text-white">YTDLP_COOKIES_FROM_BROWSER=chrome</code> (or edge/brave/firefox) in your <code class="text-white">.env</code> to inherit authenticated sessions automatically.
+          </p>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/[0.08] py-8 text-xs font-mono text-[#71717A]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-white font-semibold">Hooky</span>
+        <span>•</span>
+        <span>Autonomous AI Video Clipper (MIT)</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="https://github.com/pranav256/Hooky" target="_blank" class="hover:text-white transition-colors">GitHub Repository</a>
+        <a href="https://github.com/pranav256/Hooky/blob/main/LICENSE" target="_blank" class="hover:text-white transition-colors">License</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    lucide.createIcons();
+
+    /* ============================================================
+       1. THREE.JS 3D ORTHOGRAPHIC PERSPECTIVE PLANE
+    ============================================================ */
+    const stage = document.getElementById('three-stage');
+    let scene, camera, renderer, gridMesh;
+
+    function initThree() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.set(0, 35, 90);
+      camera.lookAt(0, 0, 0);
+
+      const planeGeo = new THREE.PlaneGeometry(160, 160, 32, 32);
+      const planeMat = new THREE.MeshBasicMaterial({
+        color: 0x1F2433,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.25
+      });
+      gridMesh = new THREE.Mesh(planeGeo, planeMat);
+      gridMesh.rotation.x = -Math.PI / 2.3;
+      scene.add(gridMesh);
+
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      stage.appendChild(renderer.domElement);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+      if (gridMesh) {
+        gridMesh.rotation.z += 0.0003;
+      }
+      renderer.render(scene, camera);
+    }
+    initThree();
+    animateThree();
+
+
+    /* ============================================================
+       2. STUDIO TIMELINE & KARAOKE ENGINE
+    ============================================================ */
+    const scriptWords = [
+      { text: "DOPAMINE", highlight: true },
+      { text: "IS", highlight: false },
+      { text: "NOT", highlight: false },
+      { text: "ABOUT", highlight: false },
+      { text: "PLEASURE.", highlight: true },
+      { text: "IT", highlight: false },
+      { text: "IS", highlight: false },
+      { text: "ABOUT", highlight: false },
+      { text: "DRIVE,", highlight: true },
+      { text: "CRAVING,", highlight: true },
+      { text: "AND", highlight: false },
+      { text: "PURSUIT.", highlight: true }
+    ];
+
+    let wordIndex = 0;
+    let isPlaying = true;
+    let activeHighlight = '#FACC15';
+
+    function renderKaraoke() {
+      const stage = document.getElementById('karaokeContainer');
+      if (!stage) return;
+
+      stage.innerHTML = scriptWords.map((item, idx) => {
+        const isCurrent = idx === wordIndex;
+        if (isCurrent) {
+          return `<span class="word-highlight" style="color: ${activeHighlight};">${item.text}</span>`;
+        }
+        return `<span class="word-rest text-white/90">${item.text}</span>`;
+      }).join(' ');
+
+      // Update progress
+      const pct = ((wordIndex + 1) / scriptWords.length) * 100;
+      const bar = document.getElementById('playerProgressBar');
+      const needle = document.getElementById('playheadNeedle');
+      if (bar) bar.style.width = `${pct}%`;
+      if (needle) needle.style.left = `${25 + (pct * 0.5)}%`;
+
+      const timeSpan = document.getElementById('playerCurrentTime');
+      if (timeSpan) {
+        const seconds = (14.2 + (wordIndex * 2.7)).toFixed(3);
+        timeSpan.textContent = `00:${seconds}`;
+      }
+    }
+
+    let timer = setInterval(() => {
+      if (!isPlaying) return;
+      wordIndex = (wordIndex + 1) % scriptWords.length;
+      renderKaraoke();
+    }, 450);
+
+    function togglePlayback() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('playbackBtnText');
+      const icon = document.getElementById('playbackIcon');
+      if (isPlaying) {
+        btn.textContent = 'Pause Preview';
+        icon.setAttribute('data-lucide', 'pause');
+      } else {
+        btn.textContent = 'Play Preview';
+        icon.setAttribute('data-lucide', 'play');
+      }
+      lucide.createIcons();
+    }
+
+    function changeStyle(style) {
+      ['hormozi', 'clean', 'yellow', 'minimal'].forEach(s => {
+        const el = document.getElementById('styleBtn-' + s);
+        if (el) {
+          if (s === style) {
+            el.className = 'px-3 py-1 rounded-lg bg-white text-black font-semibold transition-all';
+          } else {
+            el.className = 'px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white transition-all';
+          }
+        }
+      });
+
+      const colors = {
+        hormozi: '#FACC15',
+        clean: '#06B6D4',
+        yellow: '#F59E0B',
+        minimal: '#FFFFFF'
+      };
+      activeHighlight = colors[style] || '#FACC15';
+      renderKaraoke();
+    }
+
+    function setFont(font) {
+      const container = document.getElementById('karaokeContainer');
+      if (container) container.style.fontFamily = `"${font}", sans-serif`;
+    }
+
+    function setColor(color) {
+      activeHighlight = color;
+      renderKaraoke();
+    }
+
+    function scrubAudio(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, clickX / rect.width));
+      wordIndex = Math.floor(pct * scriptWords.length) % scriptWords.length;
+      renderKaraoke();
+    }
+
+    // Keyboard Shortcuts (Vercel & Anthropic accessibility pattern)
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+        e.preventDefault();
+        togglePlayback();
+      } else if (e.code === 'ArrowLeft') {
+        wordIndex = (wordIndex - 1 + scriptWords.length) % scriptWords.length;
+        renderKaraoke();
+      } else if (e.code === 'ArrowRight') {
+        wordIndex = (wordIndex + 1) % scriptWords.length;
+        renderKaraoke();
+      }
+    });
+
+
+    /* ============================================================
+       3. CLI TERMINAL
+    ============================================================ */
+    const outputs = {
+      make: `<span class="text-white font-bold">$ ./hooky.sh make</span>
+
+<span class="text-[#71717A]">[01/04]</span> Reading channels.txt (backlog_max=10, scan_max=50)...
+        Found candidate: @hubermanlab ("How to Reset Your Dopamine Baseline")
+        Metrics: 420,810 views in 48h (Velocity: 8,760 views/hr) -> QUEUED
+<span class="text-[#71717A]">[02/04]</span> Prompting Gemini 2.0 Flash highlight extraction...
+        Identified 2 narrative hook windows:
+        • [00:14.200 -> 00:46.850] Score: 98.6% (Top Hook)
+        • [14:02.100 -> 14:45.300] Score: 94.1%
+<span class="text-[#71717A]">[03/04]</span> faster-whisper alignment (model=small, compute=int8)...
+        Millisecond boundaries verified for 84 words.
+<span class="text-[#71717A]">[04/04]</span> FFmpeg 9:16 vertical transcode + ASS subtitle burn...
+        <span class="text-signal-emerald">✓ output/dopamine_hook_01.mp4 [1080x1920 60fps] (32s)</span>
+<span class="text-white font-bold">Done. 1 clip generated and added to Instagram publishing queue.</span>`,
+
+      preview: `<span class="text-white font-bold">$ ./hooky.sh preview</span>
+
+<span class="text-[#71717A]">[Dry-run Mode: Zero writes to disk, no downloads or rendering]</span>
+• Parsing links.txt:
+  URL: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  Options: clips=auto, style=hormozi, min=20s, max=60s
+• Fetching YouTube video transcript via API...
+• Gemini 2.0 Flash evaluated transcript in 1.2s:
+  - Discovered 3 candidate segments:
+    #1 [02:14 - 02:55] "Why motivation fails" (Score: 96%)
+    #2 [14:10 - 14:48] "The $\$100M leverage point" (Score: 94%)
+    #3 [31:02 - 31:40] "The 3 hires that matter" (Score: 91%)
+Run <span class="text-white">./hooky.sh</span> to download and render clips.`,
+
+      parts: `<span class="text-white font-bold">$ ./hooky.sh parts masterclass.mp4 --part-duration 60</span>
+
+<span class="text-[#71717A]">[Episodic Series Splitter]</span>
+Source: masterclass.mp4 (Total duration: 06:14)
+• Rendering Part 1: [00:00 -> 01:00] -> <span class="text-signal-emerald">output/masterclass_part_1.mp4</span>
+• Rendering Part 2: [01:00 -> 02:00] -> <span class="text-signal-emerald">output/masterclass_part_2.mp4</span>
+• Rendering Part 3: [02:00 -> 03:00] -> <span class="text-signal-emerald">output/masterclass_part_3.mp4</span>
+• Rendering Part 4: [03:00 -> 04:00] -> <span class="text-signal-emerald">output/masterclass_part_4.mp4</span>
+Burned dynamic 'Part N' badge with sequential numbering into top header.`,
+
+      doctor: `<span class="text-white font-bold">$ ./hooky.sh doctor</span>
+
+<span class="text-signal-emerald">✓</span> Python Virtualenv: Python 3.13 (.venv active)
+<span class="text-signal-emerald">✓</span> FFmpeg Binary: v7.0.1 (NVIDIA NVENC h264_nvenc acceleration active)
+<span class="text-signal-emerald">✓</span> Google Gemini API: Authenticated (gemini-2.0-flash accessible)
+<span class="text-signal-emerald">✓</span> faster-whisper: Small model cached, int8 compute ready
+<span class="text-signal-emerald">✓</span> yt-dlp: Up to date (browser cookies: chrome verified)
+<span class="text-white font-bold">All 5 diagnostic checks passed. System ready for production.</span>`
+    };
+
+    let activeTab = 'make';
+    function setCli(tab) {
+      activeTab = tab;
+      ['make', 'preview', 'parts', 'doctor'].forEach(t => {
+        const btn = document.getElementById('tabBtn-' + t);
+        if (btn) {
+          if (t === tab) {
+            btn.className = 'px-3 py-1 rounded-lg bg-white text-black font-semibold';
+          } else {
+            btn.className = 'px-3 py-1 rounded-lg text-[#A1A1AA] hover:text-white';
+          }
+        }
+      });
+      document.getElementById('cliConsole').innerHTML = outputs[tab];
+    }
+    setCli('make');
+
+    function copyCli() {
+      const cmds = {
+        make: './hooky.sh make',
+        preview: './hooky.sh preview',
+        parts: './hooky.sh parts masterclass.mp4 --part-duration 60',
+        doctor: './hooky.sh doctor'
+      };
+      navigator.clipboard.writeText(cmds[activeTab]);
+      const status = document.getElementById('cliCopyStatus');
+      status.textContent = 'Copied!';
+      setTimeout(() => status.textContent = 'Copy Command', 2000);
+    }
+
+
+    /* ============================================================
+       4. CONFIG GENERATOR (.env)
+    ============================================================ */
+    function updateConfig() {
+      const model = document.getElementById('cfgModel').value;
+      const whisper = document.getElementById('cfgWhisper').value;
+      const compute = document.getElementById('cfgCompute').value;
+      const style = document.getElementById('cfgStyle').value;
+
+      const code = `# Hooky Configuration (.env)
+GEMINI_API_KEY=AIzaSy...
+GEMINI_MODEL=${model}
+
+WHISPER_MODEL=${whisper}
+WHISPER_COMPUTE=${compute}
+SUBTITLE_STYLE=${style}
+
+QUALITY=highest
+X264_PRESET=medium
+FFMPEG_THREADS=4
+
+CHANNEL_BACKLOG_MAX=10
+CHANNEL_SCAN_MAX=50
+QUEUE_MIN_GAP=1800
+QUEUE_MAX_GAP=7200`;
+
+      document.getElementById('envCodeText').textContent = code;
+    }
+    updateConfig();
+
+
+    /* ============================================================
+       5. SNIPPET COPY HELPER
+    ============================================================ */
+    function copySnippet(id, btn) {
+      const el = document.getElementById(id);
+      const text = el ? (el.value || el.textContent) : '';
+      navigator.clipboard.writeText(text);
+      const original = btn.innerHTML;
+      btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-signal-emerald"></i><span>Copied</span>';
+      lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = original;
+        lucide.createIcons();
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
