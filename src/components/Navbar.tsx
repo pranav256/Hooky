@@ -1,3 +1,5 @@
+"use client";
+
 import { Star, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,7 +40,6 @@ export function Navbar() {
 
           <Button
             size="sm"
-            className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-xs rounded-xl shadow-sm transition-all"
             onClick={() => {
               document.getElementById("terminal")?.scrollIntoView({ behavior: "smooth" });
             }}

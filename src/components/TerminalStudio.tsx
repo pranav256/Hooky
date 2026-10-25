@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Cpu, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,8 +22,8 @@ export function TerminalStudio() {
         <span className="text-slate-400">[01/04]</span> Auto-scanning channels.txt for view velocity spikes...<br />
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Found winning source: @TheDiaryOfACEO (840k views in 24h) -&gt; <span className="text-emerald-400">QUEUED</span><br />
         <span className="text-slate-400">[02/04]</span> Gemini 2.0 Flash analyzing narrative hook points...<br />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Segment 1 [01:14 -&gt; 01:52]: <span className="text-blue-300">Score 98.4% (Viral Hook)</span><br />
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Segment 2 [12:40 -&gt; 13:22]: <span className="text-emerald-400">Score 94.2%</span><br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Segment 1 [01:14 -&gt; 01:52]: <span className="text-blue-300">Specific knowledge leverage point</span><br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Segment 2 [12:40 -&gt; 13:22]: <span className="text-emerald-400">Permissionless code &amp; media principle</span><br />
         <span className="text-slate-400">[03/04]</span> Faster-whisper int8 millisecond word-level timing...<br />
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Aligned 124 words with frame-accurate ASS karaoke boundaries.<br />
         <span className="text-slate-400">[04/04]</span> GPU NVENC 1080x1920 center-crop transcode at 240 FPS...<br />
@@ -37,8 +39,8 @@ export function TerminalStudio() {
         • Parsing pending video: https://www.youtube.com/watch?v=3qHkcs3kG44<br />
         • Title: Naval Ravikant - How to Get Rich Without Getting Lucky<br />
         • Gemini 2.0 Hook Extraction (completed in 1.1s):<br />
-        &nbsp;&nbsp;1. [04:12 - 04:48] &quot;Specific knowledge vs competition&quot; (Virality: 98%)<br />
-        &nbsp;&nbsp;2. [18:30 - 19:15] &quot;Code and media are permissionless leverage&quot; (Virality: 95%)<br />
+        &nbsp;&nbsp;1. [04:12 - 04:48] &quot;Specific knowledge vs competition&quot;<br />
+        &nbsp;&nbsp;2. [18:30 - 19:15] &quot;Code and media are permissionless leverage&quot;<br />
         Ready to process. Run <span className="text-blue-300">./hooky.sh</span> to render.
       </>
     ),
@@ -113,7 +115,7 @@ export function TerminalStudio() {
           <Button
             size="sm"
             variant="outline"
-            className="absolute top-4 right-4 bg-[#141A26] hover:bg-[#1E2536] border-white/10 text-xs text-white"
+            className="absolute top-4 right-4 text-xs"
             onClick={() => handleCopy(`./hooky.sh ${activeTab}`)}
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}

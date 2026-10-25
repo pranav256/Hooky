@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Copy, Check, Sparkles, Sliders, Play, Pause, Flame, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +66,7 @@ export function Hero() {
             </h1>
 
             <p className="text-[#94A3B8] text-base sm:text-lg max-w-xl leading-relaxed mb-8">
-              Autonomous AI detects narrative hooks, tracks active speakers in 9:16, and burns animated Hormozi captions on your local GPU. Zero cloud fees. Zero lock-in.
+              Autonomous AI detects narrative hooks, applies clean 9:16 vertical framing, and burns animated Hormozi captions on your local GPU. Zero cloud fees. Zero lock-in.
             </p>
 
             {/* 1-Click Terminal Pill */}
@@ -75,7 +77,7 @@ export function Hero() {
               </div>
               <Button
                 size="sm"
-                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium text-xs rounded-xl shrink-0 transition-all"
+                className="shrink-0"
                 onClick={handleCopy}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
@@ -107,7 +109,7 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right Column: Interactive 16:9 to 9:16 Visual Studio Preview (NO PHONE GIMMICK) */}
+          {/* Right Column: Interactive 16:9 to 9:16 Visual Studio Preview */}
           <div className="lg:col-span-6 w-full">
             <div className="rounded-2xl bg-[#131926] border border-white/10 shadow-2xl p-5 relative overflow-hidden">
               
@@ -117,7 +119,7 @@ export function Hero() {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="font-semibold text-white">Hooky Studio</span>
                   <span className="text-slate-500">•</span>
-                  <span className="text-slate-400 font-mono">16:9 Source → 9:16 Auto-Crop</span>
+                  <span className="text-slate-400 font-mono">16:9 Master → 9:16 Vertical Crop</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -137,16 +139,15 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* 16:9 Widescreen Video Frame with 9:16 Active Speaker Crop Window */}
+              {/* 16:9 Widescreen Video Frame with 9:16 Vertical Crop Window */}
               <div className="aspect-[16/9] w-full rounded-xl bg-[#0B0F19] border border-white/10 relative overflow-hidden flex items-center justify-center">
-                {/* Simulated Widescreen Podcast Interview Stage */}
                 <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-[#131a26] to-slate-900 opacity-90" />
 
                 {/* Left Speaker / Host Silhouette */}
                 <div className="absolute left-[18%] top-[28%] flex flex-col items-center opacity-40">
                   <div className="w-16 h-16 rounded-full bg-slate-700/80 mb-2" />
                   <div className="w-28 h-14 rounded-t-full bg-slate-800/80" />
-                  <span className="text-[10px] font-mono text-slate-500 mt-1">Host (Listening)</span>
+                  <span className="text-[10px] font-mono text-slate-500 mt-1">Host</span>
                 </div>
 
                 {/* Right Speaker (Active Speaker) in center of 9:16 crop box */}
@@ -155,7 +156,7 @@ export function Hero() {
                     <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#131926]" />
                   </div>
                   <div className="w-32 h-16 rounded-t-full bg-[#1E293B] border-t border-blue-400/20" />
-                  <span className="text-[10px] font-mono text-blue-400 mt-1 font-semibold">Active Speaker</span>
+                  <span className="text-[10px] font-mono text-blue-400 mt-1 font-semibold">Guest Speaker</span>
                 </div>
 
                 {/* Dynamic 9:16 Vertical Crop Overlay Boundary */}
@@ -163,10 +164,10 @@ export function Hero() {
                   {/* Top crop header */}
                   <div className="flex items-center justify-between text-[9px] font-mono">
                     <span className="bg-[#3B82F6] text-white px-1.5 py-0.5 rounded font-bold shadow-sm">
-                      9:16 CROP
+                      9:16 REEL
                     </span>
                     <span className="text-emerald-400 bg-black/60 px-1 py-0.5 rounded">
-                      ● LOCK 99.4%
+                      CENTER CROP
                     </span>
                   </div>
 
@@ -215,9 +216,9 @@ export function Hero() {
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className="text-slate-400 flex items-center gap-1.5">
                     <Flame className="w-3.5 h-3.5 text-[#3B82F6]" />
-                    Virality Hook Peak: 04:12 - 04:48
+                    AI Highlight Window: 04:12 - 04:48
                   </span>
-                  <span className="text-emerald-400 font-semibold">98.6% Virality Score</span>
+                  <span className="text-emerald-400 font-semibold">Narrative Climax Hook</span>
                 </div>
 
                 {/* Multi-frequency waveform bars */}
@@ -236,7 +237,7 @@ export function Hero() {
                 </div>
                 <div className="flex justify-between text-[10px] text-slate-500 font-mono">
                   <span>00:00</span>
-                  <span className="text-[#3B82F6]">AI Detected Highlight</span>
+                  <span className="text-[#3B82F6]">Snaps to Sentence Pause</span>
                   <span>52:40</span>
                 </div>
               </div>

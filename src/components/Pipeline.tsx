@@ -23,11 +23,11 @@ export function Pipeline() {
             </div>
             <h3 className="text-lg font-bold text-[#F8FAFC] mb-2.5">Gemini 2.0 Hook Detection</h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-6">
-              Analyzes the semantic narrative arc to extract true retention hooks (15s to 60s) calibrated for YouTube Shorts, Reels, and TikTok algorithms.
+              Analyzes the semantic narrative arc to extract true retention hooks (15s to 75s) calibrated for YouTube Shorts, Reels, and TikTok algorithms.
             </p>
           </div>
           <div className="p-3 rounded-xl bg-[#0B0F19] border border-white/5 font-mono text-xs text-emerald-400">
-            ✓ Hook Virality Score: 98.4%
+            ✓ Snaps start &amp; end to natural sentence pauses
           </div>
         </div>
 
