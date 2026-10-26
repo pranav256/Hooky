@@ -18,11 +18,19 @@ core = [
 ]
 download = ["yt-dlp>=2024.10.22"]
 instagram = ["instagrapi>=2.1.0"]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "json-repair>=0.30.0",
+]
 all = [
     "google-genai>=1.0.0",
     "faster-whisper>=1.0.0",
     "yt-dlp>=2024.10.22",
     "instagrapi>=2.1.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "json-repair>=0.30.0",
 ]
 dev = [
     "build>=1.2.2",
@@ -42,6 +50,7 @@ namespaces = false
 
 [tool.setuptools.package-data]
 "hooky.parts" = ["README.md"]
+"hooky.web" = ["static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

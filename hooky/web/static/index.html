@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hooky Studio — Autonomous Video Clipper &amp; Visual Portal</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23080A0F' stroke='%23E5C07B' stroke-width='2'/%3E%3Cpolygon points='64,46 56,66 65,66 60,82 72,60 63,60' fill='%23E5C07B'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#090B10',
+            card: '#10141E',
+            gold: {
+              300: '#F3DFA2',
+              400: '#E5C07B',
+              500: '#D4AF37',
+              600: '#B89428',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #090B10;
+      color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090B10; }
+    ::-webkit-scrollbar-thumb { background: #1E2536; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2C354C; }
+    
+    .waveform-bar {
+      animation: wavePulse 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes wavePulse {
+      0% { height: 20%; }
+      100% { height: 95%; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-[#E5C07B]/30 selection:text-white">
+
+  <!-- ==================== TOP NAVIGATION BAR ==================== -->
+  <header class="sticky top-0 z-50 bg-[#090B10]/95 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-8 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand & Version -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-[#141926] border border-[#E5C07B]/40 flex items-center justify-center text-[#E5C07B] shadow-sm">
+          <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-lg text-white tracking-tight">Hooky Studio</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E5C07B]/10 text-[#E5C07B] border border-[#E5C07B]/20 font-semibold">
+              v2.4
+            </span>
+          </div>
+          <span class="text-[11px] text-slate-400">Autonomous 9:16 Video Clipper</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-medium">
+        <button onclick="switchTab('studio')" id="tab-studio" class="tab-btn px-4 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-semibold transition-all">
+          <i data-lucide="film" class="w-3.5 h-3.5 inline mr-1.5"></i>Studio
+        </button>
+        <button onclick="switchTab('radar')" id="tab-radar" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <i data-lucide="radio" class="w-3.5 h-3.5 inline mr-1.5"></i>Radar
+        </button>
+        <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1.5"></i>Gallery (<span id="gallery-count">0</span>)
+        </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <i data-lucide="sliders" class="w-3.5 h-3.5 inline mr-1.5"></i>Settings (.env)
+        </button>
+        <button onclick="switchTab('doctor')" id="tab-doctor" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <i data-lucide="activity" class="w-3.5 h-3.5 inline mr-1.5"></i>Doctor
+        </button>
+      </nav>
+
+      <!-- Hardware Indicator -->
+      <div class="flex items-center gap-2">
+        <div id="gpu-badge" class="flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="gpu-text">Engine Online</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- ==================== VIEW 1: CLIPPER STUDIO ==================== -->
+    <section id="view-studio" class="space-y-6">
+
+      <!-- ==================== TOP COMMAND & CONTROLS TOOLBAR ==================== -->
+      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 space-y-4 shadow-xl">
+        
+        <!-- Row 1: Target Video URL + Actions -->
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+          <div class="flex-1 relative">
+            <i data-lucide="youtube" class="w-5 h-5 text-rose-500 absolute left-3.5 top-3"></i>
+            <input
+              id="source-url"
+              type="text"
+              placeholder="https://www.youtube.com/watch?v=EDCwQe7P8T0"
+              value="https://www.youtube.com/watch?v=EDCwQe7P8T0"
+              class="w-full bg-[#10141E]/90 border border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#E5C07B] font-mono transition-colors"
+            />
+          </div>
+
+          <!-- Primary Actions -->
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              id="analyze-btn"
+              onclick="triggerAnalyze()"
+              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E5C07B] to-[#D4AF37] hover:brightness-110 text-[#0A0D14] font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#E5C07B]/10 transition-all"
+            >
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Auto-Detect Hooks</span>
+            </button>
+
+            <button
+              id="top-render-btn"
+              onclick="executeRenderClip()"
+              class="px-5 py-2.5 rounded-xl bg-[#171D2B] hover:bg-[#1E2536] text-[#E5C07B] border border-[#E5C07B]/40 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+              <span>Export 9:16 Reel</span>
+            </button>
+
+            <button
+              id="execute-make-btn"
+              onclick="executeMakePipeline()"
+              class="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+              title="Run full autonomous batch pipeline"
+            >
+              <i data-lucide="play" class="w-3.5 h-3.5"></i>
+              <span>Run Pipeline</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 2: Streamlined Controls Bar (Framing & Subtitles at Top) -->
+        <div class="pt-3 border-t border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+          
+          <!-- Smart Auto Badge -->
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400 font-mono text-[11px] uppercase tracking-wider">Smart Mode:</span>
+            <div id="smart-recommendation-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5C07B]/10 border border-[#E5C07B]/20 text-[#E5C07B] font-mono text-xs">
+              <i data-lucide="sparkles" class="w-3 h-3"></i>
+              <span id="smart-recommendation-text">Auto-Tuned: Canvas Fit (Multi-speaker table) + Warm Titanium</span>
+            </div>
+          </div>
+
+          <!-- Quick Toggle Controls: Framing & Subtitles -->
+          <div class="flex flex-wrap items-center gap-4">
+            
+            <!-- Framing Mode -->
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-400 text-[11px] font-mono uppercase">Framing:</span>
+              <div class="flex items-center p-0.5 rounded-lg bg-[#10141E] border border-white/10 text-xs font-medium">
+                <button onclick="setFramingMode('auto')" id="frame-mode-auto" class="px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all">✨ Auto</button>
+                <button onclick="setFramingMode('fit')" id="frame-mode-fit" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Canvas Fit</button>
+                <button onclick="setFramingMode('center')" id="frame-mode-center" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Center Crop</button>
+              </div>
+            </div>
+
+            <!-- Subtitle Style -->
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-400 text-[11px] font-mono uppercase">Subtitles:</span>
+              <div class="flex items-center p-0.5 rounded-lg bg-[#10141E] border border-white/10 text-xs font-medium">
+                <button onclick="setSubtitleMode('auto')" id="sub-mode-auto" class="px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all">✨ Auto</button>
+                <button onclick="setSubtitleMode('gold')" id="sub-mode-gold" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Titanium</button>
+                <button onclick="setSubtitleMode('hormozi')" id="sub-mode-hormozi" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Hormozi</button>
+                <button onclick="setSubtitleMode('clean')" id="sub-mode-clean" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Clean</button>
+                <button onclick="setSubtitleMode('minimal')" id="sub-mode-minimal" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Minimal</button>
+                <button onclick="setSubtitleMode('emerald')" id="sub-mode-emerald" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Emerald</button>
+                <button onclick="setSubtitleMode('crimson')" id="sub-mode-crimson" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Crimson</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ==================== REAL-TIME ENGINE STEPPER & CONSOLE ==================== -->
+        <div id="pipeline-stepper" class="hidden p-4 rounded-xl bg-[#090B10] border border-[#E5C07B]/30 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-300 flex items-center gap-2">
+              <i data-lucide="cpu" class="w-4 h-4 text-[#E5C07B]"></i>
+              <span id="stepper-status-text">Processing engine task...</span>
+            </span>
+            <span id="stepper-percent" class="font-mono font-bold text-[#E5C07B]">15%</span>
+          </div>
+
+          <!-- Progress Bar Line -->
+          <div class="w-full bg-white/[0.04] h-2 rounded-full overflow-hidden border border-white/5">
+            <div id="stepper-progress-fill" class="h-full bg-gradient-to-r from-[#E5C07B] to-[#D4AF37] transition-all duration-300" style="width: 15%;"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Real-time speech &amp; video processing</span>
+            <button onclick="toggleTerminalConsole()" class="text-[#E5C07B] hover:underline flex items-center gap-1">
+              <i data-lucide="terminal" class="w-3 h-3"></i>
+              <span id="terminal-toggle-label">Hide Console Logs</span>
+            </button>
+          </div>
+
+          <!-- Expandable Live Diagnostic Log Stream -->
+          <div id="live-engine-console" class="p-3 rounded-lg bg-black/90 border border-white/10 font-mono text-[11px] text-emerald-400 h-32 overflow-y-auto space-y-1">
+            <div class="text-slate-500">// Engine diagnostic stream ready</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================== 2-COLUMN WORKSTATION (CLEAN & AIRY) ==================== -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left: Detected Viral Moments List (6 Cols) -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="flex items-center justify-between pb-1">
+            <div class="flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-[#E5C07B]"></i>
+              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Extracted Moments</h3>
+            </div>
+            <span id="hook-count" class="text-xs font-mono text-[#E5C07B] bg-[#E5C07B]/10 px-2.5 py-0.5 rounded-full border border-[#E5C07B]/20">
+              4 Hooks Extracted
+            </span>
+          </div>
+
+          <div id="hooks-container" class="space-y-3">
+            <!-- Dynamically populated hook cards -->
+          </div>
+        </div>
+
+        <!-- Right: Focused Visual Studio & Player (6 Cols) -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 space-y-4 shadow-xl">
+            
+            <!-- View Mode Switcher Header -->
+            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="font-bold text-white">Visual Studio Preview</span>
+              </div>
+              <div class="flex items-center gap-1 p-0.5 rounded-lg bg-[#10141E] border border-white/10">
+                <button
+                  id="preview-tab-player"
+                  onclick="switchPreviewMode('player')"
+                  class="px-2.5 py-1 rounded text-[11px] font-semibold bg-[#E5C07B] text-[#0A0D14] transition-all"
+                >
+                  <i data-lucide="play" class="w-3 h-3 inline mr-1"></i>YouTube Segment
+                </button>
+                <button
+                  id="preview-tab-canvas"
+                  onclick="switchPreviewMode('canvas')"
+                  class="px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition-all"
+                >
+                  <i data-lucide="smartphone" class="w-3 h-3 inline mr-1"></i>9:16 Simulator
+                </button>
+              </div>
+            </div>
+
+            <!-- PREVIEW MODE 1: Embedded YouTube Player Cueing Exact Segment -->
+            <div id="preview-player-container" class="aspect-[16/9] w-full rounded-xl bg-black border border-white/10 relative overflow-hidden flex items-center justify-center">
+              <iframe
+                id="youtube-embed-frame"
+                src="https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=37&end=51&autoplay=0&enablejsapi=1"
+                class="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+              ></iframe>
+            </div>
+
+            <!-- PREVIEW MODE 2: 9:16 Vertical Smartphone Canvas Simulator -->
+            <div id="preview-canvas-container" class="hidden aspect-[16/9] w-full rounded-xl bg-[#090B10] border border-white/10 relative overflow-hidden flex items-center justify-center">
+              <div class="absolute inset-0 bg-gradient-to-r from-[#0C101A] via-[#141A28] to-[#0C101A] opacity-90"></div>
+
+              <!-- Host Avatar -->
+              <div id="avatar-host" class="absolute left-[16%] top-[26%] flex flex-col items-center opacity-35 transition-opacity duration-300">
+                <div class="w-14 h-14 rounded-full bg-slate-800 mb-2 border border-white/10"></div>
+                <div class="w-24 h-12 rounded-t-full bg-slate-800/80"></div>
+                <span class="text-[10px] font-mono text-slate-500 mt-1">Host</span>
+              </div>
+
+              <!-- Active Speaker Avatar -->
+              <div class="absolute right-[28%] top-[24%] flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full bg-[#1A2234] border border-[#E5C07B]/50 shadow-lg shadow-[#E5C07B]/10 mb-2 relative">
+                  <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#10141E]"></span>
+                </div>
+                <div class="w-28 h-14 rounded-t-full bg-[#1A2234] border-t border-[#E5C07B]/30"></div>
+                <span class="text-[10px] font-mono text-[#E5C07B] mt-1 font-semibold">Active Speaker</span>
+              </div>
+
+              <!-- Audio Waveform Live Indicator -->
+              <div class="absolute top-4 right-4 flex items-end gap-1 h-5 z-20">
+                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.1s"></div>
+                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.3s"></div>
+                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.2s"></div>
+                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.4s"></div>
+              </div>
+
+              <!-- Center Crop 9:16 Overlay Phone Box -->
+              <div id="crop-box" class="absolute inset-y-0 w-[42%] border-2 border-[#E5C07B] rounded-lg pointer-events-none z-10 flex flex-col justify-end p-4">
+                <div class="w-full text-center pb-6">
+                  <div id="sub-pill" class="inline-block px-3 py-1.5 rounded-lg max-w-full bg-black/85 border border-[#E5C07B]/30 backdrop-blur-md">
+                    <div id="sub-words-container" class="flex flex-wrap items-center justify-center gap-1.5 text-xs font-extrabold uppercase tracking-wide">
+                      <!-- Subtitle words populated here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Canvas Fit Overlay -->
+              <div id="fit-box" class="hidden absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-3">
+                <div class="w-full h-7 bg-black/60 backdrop-blur-md flex items-center justify-center">
+                  <span class="text-[10px] font-mono text-slate-400 truncate max-w-xs">Ambient Blur 9:16 Canvas</span>
+                </div>
+                <div class="w-full text-center pb-2">
+                  <div id="fit-sub-pill" class="inline-block px-3 py-1.5 rounded-lg max-w-full bg-black/85 border border-[#E5C07B]/30 backdrop-blur-md">
+                    <div id="fit-sub-words-container" class="flex flex-wrap items-center justify-center gap-1.5 text-xs font-extrabold uppercase tracking-wide">
+                      <!-- Words -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dialogue Script Inspector -->
+            <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-300 flex items-center gap-1.5">
+                  <i data-lucide="message-square" class="w-3.5 h-3.5 text-[#E5C07B]"></i>
+                  <span>Spoken Dialogue Script</span>
+                </span>
+                <span id="selected-hook-time-badge" class="font-mono text-[#E5C07B] text-[11px]">0:37 - 0:51 (13.4s)</span>
+              </div>
+              
+              <div id="dialogue-lines-container" class="max-h-32 overflow-y-auto space-y-1 font-mono text-xs pr-1">
+                <!-- Dialogue cues populated here -->
+              </div>
+            </div>
+
+            <!-- Fine-Tune Timing Nudge Bar -->
+            <div class="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-400 font-mono text-[11px]">Boundary Nudge:</span>
+              <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                <button onclick="nudgeTime('start', -0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">-0.5s Start</button>
+                <button onclick="nudgeTime('start', +0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">+0.5s Start</button>
+                <span class="text-slate-600">|</span>
+                <button onclick="nudgeTime('end', -0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">-0.5s End</button>
+                <button onclick="nudgeTime('end', +0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">+0.5s End</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: SETTINGS (.ENV EDITOR) ==================== -->
+    <section id="view-settings" class="hidden space-y-6">
+      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="sliders" class="w-5 h-5 text-[#E5C07B]"></i>
+              <span>Environment Configuration (.env)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Manage API keys, model rotations, video output options, and hardware threads directly.</p>
+          </div>
+          <button onclick="saveEnvForm()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E5C07B] to-[#D4AF37] text-[#0A0D14] font-extrabold text-xs hover:brightness-110 flex items-center gap-2 shadow-lg shadow-[#E5C07B]/10 transition-all">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>Save .env Configuration</span>
+          </button>
+        </div>
+
+        <!-- Settings Tabs: Visual Form vs Raw Editor -->
+        <div class="flex items-center gap-2 border-b border-white/[0.08] pb-3 text-xs">
+          <button onclick="switchEnvTab('form')" id="env-tab-form" class="px-3.5 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold transition-all">
+            Visual Form
+          </button>
+          <button onclick="switchEnvTab('raw')" id="env-tab-raw" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+            Raw .env Editor
+          </button>
+        </div>
+
+        <!-- Sub-View 1: Visual Form -->
+        <div id="env-form-view" class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+          
+          <!-- Gemini API Key -->
+          <div class="space-y-1.5 md:col-span-2">
+            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">GEMINI_API_KEY:</label>
+            <div class="relative">
+              <input
+                id="env-gemini-key"
+                type="password"
+                placeholder="AQ.Ab8RN6KAg..."
+                class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#E5C07B]"
+              />
+              <button
+                type="button"
+                onclick="togglePasswordVisibility('env-gemini-key', this)"
+                class="absolute right-3 top-2.5 text-slate-400 hover:text-white"
+              >
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-500 font-mono">Free key from Google AI Studio (https://aistudio.google.com/apikey)</p>
+          </div>
+
+          <!-- Gemini Primary Model -->
+          <div class="space-y-1.5">
+            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL (Primary):</label>
+            <select
+              id="env-gemini-model"
+              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+            >
+              <option value="gemini-2.5-flash">gemini-2.5-flash (Fast &amp; Accurate)</option>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra Fast)</option>
+              <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Deep Reasoning)</option>
+              <option value="gemini-flash-latest">gemini-flash-latest</option>
+            </select>
+          </div>
+
+          <!-- Default Subtitle Style -->
+          <div class="space-y-1.5">
+            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">SUB_STYLE (Default Preset):</label>
+            <select
+              id="env-sub-style"
+              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+            >
+              <option value="gold">Warm Titanium (gold)</option>
+              <option value="hormozi">Hormozi Classic</option>
+              <option value="clean">Clean Studio</option>
+              <option value="minimal">Minimal Editorial</option>
+              <option value="emerald">Cyber Emerald</option>
+              <option value="crimson">Crimson Impact</option>
+            </select>
+          </div>
+
+          <!-- Fallback Models Chain -->
+          <div class="space-y-1.5 md:col-span-2">
+            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL_FALLBACKS (Order):</label>
+            <input
+              id="env-gemini-fallbacks"
+              type="text"
+              placeholder="gemini-2.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro-preview,gemini-flash-latest"
+              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#E5C07B]"
+            />
+            <p class="text-[11px] text-slate-500 font-mono">Comma-separated models to try if primary hits free-tier rate limits</p>
+          </div>
+
+          <!-- Auto Clip Density -->
+          <div class="space-y-1.5">
+            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">AUTO_CLIP_DENSITY_MINUTES:</label>
+            <input
+              id="env-density-minutes"
+              type="number"
+              min="2"
+              max="60"
+              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+            />
+            <p class="text-[11px] text-slate-500 font-mono">One clip extracted per N minutes of source footage</p>
+          </div>
+
+          <!-- Hardware Threads -->
+          <div class="space-y-1.5">
+            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">FFMPEG_THREADS:</label>
+            <input
+              id="env-ffmpeg-threads"
+              type="number"
+              min="1"
+              max="32"
+              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+            />
+            <p class="text-[11px] text-slate-500 font-mono">CPU cores allocated for encoding &amp; video cutting</p>
+          </div>
+        </div>
+
+        <!-- Sub-View 2: Raw .env Code Editor -->
+        <div id="env-raw-view" class="hidden space-y-3">
+          <textarea
+            id="env-raw-textarea"
+            rows="16"
+            class="w-full bg-black/90 border border-white/10 rounded-xl p-4 font-mono text-xs text-emerald-400 focus:outline-none focus:border-[#E5C07B] leading-relaxed"
+          ></textarea>
+        </div>
+
+        <div id="env-status-alert" class="hidden p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+          ✓ Environment configuration saved successfully and reloaded into engine.
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: CHANNEL RADAR ==================== -->
+    <section id="view-radar" class="hidden space-y-6">
+      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="radio" class="w-5 h-5 text-[#E5C07B]"></i>
+              <span>Channel Radar Monitor</span>
+            </h2>
+            <p class="text-xs text-slate-400">Autonomous YouTube channel radar saved in <code class="text-[#E5C07B] font-mono">channels.txt</code></p>
+          </div>
+          <button onclick="saveActiveChannels()" class="px-4 py-2 rounded-xl bg-[#E5C07B] text-[#0A0D14] font-bold text-xs hover:brightness-110 flex items-center gap-2 transition-all">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            <span>Save channels.txt</span>
+          </button>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex gap-2">
+          <input
+            id="new-channel-input"
+            type="text"
+            placeholder="@CreatorHandle | clips=2 | focus=high energy moments"
+            class="flex-1 bg-[#10141E] border border-white/10 rounded-lg px-4 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#E5C07B]"
+          />
+          <button onclick="addNewChannel()" class="px-4 py-2 rounded-lg bg-[#171D2B] text-[#E5C07B] border border-[#E5C07B]/30 hover:bg-[#1E2536] text-xs font-bold transition-all">
+            Add Channel
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-white/10 text-slate-400 font-mono text-[11px]">
+                <th class="p-3">Handle / URL</th>
+                <th class="p-3">Clips Desired</th>
+                <th class="p-3">Editing Focus</th>
+                <th class="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="channels-table-body" class="divide-y divide-white/5">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: OUTPUT GALLERY ==================== -->
+    <section id="view-gallery" class="hidden space-y-6">
+      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="folder" class="w-5 h-5 text-[#E5C07B]"></i>
+              <span>Rendered 9:16 Reels Gallery</span>
+            </h2>
+            <p class="text-xs text-slate-400">All MP4 videos rendered to <code class="text-[#E5C07B] font-mono">D:\Clipper\output\</code></p>
+          </div>
+          <button onclick="loadOutputs()" class="px-3.5 py-1.5 rounded-lg bg-white/[0.04] text-slate-300 hover:text-white border border-white/10 text-xs font-mono flex items-center gap-1.5 transition-all">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        <!-- Video Player Modal / Active Video Card -->
+        <div id="active-video-player-box" class="hidden p-5 rounded-2xl bg-black/80 border border-[#E5C07B]/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <span id="active-playing-title" class="font-bold text-white text-sm">Now Playing</span>
+            <button onclick="closeActivePlayer()" class="text-slate-400 hover:text-white text-xs font-mono">✕ Close Player</button>
+          </div>
+          <div class="max-w-xs mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/20 shadow-2xl">
+            <video id="html5-video-player" controls class="w-full h-full object-cover">
+              <source id="video-source-elem" src="" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <div id="outputs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated output cards -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 5: SYSTEM DOCTOR ==================== -->
+    <section id="view-doctor" class="hidden space-y-6">
+      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="activity" class="w-5 h-5 text-[#E5C07B]"></i>
+            <span>System Health &amp; Diagnostics</span>
+          </h2>
+          <p class="text-xs text-slate-400">Dependency verification across FFmpeg, Whisper, CUDA hardware acceleration, and Gemini API</p>
+        </div>
+
+        <div id="doctor-checks-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Dynamically loaded checks -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // State management
+    let CURRENT_HOOKS = [
+      {
+        id: "hook_1",
+        title: "Unhinged Crazy Tonight!",
+        hook_quote: "I'm going for the unhinged crazy tonight!",
+        category: "Comedic Banter",
+        retention_score: 98,
+        start: 37.36,
+        end: 50.79,
+        start_fmt: "0:37",
+        end_fmt: "0:51",
+        duration: "13.4s",
+        reason: "Unexpected declaration of an unhinged strategy sets an unpredictable, hilarious tone.",
+        boundary: "Natural speech pause aligned",
+        words: ["GOOD", "GAME", "PROFESSIONAL", "NEGOTIATOR", "UNHINGED", "CRAZY", "TONIGHT"],
+        dialogue: [
+          { time: "0:37", text: ">> Are you guys good at this game?" },
+          { time: "0:38", text: ">> She's a former professional pro." },
+          { time: "0:41", text: ">> You're a high-stakes deal negotiator." },
+          { time: "0:44", text: ">> I'm going for the unhinged crazy [laughter]" },
+          { time: "0:50", text: ">> Actually, there's like some pretty good players here." }
+        ],
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=37&end=51&autoplay=0&enablejsapi=1"
+      },
+      {
+        id: "hook_2",
+        title: "Mafia Rules: Second Amendment?",
+        hook_quote: "Mike, this seems kind of discriminatory against second amendment rights enthusiasts.",
+        category: "Shock Humor",
+        retention_score: 97,
+        start: 254.40,
+        end: 310.47,
+        start_fmt: "4:14",
+        end_fmt: "5:10",
+        duration: "56.1s",
+        reason: "Surprise comedic interjection during game rules creates an unexpected laugh moment.",
+        boundary: "Natural speech pause aligned",
+        words: ["DISCRIMINATORY", "SECOND", "AMENDMENT", "RIGHTS", "ENTHUSIASTS", "CRIMINAL", "GUNS"],
+        dialogue: [
+          { time: "4:14", text: ">> Mike, this seems kind of discriminatory against second amendment rights enthusiasts." },
+          { time: "4:20", text: ">> If you are in the mafia, you have guns." },
+          { time: "4:25", text: ">> The criminal element in this town is the problem." }
+        ],
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=254&end=310&autoplay=0&enablejsapi=1"
+      },
+      {
+        id: "hook_3",
+        title: "First Murder: Dylan's Demise",
+        hook_quote: "Dylan was found in his basement riddled with bullets.",
+        category: "Murder Mystery",
+        retention_score: 99,
+        start: 518.48,
+        end: 553.19,
+        start_fmt: "8:38",
+        end_fmt: "9:13",
+        duration: "34.7s",
+        reason: "Dramatic announcement of the first murder victim kicks off high-stakes accusations.",
+        boundary: "Natural speech pause aligned",
+        words: ["DYLAN", "BASEMENT", "RIDDLED", "BULLETS", "RELIEF", "FRIENDS", "GAME"],
+        dialogue: [
+          { time: "8:38", text: ">> Dylan was found in his basement riddled with bullets." },
+          { time: "8:44", text: ">> It's a relief to his friends who know how good he is at this game." }
+        ],
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=518&end=553&autoplay=0&enablejsapi=1"
+      },
+      {
+        id: "hook_4",
+        title: "Signal Founder on Privacy",
+        hook_quote: "You're the founder of Signal? You sure don't seem to care about privacy!",
+        category: "Debate Clash",
+        retention_score: 96,
+        start: 901.84,
+        end: 915.51,
+        start_fmt: "15:02",
+        end_fmt: "15:16",
+        duration: "13.7s",
+        reason: "Hilarious insider roast of the Signal founder during a secret voting round.",
+        boundary: "Natural speech pause aligned",
+        words: ["FOUNDER", "SIGNAL", "SURE", "DONT", "SEEM", "CARE", "PRIVACY"],
+        dialogue: [
+          { time: "15:02", text: ">> Do we learn people's votes?" },
+          { time: "15:05", text: ">> Aren't you the founder of Signal? You sure don't seem to care about privacy! [laughter]" }
+        ],
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=901&end=915&autoplay=0&enablejsapi=1"
+      }
+    ];
+
+    let selectedHookId = "hook_1";
+    let framingMode = "auto";       // "auto", "fit", "center"
+    let subtitleMode = "auto";     // "auto", "gold", "hormozi", "clean", "minimal", "emerald", "crimson"
+    let resolvedFraming = "fit";   // Active effective framing
+    let resolvedStyle = "gold";    // Active effective style
+    let currentPreviewMode = "player";
+    let SCRIPT_WORDS = ["GOOD", "GAME", "PROFESSIONAL", "NEGOTIATOR", "UNHINGED", "CRAZY", "TONIGHT"];
+    let wordIdx = 0;
+    let isPlaying = true;
+    let activeChannelsList = [];
+    let cachedEnvConfig = { raw: "", values: {} };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      applyAutoDecisions("fit", "gold", "Canvas Fit (Multi-speaker table) + Warm Titanium");
+      renderHooks(CURRENT_HOOKS);
+      selectHook("hook_1");
+      loadDoctorStatus();
+      loadChannels();
+      loadOutputs();
+      loadEnvConfig();
+
+      setInterval(() => {
+        if (!isPlaying || currentPreviewMode !== 'canvas') return;
+        wordIdx = (wordIdx + 1) % SCRIPT_WORDS.length;
+        renderSubtitles();
+      }, 380);
+    });
+
+    function switchTab(tabId) {
+      ['studio', 'radar', 'gallery', 'settings', 'doctor'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tabId);
+        const btn = document.getElementById(`tab-${t}`);
+        if (btn) {
+          if (t === tabId) {
+            btn.className = "tab-btn px-4 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-semibold transition-all";
+          } else {
+            btn.className = "tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function switchPreviewMode(mode) {
+      currentPreviewMode = mode;
+      document.getElementById('preview-player-container').classList.toggle('hidden', mode !== 'player');
+      document.getElementById('preview-canvas-container').classList.toggle('hidden', mode !== 'canvas');
+
+      const btnPlayer = document.getElementById('preview-tab-player');
+      const btnCanvas = document.getElementById('preview-tab-canvas');
+
+      if (mode === 'player') {
+        btnPlayer.className = "px-2.5 py-1 rounded text-[11px] font-semibold bg-[#E5C07B] text-[#0A0D14] transition-all";
+        btnCanvas.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition-all";
+      } else {
+        btnPlayer.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition-all";
+        btnCanvas.className = "px-2.5 py-1 rounded text-[11px] font-semibold bg-[#E5C07B] text-[#0A0D14] transition-all";
+      }
+      lucide.createIcons();
+    }
+
+    // ==================== AUTO DETECTION & SETTINGS ====================
+    function applyAutoDecisions(autoF, autoS, reason) {
+      if (framingMode === 'auto') {
+        resolvedFraming = autoF || 'fit';
+      }
+      if (subtitleMode === 'auto') {
+        resolvedStyle = autoS || 'gold';
+      }
+
+      if (reason) {
+        document.getElementById('smart-recommendation-text').innerText = `Auto-Tuned: ${resolvedFraming === 'fit' ? 'Canvas Fit' : 'Center Crop'} + ${resolvedStyle.toUpperCase()} (${reason})`;
+      }
+
+      updateVisualSimulatorFraming();
+      renderSubtitles();
+    }
+
+    function setFramingMode(mode) {
+      framingMode = mode;
+      ['auto', 'fit', 'center'].forEach(m => {
+        const btn = document.getElementById(`frame-mode-${m}`);
+        if (m === mode) {
+          btn.className = "px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all";
+        } else {
+          btn.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all";
+        }
+      });
+
+      if (mode !== 'auto') {
+        resolvedFraming = mode;
+      }
+      updateVisualSimulatorFraming();
+    }
+
+    function updateVisualSimulatorFraming() {
+      const isCenter = resolvedFraming === 'center';
+      document.getElementById('crop-box').classList.toggle('hidden', !isCenter);
+      document.getElementById('fit-box').classList.toggle('hidden', isCenter);
+      document.getElementById('avatar-host').classList.toggle('opacity-35', isCenter);
+      document.getElementById('avatar-host').classList.toggle('opacity-90', !isCenter);
+    }
+
+    function setSubtitleMode(mode) {
+      subtitleMode = mode;
+      ['auto', 'gold', 'hormozi', 'clean', 'minimal', 'emerald', 'crimson'].forEach(s => {
+        const btn = document.getElementById(`sub-mode-${s}`);
+        if (s === mode) {
+          btn.className = "px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all";
+        } else {
+          btn.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all";
+        }
+      });
+
+      if (mode !== 'auto') {
+        resolvedStyle = mode;
+      }
+      renderSubtitles();
+    }
+
+    function renderHooks(hooks) {
+      const container = document.getElementById('hooks-container');
+      document.getElementById('hook-count').innerText = `${hooks.length} Hooks Extracted`;
+      container.innerHTML = hooks.map(h => `
+        <div
+          onclick="selectHook('${h.id}')"
+          class="p-4 rounded-xl border cursor-pointer transition-all ${
+            selectedHookId === h.id
+              ? 'border-[#E5C07B] bg-white/[0.04] shadow-lg shadow-[#E5C07B]/5'
+              : 'border-white/[0.07] bg-white/[0.015] hover:bg-white/[0.03]'
+          }"
+        >
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                ${h.category || "Viral Clip"}
+              </span>
+              <span class="text-[10px] font-mono text-[#E5C07B] flex items-center gap-1">
+                <i data-lucide="zap" class="w-3 h-3 fill-current inline"></i>
+                ${h.retention_score || 95}% Retain
+              </span>
+            </div>
+            <span class="font-mono text-xs text-[#E5C07B] bg-[#E5C07B]/10 px-2 py-0.5 rounded font-bold">
+              ${h.start_fmt} - ${h.end_fmt}
+            </span>
+          </div>
+
+          <h4 class="font-bold text-white text-sm leading-snug mb-1">${h.title}</h4>
+          ${h.hook_quote ? `<p class="text-xs text-[#E5C07B]/90 italic mb-2">"${h.hook_quote}"</p>` : ''}
+          <p class="text-xs text-slate-400 leading-relaxed mb-3">${h.reason}</p>
+
+          <div class="flex items-center justify-between pt-2 border-t border-white/[0.06] text-xs">
+            <span class="text-[11px] font-mono text-emerald-400">✓ ${h.boundary || "Speech pause snapped"}</span>
+            <button
+              onclick="event.stopPropagation(); selectHook('${h.id}'); executeRenderClip();"
+              class="px-3 py-1 rounded-lg bg-[#171D2B] hover:bg-[#1E2536] text-[#E5C07B] border border-[#E5C07B]/30 font-bold text-xs flex items-center gap-1 transition-all"
+            >
+              <i data-lucide="zap" class="w-3 h-3 fill-current"></i>
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function selectHook(id) {
+      selectedHookId = id;
+      const hook = CURRENT_HOOKS.find(h => h.id === id);
+      if (hook) {
+        if (Array.isArray(hook.words)) {
+          SCRIPT_WORDS = hook.words;
+        } else if (typeof hook.words === 'string') {
+          SCRIPT_WORDS = hook.words.split(' ').filter(w => w.trim());
+        } else {
+          SCRIPT_WORDS = ["VIRAL", "MOMENT", "DETECTED"];
+        }
+        wordIdx = 0;
+        
+        // Update YouTube embed player
+        const frame = document.getElementById('youtube-embed-frame');
+        if (hook.youtube_embed_url) {
+          frame.src = hook.youtube_embed_url;
+        }
+
+        // Update timing badge
+        document.getElementById('selected-hook-time-badge').innerText = `${hook.start_fmt} - ${hook.end_fmt} (${hook.duration})`;
+
+        // Render dialogue script
+        const dContainer = document.getElementById('dialogue-lines-container');
+        const dList = Array.isArray(hook.dialogue) ? hook.dialogue : [];
+        if (dList.length > 0) {
+          dContainer.innerHTML = dList.map(d => `
+            <div class="flex items-start gap-2">
+              <span class="text-slate-500 shrink-0 select-none">${d.time || ''}</span>
+              <span class="text-slate-300">${d.text || ''}</span>
+            </div>
+          `).join('');
+        } else {
+          dContainer.innerHTML = `<div class="text-slate-500 italic">Dialogue transcript cue stream active.</div>`;
+        }
+      }
+      renderHooks(CURRENT_HOOKS);
+      renderSubtitles();
+    }
+
+    function nudgeTime(type, delta) {
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId);
+      if (!hook) return;
+      if (type === 'start') {
+        hook.start = Math.max(0, hook.start + delta);
+        hook.start_fmt = formatSeconds(hook.start);
+      } else {
+        hook.end = Math.max(hook.start + 2, hook.end + delta);
+        hook.end_fmt = formatSeconds(hook.end);
+      }
+      hook.duration = `${(hook.end - hook.start).toFixed(1)}s`;
+      hook.youtube_embed_url = `https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=${Math.floor(hook.start)}&end=${Math.floor(hook.end)}&autoplay=1&enablejsapi=1`;
+      selectHook(selectedHookId);
+    }
+
+    function formatSeconds(s) {
+      const m = Math.floor(s / 60);
+      const rem = Math.floor(s % 60);
+      return `${m}:${rem < 10 ? '0' : ''}${rem}`;
+    }
+
+    function renderSubtitles() {
+      const getActiveWordStyle = (isActive) => {
+        if (!isActive) return "text-white/80";
+        switch (resolvedStyle) {
+          case "hormozi": return "text-yellow-400 scale-110 drop-shadow-[0_2px_8px_rgba(250,204,21,0.6)] font-black";
+          case "gold": return "text-[#E5C07B] scale-110 drop-shadow-[0_2px_8px_rgba(229,192,123,0.5)] font-bold";
+          case "clean": return "text-white underline decoration-[#E5C07B] decoration-2";
+          case "minimal": return "text-white border-b border-[#E5C07B] font-serif italic";
+          case "emerald": return "text-emerald-400 scale-110 drop-shadow-[0_2px_8px_rgba(52,211,153,0.6)] font-mono";
+          case "crimson": return "text-rose-400 scale-110 drop-shadow-[0_2px_8px_rgba(244,63,94,0.6)] font-black";
+          default: return "text-[#E5C07B]";
+        }
+      };
+
+      const getPillStyle = () => {
+        switch (resolvedStyle) {
+          case "clean": return "bg-black/90 border border-white/20";
+          case "gold": return "bg-black/85 border border-[#E5C07B]/30";
+          case "emerald": return "bg-black/90 border border-emerald-500/30 font-mono";
+          case "crimson": return "bg-black/90 border border-rose-500/30";
+          case "minimal": return "bg-transparent";
+          default: return "bg-black/80 backdrop-blur-md border border-white/10";
+        }
+      };
+
+      const pillClass = `inline-block px-3 py-1.5 rounded-lg max-w-full transition-all ${getPillStyle()}`;
+      document.getElementById('sub-pill').className = pillClass;
+      document.getElementById('fit-sub-pill').className = pillClass;
+
+      const wordsHtml = SCRIPT_WORDS.map((word, idx) => `
+        <span class="transition-all duration-150 ${getActiveWordStyle(idx === wordIdx)}">${word}</span>
+      `).join('');
+
+      document.getElementById('sub-words-container').innerHTML = wordsHtml;
+      document.getElementById('fit-sub-words-container').innerHTML = wordsHtml;
+    }
+
+    function toggleTerminalConsole() {
+      const box = document.getElementById('live-engine-console');
+      box.classList.toggle('hidden');
+      document.getElementById('terminal-toggle-label').innerText = box.classList.contains('hidden') ? 'Show Console Logs' : 'Hide Console Logs';
+    }
+
+    function appendConsoleLog(msg) {
+      const box = document.getElementById('live-engine-console');
+      const div = document.createElement('div');
+      div.innerText = msg;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // ==================== ENGINE ACTIONS (ANALYZE & RENDER) ====================
+    async function triggerAnalyze() {
+      const btn = document.getElementById('analyze-btn');
+      const stepper = document.getElementById('pipeline-stepper');
+      const consoleBox = document.getElementById('live-engine-console');
+      
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing...`;
+      stepper.classList.remove('hidden');
+      consoleBox.classList.remove('hidden');
+      consoleBox.innerHTML = '<div class="text-[#E5C07B] font-bold">=== Starting Smart Hook Detection Pipeline ===</div>';
+      lucide.createIcons();
+
+      try {
+        const startRes = await fetch('/api/analyze/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: document.getElementById('source-url').value })
+        });
+        if (!startRes.ok) {
+          const errData = await startRes.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server error: HTTP ${startRes.status}`);
+        }
+        const data = await startRes.json();
+        const job_id = data.job_id;
+        if (!job_id) throw new Error("No job_id returned");
+
+        const poll = setInterval(async () => {
+          try {
+            const sRes = await fetch(`/api/analyze/status/${job_id}`);
+            if (!sRes.ok) {
+              clearInterval(poll);
+              appendConsoleLog(`[poll error] Status check failed: HTTP ${sRes.status}`);
+              return;
+            }
+            const job = await sRes.json();
+
+            document.getElementById('stepper-status-text').innerText = job.step;
+            document.getElementById('stepper-percent').innerText = `${job.progress}%`;
+            document.getElementById('stepper-progress-fill').style.width = `${job.progress}%`;
+
+            if (job.logs && job.logs.length > 0) {
+              consoleBox.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
+              consoleBox.scrollTop = consoleBox.scrollHeight;
+            }
+
+            if (job.status === 'completed' || job.status === 'failed') {
+              clearInterval(poll);
+              btn.disabled = false;
+              btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Auto-Detect Hooks`;
+              lucide.createIcons();
+
+              if (job.status === 'completed' && job.result) {
+                const res = job.result;
+                if (res.hooks && res.hooks.length > 0) {
+                  CURRENT_HOOKS = res.hooks;
+                  renderHooks(CURRENT_HOOKS);
+                  selectHook(CURRENT_HOOKS[0].id);
+                }
+                // Apply smart auto decisions
+                applyAutoDecisions(res.recommended_framing, res.recommended_style, res.framing_reason);
+                document.getElementById('stepper-status-text').innerText = `✓ Successfully extracted ${CURRENT_HOOKS.length} viral hooks!`;
+              }
+            }
+          } catch (pollErr) {
+            console.error(pollErr);
+          }
+        }, 600);
+
+      } catch (e) {
+        console.error(e);
+        appendConsoleLog(`[error] ${e.message}`);
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Auto-Detect Hooks`;
+        lucide.createIcons();
+      }
+    }
+
+    async function executeRenderClip() {
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId);
+      if (!hook) return;
+
+      const btn = document.getElementById('top-render-btn');
+      const stepper = document.getElementById('pipeline-stepper');
+      const consoleBox = document.getElementById('live-engine-console');
+
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Rendering Reel...`;
+      stepper.classList.remove('hidden');
+      consoleBox.classList.remove('hidden');
+      consoleBox.innerHTML = `<div class="text-[#E5C07B] font-bold">=== Rendering 9:16 Reel: "${hook.title}" [${hook.start_fmt} - ${hook.end_fmt}] ===</div>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch('/api/jobs/render_clip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: document.getElementById('source-url').value,
+            start: hook.start,
+            end: hook.end,
+            style: resolvedStyle,
+            framing: resolvedFraming,
+            title: hook.title
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server error: HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        const job_id = data.job_id;
+        if (!job_id) throw new Error("No job_id returned");
+
+        const poll = setInterval(async () => {
+          const sRes = await fetch(`/api/jobs/${job_id}`);
+          if (!sRes.ok) {
+            clearInterval(poll);
+            appendConsoleLog(`[poll error] Status check failed: HTTP ${sRes.status}`);
+            return;
+          }
+          const job = await sRes.json();
+
+          document.getElementById('stepper-status-text').innerText = job.step;
+          document.getElementById('stepper-percent').innerText = `${job.progress}%`;
+          document.getElementById('stepper-progress-fill').style.width = `${job.progress}%`;
+
+          if (job.logs && job.logs.length > 0) {
+            consoleBox.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+          }
+
+          if (job.status === 'completed' || job.status === 'failed') {
+            clearInterval(poll);
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i> <span>Export 9:16 Reel</span>`;
+            lucide.createIcons();
+
+            if (job.status === 'completed') {
+              document.getElementById('stepper-status-text').innerText = `✓ Render Complete! Video saved to Output Gallery.`;
+              await loadOutputs();
+              switchTab('gallery');
+              if (job.output_file) {
+                playOutputVideo(job.output_file, hook.title);
+              }
+            }
+          }
+        }, 700);
+
+      } catch (e) {
+        console.error(e);
+        appendConsoleLog(`[render error] ${e.message}`);
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i> <span>Export 9:16 Reel</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    async function executeMakePipeline() {
+      const stepper = document.getElementById('pipeline-stepper');
+      const consoleBox = document.getElementById('live-engine-console');
+
+      stepper.classList.remove('hidden');
+      consoleBox.classList.remove('hidden');
+      consoleBox.innerHTML = '<div class="text-[#E5C07B] font-bold">=== Launching Pipeline: hooky make ===</div>';
+
+      try {
+        const res = await fetch('/api/jobs/make', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target: document.getElementById('source-url').value,
+            framing: resolvedFraming,
+            style: resolvedStyle
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server error: HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        const job_id = data.job_id;
+        if (!job_id) throw new Error("No job_id returned");
+
+        const poll = setInterval(async () => {
+          const sRes = await fetch(`/api/jobs/${job_id}`);
+          if (!sRes.ok) {
+            clearInterval(poll);
+            appendConsoleLog(`[poll error] Status check failed: HTTP ${sRes.status}`);
+            return;
+          }
+          const job = await sRes.json();
+
+          document.getElementById('stepper-status-text').innerText = job.step;
+          document.getElementById('stepper-percent').innerText = `${job.progress}%`;
+          document.getElementById('stepper-progress-fill').style.width = `${job.progress}%`;
+
+          if (job.logs && job.logs.length > 0) {
+            consoleBox.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+          }
+
+          if (job.status === 'completed' || job.status === 'failed') {
+            clearInterval(poll);
+            loadOutputs();
+          }
+        }, 800);
+      } catch (e) {
+        console.error(e);
+        appendConsoleLog(`[pipeline error] ${e.message}`);
+      }
+    }
+
+    // ==================== SETTINGS & .ENV MANAGEMENT ====================
+    async function loadEnvConfig() {
+      try {
+        const res = await fetch('/api/env');
+        const data = await res.json();
+        cachedEnvConfig = data;
+        const vals = data.values || {};
+
+        document.getElementById('env-gemini-key').value = vals.GEMINI_API_KEY || '';
+        document.getElementById('env-gemini-model').value = vals.GEMINI_MODEL || 'gemini-2.5-flash';
+        document.getElementById('env-gemini-fallbacks').value = vals.GEMINI_MODEL_FALLBACKS || '';
+        document.getElementById('env-sub-style').value = vals.SUB_STYLE || 'gold';
+        document.getElementById('env-density-minutes').value = vals.AUTO_CLIP_DENSITY_MINUTES || '10';
+        document.getElementById('env-ffmpeg-threads').value = vals.FFMPEG_THREADS || '8';
+        document.getElementById('env-raw-textarea').value = data.raw || '';
+      } catch (e) {
+        console.error('Error loading .env config:', e);
+      }
+    }
+
+    function switchEnvTab(tab) {
+      document.getElementById('env-form-view').classList.toggle('hidden', tab !== 'form');
+      document.getElementById('env-raw-view').classList.toggle('hidden', tab !== 'raw');
+      document.getElementById('env-tab-form').className = tab === 'form'
+        ? 'px-3.5 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold transition-all'
+        : 'px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all';
+      document.getElementById('env-tab-raw').className = tab === 'raw'
+        ? 'px-3.5 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold transition-all'
+        : 'px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all';
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.innerHTML = `<i data-lucide="${input.type === 'password' ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>`;
+      lucide.createIcons();
+    }
+
+    async function saveEnvForm() {
+      const isRaw = !document.getElementById('env-raw-view').classList.contains('hidden');
+      const payload = isRaw
+        ? { raw: document.getElementById('env-raw-textarea').value }
+        : {
+            values: {
+              GEMINI_API_KEY: document.getElementById('env-gemini-key').value,
+              GEMINI_MODEL: document.getElementById('env-gemini-model').value,
+              GEMINI_MODEL_FALLBACKS: document.getElementById('env-gemini-fallbacks').value,
+              SUB_STYLE: document.getElementById('env-sub-style').value,
+              AUTO_CLIP_DENSITY_MINUTES: document.getElementById('env-density-minutes').value,
+              FFMPEG_THREADS: document.getElementById('env-ffmpeg-threads').value,
+            }
+          };
+
+      try {
+        const res = await fetch('/api/env', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const alertBox = document.getElementById('env-status-alert');
+        alertBox.classList.remove('hidden');
+        alertBox.innerText = `✓ ${data.message || '.env saved successfully!'}`;
+        await loadEnvConfig();
+        setTimeout(() => alertBox.classList.add('hidden'), 4000);
+      } catch (e) {
+        alert(`Error saving .env: ${e.message}`);
+      }
+    }
+
+    // ==================== CHANNELS & OUTPUTS ====================
+    async function loadDoctorStatus() {
+      try {
+        const res = await fetch('/api/doctor');
+        const data = await res.json();
+        document.getElementById('gpu-text').innerText = data.gpu;
+
+        const container = document.getElementById('doctor-checks-container');
+        container.innerHTML = data.checks.map(c => `
+          <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+            <div>
+              <span class="font-bold text-white block">${c.name}</span>
+              <span class="text-slate-400 text-[11px] truncate max-w-[280px] font-mono">${c.detail}</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[11px] font-bold font-mono ${
+              c.ok ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+            }">
+              ${c.ok ? 'PASS' : 'WARN'}
+            </span>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function loadChannels() {
+      try {
+        const res = await fetch('/api/channels');
+        const data = await res.json();
+        activeChannelsList = data.channels || [];
+        renderChannelsTable();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderChannelsTable() {
+      const tbody = document.getElementById('channels-table-body');
+      if (activeChannelsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 font-mono">No channels in channels.txt</td></tr>';
+        return;
+      }
+      tbody.innerHTML = activeChannelsList.map((ch, idx) => {
+        const parts = ch.split('|').map(s => s.trim());
+        const handle = parts[0] || '';
+        let clips = 'auto';
+        let focus = 'General';
+        parts.slice(1).forEach(p => {
+          if (p.startsWith('clips=')) clips = p.replace('clips=', '');
+          if (p.startsWith('focus=')) focus = p.replace('focus=', '');
+        });
+
+        return `
+          <tr class="hover:bg-white/[0.02] font-mono">
+            <td class="p-3 font-bold text-white">${handle}</td>
+            <td class="p-3 text-slate-300">${clips}</td>
+            <td class="p-3 text-slate-400">${focus}</td>
+            <td class="p-3 text-right">
+              <button onclick="removeChannel(${idx})" class="text-rose-400 hover:text-rose-300 text-xs font-mono">
+                Delete
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function addNewChannel() {
+      const input = document.getElementById('new-channel-input');
+      const val = input.value.trim();
+      if (!val) return;
+      activeChannelsList.push(val);
+      input.value = '';
+      renderChannelsTable();
+    }
+
+    function removeChannel(idx) {
+      activeChannelsList.splice(idx, 1);
+      renderChannelsTable();
+    }
+
+    async function saveActiveChannels() {
+      try {
+        await fetch('/api/channels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channels: activeChannelsList })
+        });
+        alert('Saved successfully to channels.txt!');
+      } catch (e) {
+        alert(`Error saving channels: ${e.message}`);
+      }
+    }
+
+    async function loadOutputs() {
+      try {
+        const res = await fetch('/api/outputs');
+        const data = await res.json();
+        const files = data.files || [];
+        document.getElementById('gallery-count').innerText = files.length;
+
+        const grid = document.getElementById('outputs-grid');
+        if (files.length === 0) {
+          grid.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-500 font-mono">No rendered video clips yet in output/. Click "Export 9:16 Reel" to create one!</div>';
+          return;
+        }
+
+        grid.innerHTML = files.map(f => `
+          <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:border-[#E5C07B]/40 transition-all space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">1080x1920 MP4</span>
+              <span class="text-xs font-mono text-slate-400">${f.size_mb} MB</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-white text-xs truncate max-w-full" title="${f.name}">${f.name}</h4>
+              <p class="text-[11px] text-slate-500 font-mono mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
+            </div>
+            <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+              <button
+                onclick="playOutputVideo('${f.name}', '${f.name}')"
+                class="flex-1 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold text-xs hover:brightness-110 flex items-center justify-center gap-1.5 transition-all"
+              >
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                <span>Watch</span>
+              </button>
+              <a
+                href="${f.url}"
+                download
+                class="px-3 py-1.5 rounded-lg bg-white/[0.05] text-slate-300 hover:text-white border border-white/10 text-xs font-mono transition-all"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
+              </a>
+            </div>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function playOutputVideo(filename, title) {
+      const box = document.getElementById('active-video-player-box');
+      box.classList.remove('hidden');
+      document.getElementById('active-playing-title').innerText = title || filename;
+
+      const player = document.getElementById('html5-video-player');
+      const srcElem = document.getElementById('video-source-elem');
+      srcElem.src = `/api/outputs/${filename}`;
+      player.load();
+      player.play().catch(() => {});
+      box.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeActivePlayer() {
+      const box = document.getElementById('active-video-player-box');
+      box.classList.add('hidden');
+      const player = document.getElementById('html5-video-player');
+      player.pause();
+    }
+  </script>
+</body>
+</html>

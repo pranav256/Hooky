@@ -732,6 +732,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_links_file()
 
     command, rest = args[0], args[1:]
+    if command in {"web", "ui", "gui", "portal", "serve"}:
+        from .web.server import run_server
+        return run_server(rest)
     if command == "help" or args == ["--help"]:
         return _help()
     if command == "setup":
