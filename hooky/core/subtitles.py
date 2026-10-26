@@ -1,4 +1,4 @@
-﻿"""Speech-to-text subtitles with karaoke-style word highlighting.
+"""Speech-to-text subtitles with karaoke-style word highlighting.
 
 Uses faster-whisper (tiny/int8 = fast on old CPUs, ~75MB download).
 Builds ASS subtitles burned into the video by ffmpeg's libass.
@@ -58,6 +58,50 @@ STYLES: dict[str, dict] = {
         "outline_color": "&H00000000", "back": "&H00000000",
         "border_style": 1, "outline": 4, "shadow": 1, "alignment": 2,
         "margin_v": 520, "max_words": 4, "uppercase": False,
+    },
+    # Warm Titanium / Champagne Gold: luxury editorial highlight
+    "gold": {
+        "font": "Montserrat", "font_size": 62, "bold": True,
+        "primary": "&H007BC0E5",     # champagne gold    (RGB #E5C07B)
+        "secondary": "&H00FFFFFF",   # white base
+        "outline_color": "&H00000000", "back": "&H00000000",
+        "border_style": 1, "outline": 5, "shadow": 1, "alignment": 2,
+        "margin_v": 520, "max_words": 4, "uppercase": True,
+    },
+    "titanium": {                    # alias for gold
+        "font": "Montserrat", "font_size": 62, "bold": True,
+        "primary": "&H007BC0E5",
+        "secondary": "&H00FFFFFF",
+        "outline_color": "&H00000000", "back": "&H00000000",
+        "border_style": 1, "outline": 5, "shadow": 1, "alignment": 2,
+        "margin_v": 520, "max_words": 4, "uppercase": True,
+    },
+    # Minimal Editorial: elegant serif typography with subtle shadow
+    "minimal": {
+        "font": "Georgia", "font_size": 50, "bold": False,
+        "primary": "&H007BC0E5",     # soft champagne gold
+        "secondary": "&H00F0F0F0",   # soft white
+        "outline_color": "&H00151515", "back": "&H60000000",
+        "border_style": 1, "outline": 2, "shadow": 1, "alignment": 2,
+        "margin_v": 540, "max_words": 5, "uppercase": False,
+    },
+    # Cyber Emerald: high-contrast neon green for tech, AI, and developer clips
+    "emerald": {
+        "font": "Consolas", "font_size": 58, "bold": True,
+        "primary": "&H0099D334",     # neon emerald      (RGB #34D399)
+        "secondary": "&H00E2E8F0",   # slate white
+        "outline_color": "&H00000000", "back": "&H00000000",
+        "border_style": 1, "outline": 5, "shadow": 1, "alignment": 2,
+        "margin_v": 520, "max_words": 4, "uppercase": True,
+    },
+    # Crimson Impact: deep ruby red emphasis for dramatic narrative hooks
+    "crimson": {
+        "font": "Montserrat", "font_size": 64, "bold": True,
+        "primary": "&H005E3FF4",     # ruby crimson      (RGB #F43F5E)
+        "secondary": "&H00FFFFFF",   # crisp white
+        "outline_color": "&H00000000", "back": "&H00000000",
+        "border_style": 1, "outline": 6, "shadow": 1, "alignment": 2,
+        "margin_v": 520, "max_words": 3, "uppercase": True,
     },
 }
 
