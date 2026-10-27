@@ -80,8 +80,8 @@ Most clipping tools are either expensive monthly subscriptions or clunky scripts
 ```bash
 git clone https://github.com/pranav256/Hooky.git
 cd Hooky
-chmod +x setup.sh hooky.sh
-./setup.sh
+chmod +x main.sh setup.sh hooky.sh
+./main.sh
 ```
 
 ### Windows (PowerShell)
@@ -90,10 +90,10 @@ chmod +x setup.sh hooky.sh
 git clone https://github.com/pranav256/Hooky.git
 cd Hooky
 Set-ExecutionPolicy -Scope Process Bypass
-.\setup.ps1
+.\main.ps1
 ```
 
-> **Note:** The setup wizard installs FFmpeg/FFprobe via your system package manager (winget/brew/apt), creates the `.venv`, installs locked dependencies with `uv`, and prompts for your API keys.
+> **⚡ Single-Command Magic:** Running `main.ps1` or `main.sh` (or `python main.py`) automatically verifies FFmpeg & `uv`, syncs locked dependencies, initializes `.env`, and launches the visual Web Studio, immediately opening your browser to `http://127.0.0.1:8000`! You can also run `.\setup.ps1` or `./setup.sh` at any time.
 
 ---
 

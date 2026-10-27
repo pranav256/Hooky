@@ -66,4 +66,18 @@ if ($null -eq $uvCommand) {
 # uv selects the compatible Python available on this machine. The project
 # supports Python 3.10 and newer; do not force a particular minor release.
 Invoke-Checked $uvCommand @("sync", "--locked", "--extra", "all")
-Invoke-Checked (Join-Path $Root ".venv\Scripts\python.exe") (@("-m", "hooky", "setup") + $SetupArgs)
+
+# Initialize .env if not present
+$EnvFile = Join-Path $Root ".env"
+$EnvExample = Join-Path $Root ".env.example"
+if (-not (Test-Path -LiteralPath $EnvFile) -and (Test-Path -LiteralPath $EnvExample)) {
+    Copy-Item -LiteralPath $EnvExample -Destination $EnvFile
+    Write-Host "[hooky] Created .env configuration from template." -ForegroundColor Green
+}
+
+if ($SetupArgs.Count -eq 0) {
+    Write-Host "`n[hooky] ✨ Setup complete! Launching Web Studio at http://127.0.0.1:8000...`n" -ForegroundColor Green
+    Invoke-Checked (Join-Path $Root ".venv\Scripts\python.exe") @("-m", "hooky", "web")
+} else {
+    Invoke-Checked (Join-Path $Root ".venv\Scripts\python.exe") (@("-m", "hooky", "setup") + $SetupArgs)
+}
