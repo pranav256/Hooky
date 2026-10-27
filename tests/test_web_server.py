@@ -70,3 +70,23 @@ def test_render_aliases():
     res2 = client.post("/api/render", json={"url": "https://www.youtube.com/watch?v=EDCwQe7P8T0", "start": 10, "end": 20})
     assert res2.status_code == 200
     assert "job_id" in res2.json()
+
+def test_cors_and_password_masking():
+    # 1. Foreign origin should not receive Access-Control-Allow-Origin
+    res_cors = client.get("/api/env", headers={"Origin": "http://evil.example"})
+    assert res_cors.headers.get("access-control-allow-origin") is None or res_cors.headers.get("access-control-allow-origin") != "http://evil.example"
+
+    # 2. Local origin should be accepted
+    res_local = client.get("/api/env", headers={"Origin": "http://localhost:8000"})
+    assert res_local.headers.get("access-control-allow-origin") == "http://localhost:8000"
+
+    # 3. Simple text/plain post without json content-type must be rejected with 415
+    res_bad_ct = client.post("/api/env", content="RAW_TEST=1", headers={"Content-Type": "text/plain"})
+    assert res_bad_ct.status_code == 415
+
+    # 4. Password masking verification
+    res_env = client.get("/api/env")
+    assert res_env.status_code == 200
+    values = res_env.json().get("values", {})
+    if "IG_PASSWORD" in values and values["IG_PASSWORD"]:
+        assert values["IG_PASSWORD"] == "••••••••"

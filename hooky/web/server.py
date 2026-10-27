@@ -32,7 +32,7 @@ app = FastAPI(title="Hooky Web Studio & Control Portal", version="2.4.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,31 +115,69 @@ async def save_links(request: Request):
 
 @app.get("/api/env")
 async def get_env_config():
-    """Return raw content and parsed key-value pairs from .env."""
+    """Return sanitized content and parsed key-value pairs from .env with sensitive credentials masked."""
     if not ENV_FILE.exists():
         return {"raw": "", "values": {}}
     raw = ENV_FILE.read_text(encoding="utf-8")
     values = {}
+    masked_raw_lines = []
     for line in raw.splitlines():
         stripped = line.strip()
         if stripped and not stripped.startswith("#") and "=" in stripped:
             k, _, v = stripped.partition("=")
             k = k.strip()
             v = v.strip().strip("'\"")
+            if k == "IG_PASSWORD" and v:
+                values[k] = "••••••••"
+                masked_raw_lines.append(f"{k}=••••••••")
+                continue
             values[k] = v
-    return {"raw": raw, "values": values}
+        masked_raw_lines.append(line)
+    return {"raw": "\n".join(masked_raw_lines), "values": values}
 
 
 @app.post("/api/env")
 async def save_env_config(request: Request):
     """Save updated .env configuration from either raw text or key-value dict."""
+    ct = request.headers.get("content-type", "").lower()
+    if "application/json" not in ct:
+        raise HTTPException(status_code=415, detail="Content-Type must be application/json")
+
     data = await request.json()
+    existing_raw = ENV_FILE.read_text(encoding="utf-8") if ENV_FILE.exists() else ""
+    existing_secrets = {}
+    for line in existing_raw.splitlines():
+        s = line.strip()
+        if s and not s.startswith("#") and "=" in s:
+            k, _, v = s.partition("=")
+            existing_secrets[k.strip()] = v.strip().strip("'\"")
+
     if "raw" in data and isinstance(data["raw"], str):
-        content = data["raw"].rstrip() + "\n"
+        # Preserve real IG_PASSWORD if submitted with dots
+        lines = []
+        for line in data["raw"].splitlines():
+            s = line.strip()
+            if s and not s.startswith("#") and "=" in s:
+                k, _, v = s.partition("=")
+                k = k.strip()
+                v = v.strip().strip("'\"")
+                if k == "IG_PASSWORD" and v.startswith("••") and k in existing_secrets:
+                    v_orig = existing_secrets[k]
+                    lines.append(f'{k}="{v_orig}"' if " " in v_orig else f"{k}={v_orig}")
+                    continue
+            lines.append(line)
+        content = "\n".join(lines).rstrip() + "\n"
         ENV_FILE.write_text(content, encoding="utf-8")
     elif "values" in data and isinstance(data["values"], dict):
-        updated = data["values"]
-        raw = ENV_FILE.read_text(encoding="utf-8") if ENV_FILE.exists() else ""
+        updated = dict(data["values"])
+        # Protect IG_PASSWORD from being overwritten by mask
+        if updated.get("IG_PASSWORD", "").startswith("••"):
+            if "IG_PASSWORD" in existing_secrets:
+                updated["IG_PASSWORD"] = existing_secrets["IG_PASSWORD"]
+            else:
+                updated.pop("IG_PASSWORD", None)
+
+        raw = existing_raw
         lines = raw.splitlines()
         existing = set()
         new_lines = []
@@ -313,10 +351,15 @@ async def render_single_clip(request: Request):
                     "-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
                     "--merge-output-format", "mp4",
                     "-o", str(snippet_path),
+                    "--",
                     url,
                 ]
                 proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
                 s_out, s_err = await proc.communicate()
+                if proc.returncode != 0:
+                    err_msg = s_err.decode("utf-8", errors="replace").strip()
+                    log(f"[downloader] yt-dlp failure: {err_msg}")
+                    raise RuntimeError(f"yt-dlp error (code {proc.returncode}): {err_msg[:200]}")
                 log(f"[downloader] Download complete: {snippet_path.name}")
             else:
                 log(f"[downloader] Reusing cached segment: {snippet_path.name}")
