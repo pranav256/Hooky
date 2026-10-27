@@ -42,13 +42,13 @@ def main() -> int:
             cmd = [str(venv_python), "-m", "hooky"] + (args if args else ["web"])
             return subprocess.call(cmd)
 
-        # Virtualenv does not exist yet; trigger setup
+        # Virtualenv does not exist yet; trigger setup via main launcher
         print("[hooky] Virtual environment not detected. Running automated setup...")
         if sys.platform == "win32":
-            script = ROOT / "setup.ps1"
+            script = ROOT / "main.ps1"
             return subprocess.call(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(script)])
         else:
-            script = ROOT / "setup.sh"
+            script = ROOT / "main.sh"
             return subprocess.call(["bash", str(script)])
 
 
