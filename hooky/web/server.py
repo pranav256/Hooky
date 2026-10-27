@@ -6,6 +6,8 @@ import sys
 import json
 import time
 import shutil
+import secrets
+import hmac
 import asyncio
 import subprocess
 from pathlib import Path
@@ -20,13 +22,21 @@ from hooky.doctor import dependency_checks
 from hooky.core.subtitles import STYLES, build_ass
 from hooky.core.source_text import parse_caption_file, caption_words
 from hooky.core.cutter import cut_clip
-from hooky.core.utils import format_timestamp
+from hooky.core.utils import format_timestamp, validate_video_url
 from hooky.web.analyzer import (
     ANALYSIS_JOBS,
     run_analysis_pipeline,
     extract_youtube_id,
     get_video_metadata,
 )
+
+_WEB_TOKEN = os.environ.get("HOOKY_WEB_TOKEN") or secrets.token_urlsafe(32)
+
+
+def get_web_token() -> str:
+    """Return active secret token required for Web Studio API calls."""
+    return _WEB_TOKEN
+
 
 app = FastAPI(title="Hooky Web Studio & Control Portal", version="2.4.0")
 
@@ -37,6 +47,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    """Enforce loopback Host header to prevent DNS rebinding, and authenticate API calls."""
+    # 1. Host header validation
+    host_header = request.headers.get("host", "")
+    host = host_header.split(":")[0].strip("[]").lower()
+    allowed_hosts = {"127.0.0.1", "localhost", "::1", "testserver"}
+    if host and host not in allowed_hosts:
+        return JSONResponse(
+            status_code=403,
+            content={"detail": f"Forbidden: Host header '{host_header}' is not allowed"},
+        )
+
+    # 2. Token authentication for /api/* routes (exempt CORS OPTIONS preflight)
+    if request.url.path.startswith("/api/") and request.method != "OPTIONS":
+        token = request.headers.get("x-hooky-token") or request.query_params.get("token")
+        if not token or not hmac.compare_digest(token, _WEB_TOKEN):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Unauthorized: Missing or invalid X-Hooky-Token"},
+            )
+
+    return await call_next(request)
 
 STATIC_DIR = Path(__file__).parent / "static"
 INDEX_HTML = STATIC_DIR / "index.html"
@@ -121,13 +156,14 @@ async def get_env_config():
     raw = ENV_FILE.read_text(encoding="utf-8")
     values = {}
     masked_raw_lines = []
+    sensitive_keys = {"IG_PASSWORD", "GEMINI_API_KEY"}
     for line in raw.splitlines():
         stripped = line.strip()
         if stripped and not stripped.startswith("#") and "=" in stripped:
             k, _, v = stripped.partition("=")
             k = k.strip()
             v = v.strip().strip("'\"")
-            if k == "IG_PASSWORD" and v:
+            if k in sensitive_keys and v:
                 values[k] = "••••••••"
                 masked_raw_lines.append(f"{k}=••••••••")
                 continue
@@ -152,8 +188,10 @@ async def save_env_config(request: Request):
             k, _, v = s.partition("=")
             existing_secrets[k.strip()] = v.strip().strip("'\"")
 
+    key_pattern = re.compile(r"^[A-Z0-9_]{2,64}$")
+    sensitive_keys = {"IG_PASSWORD", "GEMINI_API_KEY"}
+
     if "raw" in data and isinstance(data["raw"], str):
-        # Preserve real IG_PASSWORD if submitted with dots
         lines = []
         for line in data["raw"].splitlines():
             s = line.strip()
@@ -161,7 +199,9 @@ async def save_env_config(request: Request):
                 k, _, v = s.partition("=")
                 k = k.strip()
                 v = v.strip().strip("'\"")
-                if k == "IG_PASSWORD" and v.startswith("••") and k in existing_secrets:
+                if not key_pattern.match(k):
+                    continue
+                if k in sensitive_keys and v.startswith("••") and k in existing_secrets:
                     v_orig = existing_secrets[k]
                     lines.append(f'{k}="{v_orig}"' if " " in v_orig else f"{k}={v_orig}")
                     continue
@@ -169,13 +209,17 @@ async def save_env_config(request: Request):
         content = "\n".join(lines).rstrip() + "\n"
         ENV_FILE.write_text(content, encoding="utf-8")
     elif "values" in data and isinstance(data["values"], dict):
-        updated = dict(data["values"])
-        # Protect IG_PASSWORD from being overwritten by mask
-        if updated.get("IG_PASSWORD", "").startswith("••"):
-            if "IG_PASSWORD" in existing_secrets:
-                updated["IG_PASSWORD"] = existing_secrets["IG_PASSWORD"]
+        updated = {}
+        for k, v in data["values"].items():
+            k_clean = str(k).strip()
+            if not key_pattern.match(k_clean):
+                continue
+            v_clean = str(v).strip()
+            if k_clean in sensitive_keys and v_clean.startswith("••"):
+                if k_clean in existing_secrets:
+                    updated[k_clean] = existing_secrets[k_clean]
             else:
-                updated.pop("IG_PASSWORD", None)
+                updated[k_clean] = v_clean
 
         raw = existing_raw
         lines = raw.splitlines()
@@ -307,9 +351,19 @@ async def analyze_video(request: Request):
 async def render_single_clip(request: Request):
     """Render a selected hook into a 1080x1920 vertical Reel with burned-in subtitles."""
     data = await request.json()
-    url = data.get("url", "https://www.youtube.com/watch?v=EDCwQe7P8T0").strip()
-    start = float(data.get("start", 37.36))
-    end = float(data.get("end", 50.79))
+    url = data.get("url", "").strip()
+    if not url or not validate_video_url(url):
+        raise HTTPException(status_code=400, detail="Invalid or missing video URL; must be an http(s) URL.")
+
+    try:
+        start = float(data.get("start", 0))
+        end = float(data.get("end", 0))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Start and end timestamps must be numeric.")
+
+    if start < 0 or end <= start:
+        raise HTTPException(status_code=400, detail="Invalid clip timestamps: start must be >= 0 and end must be > start.")
+
     style = data.get("style", "gold").strip().lower()
     framing = data.get("framing", "center").strip().lower()
     title = data.get("title", "Hooky Reel").strip()
@@ -364,15 +418,21 @@ async def render_single_clip(request: Request):
             else:
                 log(f"[downloader] Reusing cached segment: {snippet_path.name}")
 
-            # 2. Build ASS Subtitles
+            # 2. Build ASS Subtitles keyed strictly by video ID
             _JOBS[job_id]["progress"] = 55
             _JOBS[job_id]["step"] = f"Generating word-aligned ASS subtitles (Preset: {style})..."
             log(f"[subtitles] Synthesizing {style} subtitle cues...")
 
-            vtt_candidates = sorted(cache_dir.glob("*.vtt"), key=lambda x: x.stat().st_mtime, reverse=True)
+            vid_id = extract_youtube_id(url)
+            vtt_file = None
+            if vid_id:
+                candidate = cache_dir / f"yt_{vid_id}.vtt"
+                if candidate.exists() and candidate.stat().st_size > 0:
+                    vtt_file = candidate
+
             cues = []
-            if vtt_candidates:
-                cues = parse_caption_file(vtt_candidates[0])
+            if vtt_file:
+                cues = parse_caption_file(vtt_file)
             
             hook_cues = [c for c in cues if c["start"] >= start - 1.0 and c["end"] <= end + 1.5]
             # Convert to 0-relative
@@ -384,17 +444,19 @@ async def render_single_clip(request: Request):
                     "text": c["text"]
                 })
             
-            words = caption_words(rel_cues) if rel_cues else [
-                {"start": 0.5, "end": 2.5, "word": "UNHINGED"},
-                {"start": 2.5, "end": 4.5, "word": "CRAZY"},
-                {"start": 4.5, "end": 6.5, "word": "TONIGHT"}
-            ]
-
-            clip_len = max(5.0, end - start)
-            ass_content = build_ass(words, clip_start=0.0, clip_end=clip_len, style_name=style)
-            ass_path = cache_dir / f"subs_{clean_name}_{style}.ass"
-            ass_path.write_text(ass_content, encoding="utf-8")
-            log(f"[subtitles] Saved ASS style file: {ass_path.name}")
+            clip_len = max(1.0, end - start)
+            ass_path = None
+            if rel_cues:
+                words = caption_words(rel_cues)
+                if words:
+                    ass_content = build_ass(words, clip_start=0.0, clip_end=clip_len, style_name=style)
+                    ass_path = cache_dir / f"subs_{clean_name}_{style}.ass"
+                    ass_path.write_text(ass_content, encoding="utf-8")
+                    log(f"[subtitles] Saved ASS style file: {ass_path.name}")
+                else:
+                    log("[subtitles] No words in cues; skipping subtitles")
+            else:
+                log("[subtitles] No timed captions found for segment; rendering clean video without subtitles")
 
             # 3. Cut & Encode 1080x1920 Vertical Video
             _JOBS[job_id]["progress"] = 75
@@ -419,7 +481,7 @@ async def render_single_clip(request: Request):
             _JOBS[job_id]["step"] = "Render completed successfully! Ready in Output Gallery."
             _JOBS[job_id]["status"] = "completed"
             _JOBS[job_id]["output_file"] = out_filename
-            _JOBS[job_id]["output_url"] = f"/api/outputs/{out_filename}"
+            _JOBS[job_id]["output_url"] = f"/api/outputs/{out_filename}?token={_WEB_TOKEN}"
             log(f"[pipeline] Successfully rendered 9:16 Reel: {out_filename} ({final_out_path.stat().st_size / (1024*1024):.2f} MB)")
 
         except Exception as exc:
@@ -437,6 +499,11 @@ async def launch_make_job(request: Request):
     """Launch full autonomous Hooky pipeline run."""
     data = await request.json()
     target = data.get("target", "").strip()
+    if target.startswith("-"):
+        raise HTTPException(status_code=400, detail="Invalid target: cannot start with option flag '-'")
+    if target and not (target.startswith("http://") or target.startswith("https://") or target.startswith("@") or Path(target).exists()):
+        raise HTTPException(status_code=400, detail="Target must be a valid URL, @channel, or local file.")
+
     style = data.get("style", "gold")
     framing = data.get("framing", "center")
 
@@ -525,9 +592,11 @@ async def get_job_status(job_id: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
-    """Serve the single-page visual studio dashboard."""
+    """Serve the single-page visual studio dashboard with auth token injected."""
     if INDEX_HTML.exists():
-        return HTMLResponse(INDEX_HTML.read_text(encoding="utf-8"))
+        content = INDEX_HTML.read_text(encoding="utf-8")
+        content = content.replace("HOOKY_AUTH_TOKEN_PLACEHOLDER", _WEB_TOKEN)
+        return HTMLResponse(content)
     return HTMLResponse("<h1>Hooky Portal Static File Missing</h1>")
 
 
@@ -539,10 +608,11 @@ def run_server(args: list[str] | None = None) -> int:
     port = 8000
     host = "127.0.0.1"
     url = f"http://{host}:{port}"
-    print(f"\n[hooky] 🚀 Launching Hooky Web Portal at {url}")
+    portal_url = f"{url}/?token={_WEB_TOKEN}"
+    print(f"\n[hooky] 🚀 Launching Hooky Web Portal at {portal_url}")
 
     try:
-        webbrowser.open(url)
+        webbrowser.open(portal_url)
     except Exception:
         pass
 

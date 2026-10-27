@@ -52,9 +52,9 @@ def parse_timestamp_seconds(val: Any) -> float:
 
 
 def extract_youtube_id(url: str) -> str:
-    """Extract 11-char YouTube video ID from various URL formats."""
+    """Extract 11-char YouTube video ID from various URL formats. Returns empty string if not found."""
     match = re.search(r"(?:v=|\/|youtu\.be\/|embed\/)([0-9A-Za-z_-]{11})", url)
-    return match.group(1) if match else "EDCwQe7P8T0"
+    return match.group(1) if match else ""
 
 
 def get_video_metadata(url: str) -> dict[str, Any]:
@@ -73,28 +73,36 @@ def get_video_metadata(url: str) -> dict[str, Any]:
             data = json.loads(result.stdout)
             return {
                 "title": data.get("title", "YouTube Video"),
-                "duration": float(data.get("duration", 1800)),
+                "duration": float(data.get("duration", 0.0)),
                 "channel": data.get("channel", "Creator"),
                 "id": data.get("id", extract_youtube_id(url)),
             }
     except Exception as exc:
         print(f"[analyzer] metadata probe error: {exc}")
-    
+
     vid_id = extract_youtube_id(url)
-    default_title = "Can Tech Legends Find the Liar? (Mafia Episode 1)" if vid_id == "EDCwQe7P8T0" else f"YouTube Video ({vid_id})"
+    default_title = f"YouTube Video ({vid_id})" if vid_id else "Unknown Video"
     return {
         "title": default_title,
-        "duration": 1988.0,
-        "channel": "YouTube Creator",
+        "duration": 0.0,
+        "channel": "Unknown Channel",
         "id": vid_id,
     }
 
 
 async def download_captions(url: str, out_prefix: Path, progress_cb: Callable[[str], None] | None = None) -> Path | None:
     """Download VTT subtitles via yt-dlp without downloading media."""
+    vid_id = extract_youtube_id(url)
+    if vid_id:
+        cached = out_prefix.parent / f"yt_{vid_id}.vtt"
+        if cached.exists() and cached.stat().st_size > 0:
+            if progress_cb:
+                progress_cb(f"[yt-dlp] Using cached VTT captions track: {cached.name}")
+            return cached
+
     if progress_cb:
         progress_cb("[yt-dlp] Requesting YouTube timed caption tracks (English)...")
-        
+
     cmd = [
         sys_executable(),
         "-m", "yt_dlp",
@@ -112,29 +120,29 @@ async def download_captions(url: str, out_prefix: Path, progress_cb: Callable[[s
         stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await process.communicate()
-    
+
     if progress_cb and stdout:
         for line in stdout.decode("utf-8", errors="replace").splitlines()[-3:]:
             if line.strip():
                 progress_cb(f"[yt-dlp] {line.strip()}")
 
-    # Check for generated .en.vtt or .vtt
+    # Check for generated .en.vtt or .vtt and copy to normalized yt_{vid_id}.vtt
     for candidate in [
         out_prefix.parent / f"{out_prefix.name}.en.vtt",
         out_prefix.parent / f"{out_prefix.name}.vtt",
     ]:
         if candidate.exists() and candidate.stat().st_size > 0:
+            if vid_id:
+                norm_path = out_prefix.parent / f"yt_{vid_id}.vtt"
+                try:
+                    shutil.copy2(candidate, norm_path)
+                    candidate = norm_path
+                except OSError:
+                    pass
             if progress_cb:
                 progress_cb(f"[yt-dlp] Captions fetched successfully: {candidate.name} ({candidate.stat().st_size} bytes)")
             return candidate
-            
-    # Check fallback in web_cache
-    for fallback in sorted((OUTPUT_DIR / "web_cache").glob("*.vtt"), key=lambda x: x.stat().st_mtime, reverse=True):
-        if fallback.exists() and fallback.stat().st_size > 0:
-            if progress_cb:
-                progress_cb(f"[yt-dlp] Using cached VTT captions track: {fallback.name}")
-            return fallback
-        
+
     return None
 
 
@@ -293,6 +301,7 @@ async def run_analysis_pipeline(url: str, job_id: str) -> dict[str, Any]:
     """Execute complete hook analysis pipeline with live step-by-step progress logging."""
     cache_dir = OUTPUT_DIR / "web_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
+    cues: list[dict] = []
     
     def log(msg: str):
         print(msg)
@@ -308,18 +317,18 @@ async def run_analysis_pipeline(url: str, job_id: str) -> dict[str, Any]:
         
         meta = get_video_metadata(url)
         title = meta["title"]
-        duration = meta["duration"] or 1988.0
+        duration = meta["duration"]
         video_id = meta.get("id") or extract_youtube_id(url)
-        log(f"[meta] Title: '{title}' | Duration: {format_timestamp(duration)} ({duration:.0f}s) | ID: {video_id}")
+        dur_label = format_timestamp(duration) if duration > 0 else "Live/Unknown"
+        log(f"[meta] Title: '{title}' | Duration: {dur_label} | ID: {video_id or 'none'}")
 
         # Step 2: Download captions
         ANALYSIS_JOBS[job_id]["step"] = "Downloading synchronized VTT caption tracks..."
         ANALYSIS_JOBS[job_id]["progress"] = 35
         ANALYSIS_JOBS[job_id]["step_number"] = 2
-        sub_prefix = cache_dir / f"sub_{int(time.time())}"
+        sub_prefix = cache_dir / (f"yt_{video_id}" if video_id else f"sub_{int(time.time())}")
         vtt_path = await download_captions(url, sub_prefix, log)
 
-        cues: list[dict] = []
         if vtt_path and vtt_path.exists():
             cues = parse_caption_file(vtt_path)
             log(f"[captions] Parsed {len(cues)} timed dialogue cues from {vtt_path.name}")
@@ -512,12 +521,13 @@ For EACH moment, return valid JSON array:
         ANALYSIS_JOBS[job_id]["status"] = "failed"
         ANALYSIS_JOBS[job_id]["error"] = str(exc)
         
-        # Dynamic fallback even on uncaught errors
-        fallback_hooks = build_dynamic_hooks_from_cues(cues, "Video Highlight", extract_youtube_id(url), 1800.0)
+        # Dynamic fallback from cues if any exist; never fabricate fake dialogue
+        fallback_hooks = build_dynamic_hooks_from_cues(cues, "Video Highlight", extract_youtube_id(url), 0.0) if cues else []
         return {
-            "status": "partial",
+            "status": "partial" if fallback_hooks else "failed",
             "video_title": "Video Highlight",
             "video_id": extract_youtube_id(url),
-            "duration_fmt": "30:00",
+            "duration_fmt": "0:00",
             "hooks": fallback_hooks,
+            "error": str(exc),
         }

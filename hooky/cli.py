@@ -654,9 +654,14 @@ def _doctor(args: Sequence[str]) -> int:
         from .doctor import run_doctor
 
         return run_doctor()
+    if args[0] in {"live", "--live", "gemini", "--gemini"}:
+        from .core.gemini import check_gemini
+
+        return check_gemini()
     if args[0] in {"--help", "help"}:
         print("Usage: hooky doctor [dependencies|youtube [URL]]")
         print("  dependencies  check local runtimes and optional integrations")
+        print("  live          live API key and model rotation check against Gemini")
         print("  youtube URL   validate cookies and probe a YouTube URL")
         return 0
     if args[0] != "youtube":
@@ -720,6 +725,7 @@ def _help() -> int:
     print("  hooky cleanup [--apply]      preview, then remove confirmed artifacts")
     print("  hooky completion SHELL      print native bash/zsh/fish/PowerShell completion")
     print("  hooky doctor                check local dependencies and install hints")
+    print("  hooky doctor live           live Gemini key & model rotation check")
     print("  hooky doctor youtube [URL]  validate cookies or probe YouTube")
     print("  hooky setup [--redo|--show] configure Hooky for this machine")
     print("  hooky make|parts|post        run the existing workflows")

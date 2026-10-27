@@ -606,6 +606,40 @@
   </main>
 
   <script>
+    // Security & Auth Token Integration
+    window.__HOOKY_TOKEN__ = "HOOKY_AUTH_TOKEN_PLACEHOLDER";
+    const _urlParams = new URLSearchParams(window.location.search);
+    const _queryToken = _urlParams.get("token");
+    if (_queryToken) {
+      window.__HOOKY_TOKEN__ = _queryToken;
+      try { sessionStorage.setItem("hooky_token", _queryToken); } catch(e) {}
+    } else {
+      try {
+        const _saved = sessionStorage.getItem("hooky_token");
+        if (_saved && window.__HOOKY_TOKEN__ === "HOOKY_AUTH_TOKEN_PLACEHOLDER") {
+          window.__HOOKY_TOKEN__ = _saved;
+        }
+      } catch(e) {}
+    }
+
+    // Intercept fetch to automatically include X-Hooky-Token header on all API calls
+    const _nativeFetch = window.fetch;
+    window.fetch = function(input, init) {
+      init = init || {};
+      init.headers = init.headers || {};
+      const token = window.__HOOKY_TOKEN__;
+      if (token && token !== "HOOKY_AUTH_TOKEN_PLACEHOLDER") {
+        if (init.headers instanceof Headers) {
+          init.headers.set("X-Hooky-Token", token);
+        } else if (Array.isArray(init.headers)) {
+          init.headers.push(["X-Hooky-Token", token]);
+        } else {
+          init.headers["X-Hooky-Token"] = token;
+        }
+      }
+      return _nativeFetch(input, init);
+    };
+
     // State management
     let CURRENT_HOOKS = [
       {
@@ -1383,7 +1417,7 @@
                 <span>Watch</span>
               </button>
               <a
-                href="${f.url}"
+                href="${f.url}${window.__HOOKY_TOKEN__ ? '?token=' + encodeURIComponent(window.__HOOKY_TOKEN__) : ''}"
                 download
                 class="px-3 py-1.5 rounded-lg bg-white/[0.05] text-slate-300 hover:text-white border border-white/10 text-xs font-mono transition-all"
               >
@@ -1405,7 +1439,8 @@
 
       const player = document.getElementById('html5-video-player');
       const srcElem = document.getElementById('video-source-elem');
-      srcElem.src = `/api/outputs/${filename}`;
+      const tokenParam = window.__HOOKY_TOKEN__ ? `?token=${encodeURIComponent(window.__HOOKY_TOKEN__)}` : '';
+      srcElem.src = `/api/outputs/${filename}${tokenParam}`;
       player.load();
       player.play().catch(() => {});
       box.scrollIntoView({ behavior: 'smooth' });

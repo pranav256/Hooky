@@ -1,4 +1,4 @@
-﻿"""Configuration loaded from environment / .env file."""
+"""Configuration loaded from environment / .env file."""
 import os
 from pathlib import Path
 
@@ -56,17 +56,16 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
 # next model here and continues (sticky for the rest of the run). Models
 # retired by Google (404) are skipped automatically.
 #
-# Default chain verified live against the API (Sep 2026):
+# Default chain verified live against the API:
 #   gemini-3.8-flash      primary — newest Flash; free tier, busiest at peaks
-#   gemini-2.5-flash      working, own quota bucket
-#   gemini-3.1-flash-lite working, lite tier (typically the roomiest limits)
+#   gemini-3.1-flash-lite working, lite tier (roomiest limits)
 #   gemini-flash-latest   alias -> newest Flash; tracks future releases
-# (gemini-2.0-flash was retired by Google — do not put it back.)
+# (gemini-2.0-flash and gemini-2.5-flash were retired by Google — do not put them back.)
 # Empty = no rotation.
 GEMINI_FALLBACK_MODELS = [
     m.strip() for m in os.environ.get(
         "GEMINI_MODEL_FALLBACKS",
-        "gemini-2.5-flash,gemini-3.1-flash-lite,gemini-flash-latest").split(",")
+        "gemini-3.1-flash-lite,gemini-flash-latest").split(",")
     if m.strip() and m.strip().lower() != GEMINI_MODEL.lower()
 ]
 try:

@@ -24,7 +24,7 @@ jobs:
       - name: Test
         run: uv run pytest -q
       - name: Shell syntax
-        run: bash -n hooky.sh && bash -n setup.sh
+        run: bash -n main.sh
       - name: Build distributions
         run: uv run python -m build
 
@@ -38,7 +38,7 @@ jobs:
       - name: Parse PowerShell launchers
         shell: pwsh
         run: |
-          $files = @("hooky.ps1", "setup.ps1")
+          $files = @("main.ps1")
           foreach ($file in $files) {
             $tokens = $null
             $errors = $null
