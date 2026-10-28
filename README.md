@@ -80,7 +80,6 @@ Most clipping tools are either expensive monthly subscriptions or clunky scripts
 ```bash
 git clone https://github.com/pranav256/Hooky.git
 cd Hooky
-chmod +x main.sh
 ./main.sh
 ```
 
