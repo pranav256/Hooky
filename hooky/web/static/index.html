@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hooky Studio — Autonomous 9:16 Video Clipper</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' fill='%23070916'/%3E%3Crect x='16' y='16' width='96' height='96' fill='%2355F5D2' transform='rotate(-6 64 64)'/%3E%3Ctext x='64' y='82' font-family='monospace' font-size='64' font-weight='900' fill='%2307110F' text-anchor='middle'%3EH%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' fill='%23121316'/%3E%3Crect x='20' y='20' width='88' height='88' rx='16' fill='%2334D399'/%3E%3Ctext x='64' y='80' font-family='sans-serif' font-size='60' font-weight='700' fill='%230C0D10' text-anchor='middle'%3EH%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -21,8 +21,7 @@
             ink: '#f0f1f4',
             acid: '#34d399',
             red: '#ef4444',
-            violet: '#818cf8',
-            muted: '#6e7282',
+            muted: '#858997',
             line: 'rgba(255, 255, 255, 0.08)',
           },
           fontFamily: {
@@ -41,8 +40,7 @@
       --ink: #f0f1f4;
       --acid: #34d399;
       --red: #ef4444;
-      --violet: #818cf8;
-      --muted: #6e7282;
+      --muted: #858997;
       --line: rgba(255, 255, 255, 0.08);
     }
     body {
@@ -53,14 +51,14 @@
     }
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #121316; }
-    ::-webkit-scrollbar-thumb { background: #2b2e38; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3b3f4c; }
+    ::-webkit-scrollbar-thumb { background: #262830; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #323540; }
 
     .brutal-card {
       background: #18191e;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
       transition: border-color 0.15s ease;
     }
     .brutal-card:hover {
@@ -70,9 +68,8 @@
     .brutal-btn-acid {
       background: var(--acid);
       color: #0c0d10;
-      font-weight: 600;
+      font-weight: 500;
       border-radius: 8px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
       transition: opacity 0.15s ease, transform 0.1s ease;
     }
     .brutal-btn-acid:hover {
@@ -85,9 +82,8 @@
     .brutal-btn-red {
       background: var(--red);
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 500;
       border-radius: 8px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
       transition: opacity 0.15s ease, transform 0.1s ease;
     }
     .brutal-btn-red:hover {
@@ -103,12 +99,16 @@
       border-radius: 50%;
       background: var(--acid);
     }
+
+    .tabular {
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 <body class="flex flex-col selection:bg-[#34d399]/20 selection:text-white">
 
   <!-- ==================== TOP NAVIGATION BAR ==================== -->
-  <header class="sticky top-0 z-50 bg-[#0c0d10]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-8 py-3">
+  <header class="sticky top-0 z-50 bg-[#0c0d10]/95 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-8 py-3">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       
       <!-- Brand & Version -->
@@ -120,10 +120,10 @@
           <div class="flex items-center gap-2">
             <span class="font-semibold text-base text-white tracking-tight">Hooky Studio</span>
             <span class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-[#34d399] border border-white/10 rounded font-medium">
-              Local Engine
+              Local engine
             </span>
           </div>
-          <span class="text-[11px] text-slate-400 font-mono">Autonomous 9:16 Video Clipper</span>
+          <span class="text-[11px] text-slate-400 font-mono">Autonomous 9:16 video clipper</span>
         </div>
       </div>
 
@@ -136,7 +136,7 @@
           <i data-lucide="radio" class="w-3.5 h-3.5 inline mr-1.5"></i>Radar
         </button>
         <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
-          <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1.5"></i>Gallery (<span id="gallery-count">0</span>)
+          <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1.5"></i>Gallery (<span id="gallery-count" class="tabular">0</span>)
         </button>
         <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
           <i data-lucide="sliders" class="w-3.5 h-3.5 inline mr-1.5"></i>Settings (.env)
@@ -150,7 +150,7 @@
       <div class="flex items-center gap-2">
         <div id="gpu-badge" class="flex items-center gap-2 px-3 py-1 bg-[#18191e] border border-white/[0.08] rounded-md text-xs font-mono text-slate-300">
           <span class="pulse-dot"></span>
-          <span id="gpu-text">Engine Online</span>
+          <span id="gpu-text">Engine online</span>
         </div>
       </div>
     </div>
@@ -168,7 +168,7 @@
         <!-- Row 1: Target Video URL + Actions -->
         <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
           <div class="flex-1 relative">
-            <i data-lucide="youtube" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <i data-lucide="link" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
             <input
               id="source-url"
               type="text"
@@ -194,7 +194,7 @@
               onclick="renderSelectedHook()"
               class="brutal-btn-red px-4 py-2 text-xs flex items-center justify-center gap-1.5"
             >
-              <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
+              <i data-lucide="video" class="w-3.5 h-3.5"></i>
               <span>Export 9:16</span>
             </button>
 
@@ -248,32 +248,32 @@
         </div>
 
         <!-- Progress Stepper & Terminal Log Toggle -->
-        <div id="pipeline-stepper" class="hidden p-4 bg-[#070916] border border-[#55f5d2]/40 space-y-3">
+        <div id="pipeline-stepper" class="hidden p-4 bg-[#121316] border border-white/[0.08] rounded-lg space-y-3">
           <div class="flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center gap-2 text-[#55f5d2]">
-              <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+            <div class="flex items-center gap-2 text-slate-200">
+              <i data-lucide="loader" class="w-4 h-4 animate-spin text-[#34d399]"></i>
               <span id="stepper-status-text">Processing engine task...</span>
             </div>
-            <span id="stepper-percent" class="font-bold text-[#55f5d2]">15%</span>
+            <span id="stepper-percent" class="font-medium text-[#34d399] tabular">15%</span>
           </div>
           
           <!-- Stepper Progress Bar -->
-          <div class="w-full h-1.5 bg-white/10 overflow-hidden">
-            <div id="stepper-progress-fill" class="h-full bg-[#55f5d2] transition-all duration-300" style="width: 15%;"></div>
+          <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div id="stepper-progress-fill" class="h-full bg-[#34d399] transition-all duration-300" style="width: 15%;"></div>
           </div>
 
           <!-- Console Terminal Toggle -->
           <div class="flex items-center justify-between text-[11px] font-mono pt-1 text-slate-400">
             <button onclick="toggleTerminalLogs()" class="hover:text-white flex items-center gap-1.5">
-              <i data-lucide="terminal" class="w-3.5 h-3.5 text-[#55f5d2]"></i>
-              <span id="terminal-toggle-label">Hide Console Logs</span>
+              <i data-lucide="terminal" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span id="terminal-toggle-label">Hide console logs</span>
             </button>
-            <span>Task ID: <code id="active-task-id" class="text-white">init_001</code></span>
+            <span>Task id: <code id="active-task-id" class="text-slate-300">init_001</code></span>
           </div>
 
           <!-- Live Console Output Box -->
-          <div id="live-engine-console" class="p-3 bg-black/95 border border-white/10 font-mono text-[11px] text-[#55f5d2] h-32 overflow-y-auto space-y-1">
-            <p class="text-slate-500">[system] Hooky Engine pipeline monitoring active</p>
+          <div id="live-engine-console" class="p-3 bg-[#0c0d10] border border-white/[0.06] rounded-md font-mono text-[11px] text-slate-300 h-32 overflow-y-auto space-y-1">
+            <p class="text-slate-500">[system] Hooky engine pipeline monitoring active</p>
           </div>
         </div>
 
@@ -285,12 +285,12 @@
         <!-- LEFT COLUMN: Hook Candidates List (5 Cols) -->
         <div class="lg:col-span-5 space-y-4">
           <div class="flex items-center justify-between">
-            <h3 class="font-extrabold text-sm uppercase tracking-wider text-white flex items-center gap-2">
-              <i data-lucide="flame" class="w-4 h-4 text-[#ff6b62]"></i>
-              <span>High-Retention Hook Moments</span>
+            <h3 class="font-medium text-sm text-white flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-[#34d399]"></i>
+              <span>High-retention hook moments</span>
             </h3>
-            <span id="hook-count" class="text-xs font-mono text-[#55f5d2] bg-[#55f5d2]/10 px-2.5 py-0.5 border border-[#55f5d2]/30">
-              4 Hooks Detected
+            <span id="hook-count" class="text-xs font-mono text-slate-300 bg-white/5 px-2.5 py-0.5 border border-white/10 rounded">
+              4 hooks detected
             </span>
           </div>
 
@@ -308,33 +308,33 @@
             <!-- Preview Controls Header -->
             <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
               <div class="flex items-center gap-2">
-                <span class="font-bold text-sm text-white">Visual Studio Preview</span>
-                <span id="preview-mode-tag" class="text-[10px] font-mono px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 uppercase">
-                  9:16 Simulator
+                <span class="font-medium text-sm text-white">Visual studio preview</span>
+                <span id="preview-mode-tag" class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded">
+                  9:16 simulator
                 </span>
               </div>
 
               <!-- Switcher: YouTube Source vs Vertical Canvas -->
-              <div class="flex items-center gap-1 bg-[#070916] p-1 border border-white/10 text-xs font-mono">
+              <div class="flex items-center gap-1 bg-[#121316] p-1 border border-white/[0.08] rounded-md text-xs font-mono">
                 <button
                   id="preview-tab-player"
                   onclick="switchPreviewMode('player')"
-                  class="px-3 py-1 text-slate-400 hover:text-white transition-all"
+                  class="px-3 py-1 text-slate-400 hover:text-white rounded transition-all"
                 >
-                  Source Video
+                  Source video
                 </button>
                 <button
                   id="preview-tab-canvas"
                   onclick="switchPreviewMode('canvas')"
-                  class="px-3 py-1 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all"
+                  class="px-3 py-1 bg-[#21232a] text-white font-medium rounded border border-white/10 transition-all"
                 >
-                  9:16 Canvas
+                  9:16 canvas
                 </button>
               </div>
             </div>
 
             <!-- Sub-View A: Embedded YouTube Player -->
-            <div id="preview-player-container" class="aspect-[16/9] w-full bg-black border border-white/10 relative overflow-hidden flex items-center justify-center">
+            <div id="preview-player-container" class="aspect-[16/9] w-full bg-black border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center">
               <iframe
                 id="youtube-embed-frame"
                 src="https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=37&end=51&autoplay=0&enablejsapi=1"
@@ -345,53 +345,53 @@
             </div>
 
             <!-- Sub-View B: Interactive 9:16 Vertical Video Canvas Simulator -->
-            <div id="preview-canvas-container" class="hidden aspect-[16/9] w-full bg-[#070916] border border-white/10 relative overflow-hidden flex items-center justify-center">
+            <div id="preview-canvas-container" class="hidden aspect-[16/9] w-full bg-[#0e0f12] border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center">
               
               <!-- Ambient Blurred Backdrop for Canvas Fit Mode -->
               <div id="ambient-blur-backdrop" class="absolute inset-0 bg-cover bg-center filter blur-xl opacity-30 scale-110"></div>
 
               <!-- Simulated Multi-Speaker Table Avatars -->
-              <div id="avatar-host" class="absolute left-[16%] top-[26%] flex flex-col items-center opacity-35 transition-opacity duration-300">
-                <div class="w-14 h-14 rounded-full bg-[#1b233a] border-2 border-slate-600 flex items-center justify-center text-slate-400 font-bold text-xs">
+              <div id="avatar-host" class="absolute left-[16%] top-[26%] flex flex-col items-center opacity-40 transition-opacity duration-300">
+                <div class="w-14 h-14 rounded-full bg-[#1e2026] border border-white/20 flex items-center justify-center text-slate-400 font-medium text-xs">
                   Speaker A
                 </div>
                 <span class="text-[10px] font-mono text-slate-400 mt-1">Host</span>
               </div>
 
               <div id="avatar-speaker1" class="absolute left-[44%] top-[22%] flex flex-col items-center opacity-100 transition-opacity duration-300">
-                <div class="w-16 h-16 rounded-full bg-[#55f5d2]/20 border-2 border-[#55f5d2] flex items-center justify-center text-[#55f5d2] font-bold text-sm shadow-lg shadow-[#55f5d2]/20">
+                <div class="w-16 h-16 rounded-full bg-[#34d399]/10 border border-[#34d399] flex items-center justify-center text-[#34d399] font-medium text-sm">
                   Speaker B
                 </div>
-                <span class="text-[10px] font-mono text-[#55f5d2] mt-1 flex items-center gap-1 font-bold">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#55f5d2] pulse-dot"></span> Active Voice
+                <span class="text-[10px] font-mono text-[#34d399] mt-1 flex items-center gap-1 font-medium">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#34d399] pulse-dot"></span> Active voice
                 </span>
               </div>
 
-              <div id="avatar-speaker2" class="absolute right-[16%] top-[26%] flex flex-col items-center opacity-35 transition-opacity duration-300">
-                <div class="w-14 h-14 rounded-full bg-[#1b233a] border-2 border-slate-600 flex items-center justify-center text-slate-400 font-bold text-xs">
+              <div id="avatar-speaker2" class="absolute right-[16%] top-[26%] flex flex-col items-center opacity-40 transition-opacity duration-300">
+                <div class="w-14 h-14 rounded-full bg-[#1e2026] border border-white/20 flex items-center justify-center text-slate-400 font-medium text-xs">
                   Speaker C
                 </div>
                 <span class="text-[10px] font-mono text-slate-400 mt-1">Guest</span>
               </div>
 
               <!-- 9:16 Vertical Cut Wireframe Indicator -->
-              <div id="crop-box" class="absolute inset-y-0 w-[42%] border-2 border-[#55f5d2] shadow-[0_0_20px_rgba(85,245,210,0.15)] pointer-events-none z-10 flex flex-col justify-end p-4">
-                <div class="bg-black/60 backdrop-blur-sm p-1.5 border border-[#55f5d2]/40 text-center mb-10">
-                  <span id="canvas-subtitle-preview" class="text-xs font-black tracking-tight text-white uppercase leading-snug">
-                    I'm going for the <span class="text-[#55f5d2]">unhinged crazy</span> tonight!
+              <div id="crop-box" class="absolute inset-y-0 w-[42%] border border-[#34d399]/70 pointer-events-none z-10 flex flex-col justify-end p-4">
+                <div class="bg-black/75 backdrop-blur-sm p-2 border border-white/10 rounded text-center mb-8">
+                  <span id="canvas-subtitle-preview" class="text-xs font-medium tracking-tight text-white leading-snug">
+                    I'm going for the <span class="text-[#34d399]">unhinged crazy</span> tonight
                   </span>
                 </div>
-                <div class="text-[10px] font-mono text-center text-[#55f5d2] bg-black/80 py-0.5 border border-[#55f5d2]/40 uppercase tracking-wider font-bold">
-                  1080 × 1920 (9:16 Reel)
+                <div class="text-[10px] font-mono text-center text-slate-300 bg-black/85 py-0.5 border border-white/10 rounded font-medium">
+                  1080 × 1920 (9:16 reel)
                 </div>
               </div>
             </div>
 
             <!-- Dialogue Transcript Inspector -->
-            <div class="p-3 bg-[#070916] border border-white/10 space-y-2">
+            <div class="p-3.5 bg-[#121316] border border-white/[0.08] rounded-lg space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300 font-mono text-[11px] uppercase">Hook Dialogue Transcript:</span>
-                <span id="transcript-time-badge" class="font-mono text-slate-400 text-[11px]">00:37.36 - 00:50.79</span>
+                <span class="font-medium text-slate-300 font-mono text-[11px]">Hook dialogue transcript:</span>
+                <span id="transcript-time-badge" class="font-mono text-slate-400 text-[11px] tabular">00:37.36 - 00:50.79</span>
               </div>
               <div id="dialogue-lines-box" class="max-h-24 overflow-y-auto space-y-1 font-mono text-xs text-slate-300 pr-1">
                 <!-- Dialogue cues populated here -->
@@ -399,14 +399,14 @@
             </div>
 
             <!-- Fine-Tune Timing Nudge Bar -->
-            <div class="p-2.5 bg-[#070916] border border-white/10 flex items-center justify-between text-xs">
-              <span class="font-bold text-slate-400 font-mono text-[11px] uppercase">Boundary Nudge:</span>
+            <div class="p-2.5 bg-[#121316] border border-white/[0.08] rounded-lg flex items-center justify-between text-xs">
+              <span class="font-medium text-slate-400 font-mono text-[11px]">Boundary nudge:</span>
               <div class="flex items-center gap-1.5 font-mono text-[11px]">
-                <button onclick="nudgeTime('start', -0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">-0.5s Start</button>
-                <button onclick="nudgeTime('start', +0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">+0.5s Start</button>
+                <button onclick="nudgeTime('start', -0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">-0.5s start</button>
+                <button onclick="nudgeTime('start', +0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">+0.5s start</button>
                 <span class="text-slate-600">|</span>
-                <button onclick="nudgeTime('end', -0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">-0.5s End</button>
-                <button onclick="nudgeTime('end', +0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">+0.5s End</button>
+                <button onclick="nudgeTime('end', -0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">-0.5s end</button>
+                <button onclick="nudgeTime('end', +0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">+0.5s end</button>
               </div>
             </div>
           </div>
@@ -420,25 +420,25 @@
       <div class="brutal-card p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="sliders" class="w-5 h-5 text-[#55f5d2]"></i>
-              <span class="uppercase tracking-tight">Environment Configuration (.env)</span>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-[#34d399]"></i>
+              <span>Environment configuration (.env)</span>
             </h2>
-            <p class="text-xs text-slate-400 mt-0.5">Manage API keys, model rotations, video output options, and hardware threads directly.</p>
+            <p class="text-xs text-slate-400 mt-1">Manage API keys, model fallbacks, output clip density, and FFmpeg threads.</p>
           </div>
-          <button onclick="saveEnvForm()" class="brutal-btn-acid px-5 py-2.5 text-xs uppercase tracking-wider flex items-center gap-2">
-            <i data-lucide="save" class="w-4 h-4"></i>
-            <span>Save .env Configuration</span>
+          <button onclick="saveEnvForm()" class="brutal-btn-acid px-4 py-2 text-xs flex items-center gap-2">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+            <span>Save configuration</span>
           </button>
         </div>
 
         <!-- Settings Tabs: Visual Form vs Raw Editor -->
         <div class="flex items-center gap-2 border-b border-white/[0.08] pb-3 text-xs font-mono">
-          <button onclick="switchEnvTab('form')" id="env-tab-form" class="px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all">
-            Visual Form
+          <button onclick="switchEnvTab('form')" id="env-tab-form" class="px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all">
+            Visual form
           </button>
-          <button onclick="switchEnvTab('raw')" id="env-tab-raw" class="px-3.5 py-1.5 text-slate-400 hover:text-white transition-all">
-            Raw .env Editor
+          <button onclick="switchEnvTab('raw')" id="env-tab-raw" class="px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
+            Raw .env editor
           </button>
         </div>
 
@@ -447,90 +447,90 @@
           
           <!-- Gemini API Key -->
           <div class="space-y-1.5 md:col-span-2">
-            <label class="text-slate-300 font-bold uppercase tracking-wider block">GEMINI_API_KEY:</label>
+            <label class="text-slate-300 font-medium block">GEMINI_API_KEY:</label>
             <div class="relative">
               <input
                 id="env-gemini-key"
                 type="password"
                 placeholder="AQ.Ab8RN6KAg..."
-                class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#55f5d2]"
+                class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
               />
               <button
                 type="button"
                 onclick="togglePasswordVisibility('env-gemini-key', this)"
-                class="absolute right-3 top-2.5 text-slate-400 hover:text-white"
+                class="absolute right-3 top-2 text-slate-400 hover:text-white"
               >
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
             </div>
-            <p class="text-[11px] text-slate-500">Free key from Google AI Studio (https://aistudio.google.com/apikey)</p>
+            <p class="text-[11px] text-slate-500">Free API key from Google AI Studio</p>
           </div>
 
           <!-- Gemini Primary Model -->
           <div class="space-y-1.5">
-            <label class="text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL (Primary):</label>
+            <label class="text-slate-300 font-medium block">GEMINI_MODEL (Primary):</label>
             <select
               id="env-gemini-model"
-              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
+              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-white/20"
             >
-              <option value="gemini-3.8-flash">gemini-3.8-flash (Primary Active Flash)</option>
-              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra Fast Lite)</option>
-              <option value="gemini-flash-latest">gemini-flash-latest (Auto Tracking)</option>
+              <option value="gemini-3.8-flash">gemini-3.8-flash (Primary active flash)</option>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra fast lite)</option>
+              <option value="gemini-flash-latest">gemini-flash-latest (Auto tracking)</option>
             </select>
           </div>
 
           <!-- Default Subtitle Style -->
           <div class="space-y-1.5">
-            <label class="text-slate-300 font-bold uppercase tracking-wider block">SUB_STYLE (Default Preset):</label>
+            <label class="text-slate-300 font-medium block">SUB_STYLE (Default preset):</label>
             <select
               id="env-sub-style"
-              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
+              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-white/20"
             >
-              <option value="gold">Warm Titanium (gold)</option>
-              <option value="hormozi">Hormozi Classic</option>
-              <option value="clean">Clean Studio</option>
-              <option value="minimal">Minimal Editorial</option>
-              <option value="emerald">Cyber Emerald</option>
-              <option value="crimson">Crimson Impact</option>
+              <option value="gold">Warm titanium (gold)</option>
+              <option value="hormozi">Hormozi classic</option>
+              <option value="clean">Clean studio</option>
+              <option value="minimal">Minimal editorial</option>
+              <option value="emerald">Cyber emerald</option>
+              <option value="crimson">Crimson impact</option>
             </select>
           </div>
 
           <!-- Fallback Models Chain -->
           <div class="space-y-1.5 md:col-span-2">
-            <label class="text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL_FALLBACKS (Order):</label>
+            <label class="text-slate-300 font-medium block">GEMINI_MODEL_FALLBACKS (Order):</label>
             <input
               id="env-gemini-fallbacks"
               type="text"
               placeholder="gemini-3.1-flash-lite,gemini-flash-latest"
-              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#55f5d2]"
+              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
             />
-            <p class="text-[11px] text-slate-500">Comma-separated models to rotate onto when hitting rate limits</p>
+            <p class="text-[11px] text-slate-500">Comma-separated models rotated automatically during rate limits</p>
           </div>
 
           <!-- Auto Clip Density -->
           <div class="space-y-1.5">
-            <label class="text-slate-300 font-bold uppercase tracking-wider block">AUTO_CLIP_DENSITY_MINUTES:</label>
+            <label class="text-slate-300 font-medium block">AUTO_CLIP_DENSITY_MINUTES:</label>
             <input
               id="env-density-minutes"
               type="number"
               min="2"
               max="60"
-              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
+              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/20 tabular"
             />
-            <p class="text-[11px] text-slate-500">One clip extracted per N minutes of source footage</p>
+            <p class="text-[11px] text-slate-500">Clips extracted per N minutes of source footage</p>
           </div>
 
           <!-- Hardware Threads -->
           <div class="space-y-1.5">
-            <label class="text-slate-300 font-bold uppercase tracking-wider block">FFMPEG_THREADS:</label>
+            <label class="text-slate-300 font-medium block">FFMPEG_THREADS:</label>
             <input
               id="env-ffmpeg-threads"
               type="number"
               min="1"
               max="32"
-              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
+              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/20 tabular"
             />
-            <p class="text-[11px] text-slate-500">CPU worker threads allocated for multi-threaded FFmpeg encoding</p>
+            <p class="text-[11px] text-slate-500">Worker threads allocated for FFmpeg encoding</p>
           </div>
         </div>
 
@@ -539,12 +539,12 @@
           <textarea
             id="env-raw-textarea"
             rows="16"
-            class="w-full bg-black/95 border border-white/10 p-4 font-mono text-xs text-[#55f5d2] focus:outline-none focus:border-[#55f5d2] leading-relaxed"
+            class="w-full bg-[#121316] border border-white/[0.08] rounded-lg p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-white/20 leading-relaxed"
           ></textarea>
         </div>
 
-        <div id="env-status-alert" class="hidden p-3 bg-[#55f5d2]/10 border border-[#55f5d2]/30 text-[#55f5d2] text-xs font-mono">
-          ✓ Environment configuration saved successfully and reloaded into engine.
+        <div id="env-status-alert" class="hidden p-3 bg-emerald-500/10 border border-emerald-500/20 text-[#34d399] text-xs font-mono rounded-md">
+          Environment configuration saved successfully and reloaded into engine.
         </div>
       </div>
     </section>
@@ -554,41 +554,41 @@
       <div class="brutal-card p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="radio" class="w-5 h-5 text-[#55f5d2]"></i>
-              <span class="uppercase tracking-tight">Channel Radar Monitor</span>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i data-lucide="radio" class="w-4 h-4 text-[#34d399]"></i>
+              <span>Channel radar monitor</span>
             </h2>
-            <p class="text-xs text-slate-400">Autonomous YouTube channel radar saved in <code class="text-[#55f5d2] font-mono">channels.txt</code></p>
+            <p class="text-xs text-slate-400 mt-1">Autonomous YouTube channel radar saved in <code class="text-slate-300 font-mono">channels.txt</code></p>
           </div>
-          <button onclick="saveActiveChannels()" class="brutal-btn-acid px-4 py-2 text-xs uppercase flex items-center gap-2">
-            <i data-lucide="save" class="w-4 h-4"></i>
+          <button onclick="saveActiveChannels()" class="brutal-btn-acid px-4 py-2 text-xs flex items-center gap-2">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
             <span>Save channels.txt</span>
           </button>
         </div>
 
-        <div class="p-3.5 bg-[#070916] border border-white/10 flex gap-2">
+        <div class="p-3.5 bg-[#121316] border border-white/[0.08] rounded-lg flex gap-2">
           <input
             id="new-channel-input"
             type="text"
             placeholder="@CreatorHandle | clips=2 | focus=high energy moments"
-            class="flex-1 bg-[#10142a] border border-white/10 px-4 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#55f5d2]"
+            class="flex-1 bg-[#18191e] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-white/20"
           />
-          <button onclick="addNewChannel()" class="px-4 py-2 bg-[#10142a] text-[#55f5d2] border border-[#55f5d2]/40 hover:bg-[#1a2142] text-xs font-mono font-bold transition-all">
-            Add Channel
+          <button onclick="addNewChannel()" class="px-4 py-2 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded-md text-xs font-mono font-medium transition-all">
+            Add channel
           </button>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr class="border-b border-white/10 text-slate-400 text-[11px]">
+              <tr class="border-b border-white/[0.08] text-slate-400 text-[11px]">
                 <th class="p-3">Handle / URL</th>
-                <th class="p-3">Clips Desired</th>
-                <th class="p-3">Editing Focus</th>
+                <th class="p-3">Clips desired</th>
+                <th class="p-3">Editing focus</th>
                 <th class="p-3 text-right">Action</th>
               </tr>
             </thead>
-            <tbody id="channels-table-body" class="divide-y divide-white/5">
+            <tbody id="channels-table-body" class="divide-y divide-white/[0.06]">
               <!-- Dynamically populated -->
             </tbody>
           </table>
@@ -601,25 +601,25 @@
       <div class="brutal-card p-6 space-y-6">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="folder" class="w-5 h-5 text-[#55f5d2]"></i>
-              <span class="uppercase tracking-tight">Rendered 9:16 Reels Gallery</span>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i data-lucide="folder" class="w-4 h-4 text-[#34d399]"></i>
+              <span>Rendered 9:16 reels gallery</span>
             </h2>
-            <p class="text-xs text-slate-400">All MP4 videos rendered to <code class="text-[#55f5d2] font-mono">output/</code></p>
+            <p class="text-xs text-slate-400 mt-1">Rendered MP4 video clips saved in <code class="text-slate-300 font-mono">output/</code></p>
           </div>
-          <button onclick="loadOutputs()" class="px-3.5 py-1.5 bg-[#10142a] text-slate-300 hover:text-white border border-white/10 text-xs font-mono flex items-center gap-1.5 transition-all">
+          <button onclick="loadOutputs()" class="px-3 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-slate-300 hover:text-white border border-white/10 rounded-md text-xs font-mono flex items-center gap-1.5 transition-all">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Refresh</span>
           </button>
         </div>
 
         <!-- Video Player Modal / Active Video Card -->
-        <div id="active-video-player-box" class="hidden p-5 bg-black/90 border border-[#55f5d2]/50 space-y-3">
+        <div id="active-video-player-box" class="hidden p-5 bg-[#121316] border border-white/10 rounded-xl space-y-3">
           <div class="flex items-center justify-between">
-            <span id="active-playing-title" class="font-bold text-white text-sm font-mono">Now Playing</span>
-            <button onclick="closeActivePlayer()" class="text-slate-400 hover:text-white text-xs font-mono">✕ Close Player</button>
+            <span id="active-playing-title" class="font-medium text-white text-sm font-mono">Now playing</span>
+            <button onclick="closeActivePlayer()" class="text-slate-400 hover:text-white text-xs font-mono">Close player ✕</button>
           </div>
-          <div class="max-w-xs mx-auto aspect-[9/16] overflow-hidden bg-black border border-white/20 shadow-2xl">
+          <div class="max-w-xs mx-auto aspect-[9/16] overflow-hidden bg-black border border-white/10 rounded-lg">
             <video id="html5-video-player" controls class="w-full h-full object-cover">
               <source id="video-source-elem" src="" type="video/mp4">
             </video>
@@ -636,11 +636,11 @@
     <section id="view-doctor" class="hidden space-y-6">
       <div class="brutal-card p-6 space-y-6">
         <div>
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i data-lucide="activity" class="w-5 h-5 text-[#55f5d2]"></i>
-            <span class="uppercase tracking-tight">System Health &amp; Diagnostics</span>
+          <h2 class="text-base font-semibold text-white flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-[#34d399]"></i>
+            <span>System health and diagnostics</span>
           </h2>
-          <p class="text-xs text-slate-400">Dependency verification across FFmpeg, Whisper, CPU/GPU hardware profiles, and Gemini API</p>
+          <p class="text-xs text-slate-400 mt-1">Diagnostic status across FFmpeg, Whisper, hardware acceleration, and Gemini API.</p>
         </div>
 
         <div id="doctor-checks-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono">
@@ -699,7 +699,7 @@
         start_fmt: "0:37",
         end_fmt: "0:51",
         duration: "13.4s",
-        reason: "Unexpected declaration of an unhinged strategy sets an unpredictable, hilarious tone.",
+        reason: "Unexpected declaration of an unhinged strategy sets an unpredictable tone.",
         boundary: "Natural speech pause aligned",
         words: ["GOOD", "GAME", "PROFESSIONAL", "NEGOTIATOR", "UNHINGED", "CRAZY", "TONIGHT"],
         dialogue: [
@@ -787,7 +787,7 @@
     let cachedEnvConfig = { raw: "", values: {} };
     let isPlaying = true;
     let wordIdx = 0;
-    const SCRIPT_WORDS = ["I'M", "GOING", "FOR", "THE", "UNHINGED", "CRAZY", "TONIGHT!"];
+    const SCRIPT_WORDS = ["I'M", "GOING", "FOR", "THE", "UNHINGED", "CRAZY", "TONIGHT"];
 
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
@@ -811,9 +811,9 @@
         const btn = document.getElementById(`tab-${t}`);
         if (btn) {
           if (t === tabId) {
-            btn.className = "tab-btn px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold border border-[#55f5d2] shadow-[2px_2px_0_#9c8cff] transition-all";
+            btn.className = "tab-btn px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all";
           } else {
-            btn.className = "tab-btn px-3.5 py-1.5 text-slate-400 hover:text-white transition-all";
+            btn.className = "tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all";
           }
         }
       });
@@ -825,9 +825,9 @@
       ['auto', 'fit', 'center'].forEach(m => {
         const btn = document.getElementById(`frame-mode-${m}`);
         if (m === mode) {
-          btn.className = "px-2.5 py-0.5 bg-[#55f5d2] text-[#07110f] font-bold transition-all";
+          btn.className = "px-2.5 py-0.5 bg-[#21232a] text-white font-medium rounded transition-all";
         } else {
-          btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white transition-all";
+          btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all";
         }
       });
       applyVisualFramingState();
@@ -839,9 +839,9 @@
         const btn = document.getElementById(`sub-mode-${s}`);
         if (btn) {
           if (s === style) {
-            btn.className = "px-2.5 py-0.5 bg-[#55f5d2] text-[#07110f] font-bold transition-all";
+            btn.className = "px-2.5 py-0.5 bg-[#21232a] text-white font-medium rounded transition-all";
           } else {
-            btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white transition-all";
+            btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all";
           }
         }
       });
@@ -858,14 +858,14 @@
         cropBox.style.width = "40%";
         cropBox.style.left = "30%";
         backdrop.style.opacity = "0.35";
-        tag.innerText = "Canvas Fit (Ambient Blur)";
+        tag.innerText = "Canvas fit (ambient blur)";
         document.getElementById('avatar-host').style.opacity = "0.7";
         document.getElementById('avatar-speaker2').style.opacity = "0.7";
       } else {
         cropBox.style.width = "46%";
         cropBox.style.left = "27%";
         backdrop.style.opacity = "0.08";
-        tag.innerText = "Center Crop (Solo Speaker)";
+        tag.innerText = "Center crop (solo speaker)";
         document.getElementById('avatar-host').style.opacity = "0.2";
         document.getElementById('avatar-speaker2').style.opacity = "0.2";
       }
@@ -881,11 +881,11 @@
       const tabCanvas = document.getElementById('preview-tab-canvas');
 
       if (isPlayer) {
-        tabPlayer.className = "px-3 py-1 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
-        tabCanvas.className = "px-3 py-1 text-slate-400 hover:text-white transition-all";
+        tabPlayer.className = "px-3 py-1 bg-[#21232a] text-white font-medium rounded border border-white/10 transition-all";
+        tabCanvas.className = "px-3 py-1 text-slate-400 hover:text-white rounded transition-all";
       } else {
-        tabCanvas.className = "px-3 py-1 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
-        tabPlayer.className = "px-3 py-1 text-slate-400 hover:text-white transition-all";
+        tabCanvas.className = "px-3 py-1 bg-[#21232a] text-white font-medium rounded border border-white/10 transition-all";
+        tabPlayer.className = "px-3 py-1 text-slate-400 hover:text-white rounded transition-all";
       }
     }
 
@@ -912,8 +912,8 @@
       const dialogueBox = document.getElementById('dialogue-lines-box');
       if (dialogueBox && hook.dialogue) {
         dialogueBox.innerHTML = hook.dialogue.map(d => `
-          <div class="flex items-start gap-2 hover:bg-white/[0.04] p-1 transition-colors">
-            <span class="text-[#55f5d2] select-none text-[10px] w-10 shrink-0 font-bold">${d.time}</span>
+          <div class="flex items-start gap-2 hover:bg-white/[0.04] p-1 rounded transition-colors">
+            <span class="text-[#34d399] select-none text-[10px] w-10 shrink-0 font-medium tabular">${d.time}</span>
             <span class="leading-relaxed text-slate-200">${d.text}</span>
           </div>
         `).join('');
@@ -935,15 +935,15 @@
 
       let styledHTML = "";
       if (style === 'gold') {
-        styledHTML = `I'M GOING FOR THE <span class="text-[#ffd166] drop-shadow-[0_2px_10px_rgba(255,209,102,0.8)] font-black text-sm">${activeWord}</span> TONIGHT!`;
+        styledHTML = `I'M GOING FOR THE <span class="text-[#ffd166] font-medium text-sm">${activeWord}</span> TONIGHT`;
       } else if (style === 'hormozi') {
-        styledHTML = `<span class="bg-[#ffff00] text-black px-1.5 py-0.5 font-black uppercase text-sm">${activeWord}</span>`;
+        styledHTML = `<span class="bg-[#ffff00] text-black px-1.5 py-0.5 font-bold uppercase text-sm">${activeWord}</span>`;
       } else if (style === 'emerald') {
-        styledHTML = `UNHINGED <span class="text-[#55f5d2] drop-shadow-[0_0_12px_#55f5d2] underline decoration-2">${activeWord}</span> STRATEGY`;
+        styledHTML = `UNHINGED <span class="text-[#34d399] font-medium underline decoration-1">${activeWord}</span> STRATEGY`;
       } else if (style === 'crimson') {
-        styledHTML = `<span class="text-[#ff6b62] drop-shadow-[0_0_15px_#ff6b62] font-black">${activeWord}</span>`;
+        styledHTML = `<span class="text-[#ef4444] font-medium">${activeWord}</span>`;
       } else if (style === 'minimal') {
-        styledHTML = `<span class="italic text-slate-100 font-serif border-b border-white">${activeWord}</span>`;
+        styledHTML = `<span class="text-slate-100 border-b border-white">${activeWord}</span>`;
       } else {
         styledHTML = `UNHINGED <span class="text-white bg-black/80 px-2 py-0.5 border border-white/20">${activeWord}</span> TONIGHT`;
       }
@@ -954,48 +954,48 @@
       const container = document.getElementById('hooks-container');
       if (!container) return;
 
-      document.getElementById('hook-count').innerText = `${CURRENT_HOOKS.length} Hooks Detected`;
+      document.getElementById('hook-count').innerText = `${CURRENT_HOOKS.length} hooks detected`;
 
       container.innerHTML = CURRENT_HOOKS.map((h, idx) => {
         const isSelected = h.id === selectedHookId;
-        const borderClass = isSelected ? "border-[#55f5d2] bg-[#0d1124] shadow-[4px_4px_0_#9c8cff]" : "border-white/10 bg-[#070916] hover:border-white/30";
+        const borderClass = isSelected ? "border-[#34d399] bg-[#21232a]" : "border-white/[0.08] bg-[#18191e] hover:border-white/20";
         
         return `
           <div 
             onclick="selectHook('${h.id}')"
-            class="p-4 border ${borderClass} transition-all cursor-pointer space-y-3 group"
+            class="p-4 border ${borderClass} rounded-lg transition-all cursor-pointer space-y-2.5 group"
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <span class="w-5 h-5 grid place-items-center bg-[#10142a] text-slate-400 font-mono text-[10px] font-bold border border-white/10">0${idx + 1}</span>
-                <span class="text-xs font-mono px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 uppercase font-bold tracking-wider text-[10px]">
-                  ${h.category || 'High-Retention'}
+                <span class="w-5 h-5 grid place-items-center bg-[#121316] text-slate-400 font-mono text-[10px] rounded border border-white/10">0${idx + 1}</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded">
+                  ${h.category || 'High-retention'}
                 </span>
               </div>
-              <div class="flex items-center gap-1 font-mono text-xs">
-                <span class="text-[#55f5d2] font-black">${h.retention_score}%</span>
-                <span class="text-slate-500 text-[10px]">RETENTION</span>
+              <div class="flex items-center gap-1 font-mono text-xs tabular">
+                <span class="text-[#34d399] font-medium">${h.retention_score}%</span>
+                <span class="text-slate-500 text-[10px]">retention</span>
               </div>
             </div>
 
             <div>
-              <h4 class="font-extrabold text-sm text-white group-hover:text-[#55f5d2] transition-colors leading-snug">
+              <h4 class="font-medium text-sm text-white group-hover:text-white transition-colors leading-snug">
                 "${h.title}"
               </h4>
-              <p class="text-xs text-slate-400 mt-1 line-clamp-2 italic font-mono leading-relaxed">
+              <p class="text-xs text-slate-400 mt-1 line-clamp-2 font-mono leading-relaxed">
                 "${h.hook_quote}"
               </p>
             </div>
 
-            <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-mono">
-              <span class="text-slate-400">
-                ⏱ ${h.start_fmt} - ${h.end_fmt} (${h.duration})
+            <div class="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[11px] font-mono">
+              <span class="text-slate-400 tabular">
+                ${h.start_fmt} - ${h.end_fmt} (${h.duration})
               </span>
               <button
                 onclick="event.stopPropagation(); renderSingleHookById('${h.id}')"
-                class="px-3 py-1 bg-[#10142a] hover:bg-[#55f5d2] hover:text-[#07110f] border border-white/10 hover:border-[#55f5d2] text-white font-bold transition-all"
+                class="px-2.5 py-1 bg-[#232325] hover:bg-white hover:text-black border border-white/10 text-white rounded transition-all"
               >
-                Export Reel →
+                Export reel →
               </button>
             </div>
           </div>
@@ -1042,7 +1042,7 @@
       const consoleBox = document.getElementById('live-engine-console');
       const label = document.getElementById('terminal-toggle-label');
       consoleBox.classList.toggle('hidden');
-      label.innerText = consoleBox.classList.contains('hidden') ? 'Show Console Logs' : 'Hide Console Logs';
+      label.innerText = consoleBox.classList.contains('hidden') ? 'Show console logs' : 'Hide console logs';
     }
 
     // ==================== ENGINE API CALLS ====================
@@ -1076,7 +1076,7 @@
             const sRes = await fetch(`/api/analyze/status/${job_id}`);
             const job = await sRes.json();
 
-            document.getElementById('stepper-status-text').innerText = job.step || 'Running AI Hook Detection...';
+            document.getElementById('stepper-status-text').innerText = job.step || 'Running AI hook detection...';
             document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
             document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
@@ -1087,7 +1087,7 @@
             if (job.status === 'completed' || job.status === 'failed') {
               clearInterval(pollInterval);
               analyzeBtn.disabled = false;
-              analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Auto-Detect Hooks</span>`;
+              analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
               lucide.createIcons();
 
               if (job.result && job.result.hooks && job.result.hooks.length > 0) {
@@ -1096,13 +1096,13 @@
                 autoDetectedStyle = job.result.recommended_style || 'gold';
 
                 document.getElementById('smart-recommendation-text').innerText = 
-                  `Auto-Tuned: ${autoDetectedFraming === 'fit' ? 'Canvas Fit' : 'Center Crop'} + ${autoDetectedStyle.toUpperCase()}`;
+                  `Auto-tuned: ${autoDetectedFraming === 'fit' ? 'Canvas fit' : 'Center crop'} + ${autoDetectedStyle}`;
 
                 setFramingMode(autoDetectedFraming);
                 setSubtitleMode(autoDetectedStyle);
                 renderHooksList();
                 updateSelectedHookDetails();
-                appendConsoleLog(`[pipeline] Hook analysis completed successfully! ${CURRENT_HOOKS.length} moments ready.`);
+                appendConsoleLog(`[pipeline] Hook analysis completed successfully. ${CURRENT_HOOKS.length} moments ready.`);
               }
             }
           } catch (pollErr) {
@@ -1113,7 +1113,7 @@
       } catch (e) {
         console.error(e);
         analyzeBtn.disabled = false;
-        analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Auto-Detect Hooks</span>`;
+        analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
         lucide.createIcons();
       }
     }
@@ -1130,7 +1130,7 @@
 
       const btn = document.getElementById('top-render-btn');
       btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Exporting Reel...</span>`;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Exporting...</span>`;
       lucide.createIcons();
 
       const stepper = document.getElementById('pipeline-stepper');
@@ -1161,14 +1161,14 @@
           const sRes = await fetch(`/api/jobs/${job_id}`);
           const job = await sRes.json();
 
-          document.getElementById('stepper-status-text').innerText = job.step || 'Encoding Vertical 1080x1920 Reel...';
+          document.getElementById('stepper-status-text').innerText = job.step || 'Encoding vertical 1080x1920 reel...';
           document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
           document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
           if (job.status === 'completed' || job.status === 'failed') {
             clearInterval(pollRender);
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i><span>Export 9:16 Reel</span>`;
+            btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
             lucide.createIcons();
 
             if (job.status === 'completed') {
@@ -1186,7 +1186,7 @@
         console.error(e);
         appendConsoleLog(`[render error] ${e.message}`);
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i><span>Export 9:16 Reel</span>`;
+        btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
         lucide.createIcons();
       }
     }
@@ -1226,7 +1226,7 @@
           if (job.status === 'completed' || job.status === 'failed') {
             clearInterval(pollMake);
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#55f5d2]"></i><span>Run Pipeline</span>`;
+            btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
             lucide.createIcons();
             loadOutputs();
           }
@@ -1303,11 +1303,11 @@
       const tabRaw = document.getElementById('env-tab-raw');
 
       if (isRaw) {
-        tabRaw.className = "px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
-        tabForm.className = "px-3.5 py-1.5 text-slate-400 hover:text-white transition-all";
+        tabRaw.className = "px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all";
+        tabForm.className = "px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all";
       } else {
-        tabForm.className = "px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
-        tabRaw.className = "px-3.5 py-1.5 text-slate-400 hover:text-white transition-all";
+        tabForm.className = "px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all";
+        tabRaw.className = "px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all";
       }
     }
 
@@ -1352,11 +1352,11 @@
 
         return `
           <tr class="hover:bg-white/[0.02] transition-colors">
-            <td class="p-3 font-mono font-bold text-white">${handle}</td>
-            <td class="p-3 text-slate-400 font-mono">${clips}</td>
+            <td class="p-3 font-mono font-medium text-white">${handle}</td>
+            <td class="p-3 text-slate-400 font-mono tabular">${clips}</td>
             <td class="p-3 text-slate-400 font-mono">${focus}</td>
             <td class="p-3 text-right">
-              <button onclick="removeChannel(${idx})" class="text-rose-400 hover:text-rose-300 font-mono text-[11px]">
+              <button onclick="removeChannel(${idx})" class="text-red-400 hover:text-red-300 font-mono text-[11px]">
                 Remove
               </button>
             </td>
@@ -1402,32 +1402,32 @@
 
         const grid = document.getElementById('outputs-grid');
         if (files.length === 0) {
-          grid.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-500 font-mono">No rendered video clips yet in output/. Click "Export 9:16 Reel" to create one!</div>';
+          grid.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-500 font-mono text-xs">No rendered video clips in output/ yet. Use "Export 9:16" to create clips.</div>';
           return;
         }
 
         grid.innerHTML = files.map(f => `
-          <div class="p-4 bg-[#070916] border border-white/10 hover:border-[#55f5d2]/40 transition-all space-y-3 font-mono">
+          <div class="p-4 bg-[#18191e] border border-white/[0.08] hover:border-white/20 rounded-lg transition-all space-y-3 font-mono">
             <div class="flex items-center justify-between">
-              <span class="text-xs px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 font-bold">1080×1920 MP4</span>
-              <span class="text-xs text-slate-400">${f.size_mb} MB</span>
+              <span class="text-xs px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded font-medium">1080×1920 MP4</span>
+              <span class="text-xs text-slate-400 tabular">${f.size_mb} MB</span>
             </div>
             <div>
-              <h4 class="font-bold text-white text-xs truncate max-w-full font-sans" title="${f.name}">${f.name}</h4>
+              <h4 class="font-medium text-white text-xs truncate max-w-full font-sans" title="${f.name}">${f.name}</h4>
               <p class="text-[11px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
             </div>
-            <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+            <div class="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
               <button
                 onclick="playOutputVideo('${f.name}', '${f.name}')"
-                class="flex-1 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold text-xs hover:brightness-110 flex items-center justify-center gap-1.5 transition-all shadow-[2px_2px_0_#9c8cff]"
+                class="flex-1 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
               >
-                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                <i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i>
                 <span>Watch</span>
               </button>
               <a
                 href="${f.url}${window.__HOOKY_TOKEN__ ? '?token=' + encodeURIComponent(window.__HOOKY_TOKEN__) : ''}"
                 download
-                class="px-3 py-1.5 bg-[#10142a] text-slate-300 hover:text-white border border-white/10 text-xs transition-all"
+                class="px-3 py-1.5 bg-[#121316] text-slate-300 hover:text-white border border-white/[0.08] rounded text-xs transition-all"
               >
                 <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
               </a>
@@ -1475,12 +1475,12 @@
 
         const checks = data.checks || [];
         container.innerHTML = checks.map(c => `
-          <div class="p-3 bg-[#070916] border border-white/10 flex items-center justify-between text-xs font-mono">
+          <div class="p-3 bg-[#18191e] border border-white/[0.08] rounded-md flex items-center justify-between text-xs font-mono">
             <div class="flex items-center gap-2">
-              <span class="${c.ok ? 'text-[#55f5d2]' : 'text-[#ff6b62]'} font-bold">
-                ${c.ok ? '✓ PASS' : '✗ FAIL'}
+              <span class="${c.ok ? 'text-[#34d399]' : 'text-red-400'} font-medium">
+                ${c.ok ? '✓ pass' : '✗ fail'}
               </span>
-              <span class="text-white font-bold">${c.name}</span>
+              <span class="text-white font-medium">${c.name}</span>
             </div>
             <span class="text-slate-400 text-[11px] truncate max-w-[200px]" title="${c.detail}">${c.detail}</span>
           </div>
