@@ -96,6 +96,26 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 ---
 
+## 🖥️ Web Studio & Interactive Portal
+
+Hooky includes a built-in visual Web Studio and control portal running locally at `http://127.0.0.1:8000`:
+
+<p align="center">
+  <img src="docs/images/engine_studio.png" alt="Hooky Web Studio Interface" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/images/engine_settings.png" alt="Hooky Settings Editor" width="49.5%">
+  <img src="docs/images/engine_radar.png" alt="Hooky Channel Radar" width="49.5%">
+</p>
+
+* **AI Hook Candidate Inspector**: Inspect Gemini-detected viral moments with dialogue transcripts, retention scores, and boundary timecodes.
+* **Dual-Mode Visual Simulator**: Switch between the original horizontal video and the 9:16 vertical crop preview.
+* **Auto-Tuned Framing & Subtitles**: Automatically selects between solo speaker tracking, split-screen, or ambient canvas fit with custom typography.
+* **Channel Radar & `.env` Management**: Monitor creator channels in `channels.txt` and fine-tune runtime environment variables directly in your browser.
+
+---
+
 ## ⚡ Workflow in 2 Minutes
 
 ### 1. Feed Channels or Links
