@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hooky Studio — Autonomous Video Clipper &amp; Visual Portal</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23080A0F' stroke='%23E5C07B' stroke-width='2'/%3E%3Cpolygon points='64,46 56,66 65,66 60,82 72,60 63,60' fill='%23E5C07B'/%3E%3C/svg%3E">
+  <title>Hooky Studio — Autonomous 9:16 Video Clipper</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' fill='%23070916'/%3E%3Crect x='16' y='16' width='96' height='96' fill='%2355F5D2' transform='rotate(-6 64 64)'/%3E%3Ctext x='64' y='82' font-family='monospace' font-size='64' font-weight='900' fill='%2307110F' text-anchor='middle'%3EH%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -12,84 +15,136 @@
       theme: {
         extend: {
           colors: {
-            obsidian: '#090B10',
-            card: '#10141E',
-            gold: {
-              300: '#F3DFA2',
-              400: '#E5C07B',
-              500: '#D4AF37',
-              600: '#B89428',
-            }
+            paper: '#070916',
+            panel: '#0d1124',
+            cream: '#10142a',
+            ink: '#f6f4ee',
+            acid: '#55f5d2',
+            red: '#ff6b62',
+            violet: '#9c8cff',
+            muted: '#9298ae',
+            line: 'rgba(221, 225, 255, 0.12)',
+          },
+          fontFamily: {
+            sans: ['Manrope', 'sans-serif'],
+            mono: ['DM Mono', 'monospace'],
           }
         }
       }
     }
   </script>
   <style>
+    :root {
+      --paper: #070916;
+      --panel: #0d1124;
+      --cream: #10142a;
+      --ink: #f6f4ee;
+      --acid: #55f5d2;
+      --red: #ff6b62;
+      --violet: #9c8cff;
+      --muted: #9298ae;
+      --line: rgba(221, 225, 255, 0.12);
+    }
     body {
-      background-color: #090B10;
-      color: #F8FAFC;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: 'Manrope', sans-serif;
+      background-image: 
+        radial-gradient(circle at 82% 8%, rgba(156, 140, 255, 0.12), transparent 28%),
+        radial-gradient(circle at 14% 22%, rgba(85, 245, 210, 0.05), transparent 25%);
+      min-height: 100vh;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #090B10; }
-    ::-webkit-scrollbar-thumb { background: #1E2536; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #2C354C; }
-    
-    .waveform-bar {
-      animation: wavePulse 1.2s ease-in-out infinite alternate;
+    ::-webkit-scrollbar-track { background: #070916; }
+    ::-webkit-scrollbar-thumb { background: #28314e; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3d4a75; }
+
+    .brutal-card {
+      background: #0d1124;
+      border: 1px solid rgba(221, 225, 255, 0.14);
+      box-shadow: 6px 6px 0 rgba(156, 140, 255, 0.25);
+      transition: all 0.2s ease;
     }
-    @keyframes wavePulse {
-      0% { height: 20%; }
-      100% { height: 95%; }
+    .brutal-card:hover {
+      box-shadow: 8px 8px 0 rgba(156, 140, 255, 0.4);
+    }
+
+    .brutal-btn-acid {
+      background: var(--acid);
+      color: #07110f;
+      font-weight: 700;
+      border: 1px solid #55f5d2;
+      box-shadow: 3px 3px 0 var(--violet);
+      transition: all 0.15s ease;
+    }
+    .brutal-btn-acid:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 var(--violet);
+    }
+
+    .brutal-btn-red {
+      background: var(--red);
+      color: #07110f;
+      font-weight: 700;
+      border: 1px solid #ff6b62;
+      box-shadow: 3px 3px 0 var(--violet);
+      transition: all 0.15s ease;
+    }
+    .brutal-btn-red:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 var(--violet);
+    }
+
+    .pulse-dot {
+      box-shadow: 0 0 0 3px rgba(85, 245, 210, 0.2), 0 0 14px rgba(85, 245, 210, 0.8);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-[#E5C07B]/30 selection:text-white">
+<body class="flex flex-col selection:bg-[#55f5d2]/30 selection:text-white">
 
   <!-- ==================== TOP NAVIGATION BAR ==================== -->
-  <header class="sticky top-0 z-50 bg-[#090B10]/95 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-8 py-3">
+  <header class="sticky top-0 z-50 bg-[#070916]/95 backdrop-blur-md border-b border-[rgba(221,225,255,0.12)] px-4 sm:px-8 py-3">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       
       <!-- Brand & Version -->
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-[#141926] border border-[#E5C07B]/40 flex items-center justify-center text-[#E5C07B] shadow-sm">
-          <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+        <div class="w-8 h-8 grid place-items-center bg-[#55f5d2] text-[#07110f] -rotate-6 shadow-[3px_3px_0_#9c8cff] font-mono font-black text-lg">
+          <span class="rotate-6">H</span>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-extrabold text-lg text-white tracking-tight">Hooky Studio</span>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E5C07B]/10 text-[#E5C07B] border border-[#E5C07B]/20 font-semibold">
-              v2.4
+            <span class="font-extrabold text-lg text-white tracking-tight uppercase">Hooky Studio</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 font-bold uppercase tracking-wider">
+              Local Engine
             </span>
           </div>
-          <span class="text-[11px] text-slate-400">Autonomous 9:16 Video Clipper</span>
+          <span class="text-[11px] text-slate-400 font-mono">Autonomous 9:16 Video Clipper</span>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
-      <nav class="hidden md:flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-medium">
-        <button onclick="switchTab('studio')" id="tab-studio" class="tab-btn px-4 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-semibold transition-all">
+      <nav class="hidden md:flex items-center gap-1.5 p-1 bg-[#0d1124] border border-white/10 text-xs font-mono">
+        <button onclick="switchTab('studio')" id="tab-studio" class="tab-btn px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold border border-[#55f5d2] shadow-[2px_2px_0_#9c8cff] transition-all">
           <i data-lucide="film" class="w-3.5 h-3.5 inline mr-1.5"></i>Studio
         </button>
-        <button onclick="switchTab('radar')" id="tab-radar" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+        <button onclick="switchTab('radar')" id="tab-radar" class="tab-btn px-3.5 py-1.5 text-slate-400 hover:text-white transition-all">
           <i data-lucide="radio" class="w-3.5 h-3.5 inline mr-1.5"></i>Radar
         </button>
-        <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+        <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn px-3.5 py-1.5 text-slate-400 hover:text-white transition-all">
           <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1.5"></i>Gallery (<span id="gallery-count">0</span>)
         </button>
-        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3.5 py-1.5 text-slate-400 hover:text-white transition-all">
           <i data-lucide="sliders" class="w-3.5 h-3.5 inline mr-1.5"></i>Settings (.env)
         </button>
-        <button onclick="switchTab('doctor')" id="tab-doctor" class="tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+        <button onclick="switchTab('doctor')" id="tab-doctor" class="tab-btn px-3.5 py-1.5 text-slate-400 hover:text-white transition-all">
           <i data-lucide="activity" class="w-3.5 h-3.5 inline mr-1.5"></i>Doctor
         </button>
       </nav>
 
-      <!-- Hardware Indicator -->
+      <!-- Engine Hardware Indicator -->
       <div class="flex items-center gap-2">
-        <div id="gpu-badge" class="flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-emerald-400">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div id="gpu-badge" class="flex items-center gap-2 px-3 py-1 bg-[#0d1124] border border-[#55f5d2]/30 text-xs font-mono text-[#55f5d2]">
+          <span class="w-2 h-2 rounded-full bg-[#55f5d2] pulse-dot"></span>
           <span id="gpu-text">Engine Online</span>
         </div>
       </div>
@@ -103,27 +158,27 @@
     <section id="view-studio" class="space-y-6">
 
       <!-- ==================== TOP COMMAND & CONTROLS TOOLBAR ==================== -->
-      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 space-y-4 shadow-xl">
+      <div class="brutal-card p-5 space-y-4">
         
         <!-- Row 1: Target Video URL + Actions -->
         <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
           <div class="flex-1 relative">
-            <i data-lucide="youtube" class="w-5 h-5 text-rose-500 absolute left-3.5 top-3"></i>
+            <i data-lucide="youtube" class="w-5 h-5 text-[#ff6b62] absolute left-3.5 top-3"></i>
             <input
               id="source-url"
               type="text"
               placeholder="https://www.youtube.com/watch?v=EDCwQe7P8T0"
               value="https://www.youtube.com/watch?v=EDCwQe7P8T0"
-              class="w-full bg-[#10141E]/90 border border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#E5C07B] font-mono transition-colors"
+              class="w-full bg-[#10142a] border border-white/10 rounded-none pl-11 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#55f5d2] font-mono transition-colors"
             />
           </div>
 
           <!-- Primary Actions -->
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
             <button
               id="analyze-btn"
               onclick="triggerAnalyze()"
-              class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E5C07B] to-[#D4AF37] hover:brightness-110 text-[#0A0D14] font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#E5C07B]/10 transition-all"
+              class="brutal-btn-acid px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2"
             >
               <i data-lucide="sparkles" class="w-4 h-4"></i>
               <span>Auto-Detect Hooks</span>
@@ -131,8 +186,8 @@
 
             <button
               id="top-render-btn"
-              onclick="executeRenderClip()"
-              class="px-5 py-2.5 rounded-xl bg-[#171D2B] hover:bg-[#1E2536] text-[#E5C07B] border border-[#E5C07B]/40 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+              onclick="renderSelectedHook()"
+              class="brutal-btn-red px-5 py-2.5 text-xs uppercase tracking-wider flex items-center justify-center gap-2"
             >
               <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
               <span>Export 9:16 Reel</span>
@@ -140,139 +195,141 @@
 
             <button
               id="execute-make-btn"
-              onclick="executeMakePipeline()"
-              class="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-              title="Run full autonomous batch pipeline"
+              onclick="triggerMakePipeline()"
+              class="px-4 py-2.5 bg-[#10142a] hover:bg-[#151b38] border border-white/10 text-white font-mono text-xs uppercase flex items-center justify-center gap-2 transition-all"
             >
-              <i data-lucide="play" class="w-3.5 h-3.5"></i>
+              <i data-lucide="play" class="w-3.5 h-3.5 text-[#55f5d2]"></i>
               <span>Run Pipeline</span>
             </button>
           </div>
         </div>
 
-        <!-- Row 2: Streamlined Controls Bar (Framing & Subtitles at Top) -->
-        <div class="pt-3 border-t border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+        <!-- Row 2: Intelligent Auto-Recommendation & Override Controls -->
+        <div class="pt-3 border-t border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
           
-          <!-- Smart Auto Badge -->
+          <!-- Auto-Tuned Recommendation Pill -->
           <div class="flex items-center gap-2">
-            <span class="text-slate-400 font-mono text-[11px] uppercase tracking-wider">Smart Mode:</span>
-            <div id="smart-recommendation-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5C07B]/10 border border-[#E5C07B]/20 text-[#E5C07B] font-mono text-xs">
-              <i data-lucide="sparkles" class="w-3 h-3"></i>
+            <span class="font-mono text-slate-400 font-bold uppercase text-[11px]">AI Recommendation:</span>
+            <div id="smart-recommendation-pill" class="flex items-center gap-1.5 px-3 py-1 bg-[#55f5d2]/10 border border-[#55f5d2]/30 text-[#55f5d2] font-mono text-xs">
+              <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
               <span id="smart-recommendation-text">Auto-Tuned: Canvas Fit (Multi-speaker table) + Warm Titanium</span>
             </div>
           </div>
 
-          <!-- Quick Toggle Controls: Framing & Subtitles -->
-          <div class="flex flex-wrap items-center gap-4">
+          <!-- Manual Framing & Subtitle Style Override Controls -->
+          <div class="flex flex-wrap items-center gap-3">
             
-            <!-- Framing Mode -->
-            <div class="flex items-center gap-1.5">
-              <span class="text-slate-400 text-[11px] font-mono uppercase">Framing:</span>
-              <div class="flex items-center p-0.5 rounded-lg bg-[#10141E] border border-white/10 text-xs font-medium">
-                <button onclick="setFramingMode('auto')" id="frame-mode-auto" class="px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all">✨ Auto</button>
-                <button onclick="setFramingMode('fit')" id="frame-mode-fit" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Canvas Fit</button>
-                <button onclick="setFramingMode('center')" id="frame-mode-center" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Center Crop</button>
-              </div>
+            <!-- Framing Mode Selector -->
+            <div class="flex items-center gap-1 bg-[#070916] p-1 border border-white/10 font-mono text-[11px]">
+              <span class="px-2 text-slate-400">FRAME:</span>
+              <button onclick="setFramingMode('auto')" id="frame-mode-auto" class="px-2.5 py-0.5 bg-[#55f5d2] text-[#07110f] font-bold transition-all">✦ Auto</button>
+              <button onclick="setFramingMode('fit')" id="frame-mode-fit" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Canvas Fit</button>
+              <button onclick="setFramingMode('center')" id="frame-mode-center" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Center Crop</button>
             </div>
 
-            <!-- Subtitle Style -->
-            <div class="flex items-center gap-1.5">
-              <span class="text-slate-400 text-[11px] font-mono uppercase">Subtitles:</span>
-              <div class="flex items-center p-0.5 rounded-lg bg-[#10141E] border border-white/10 text-xs font-medium">
-                <button onclick="setSubtitleMode('auto')" id="sub-mode-auto" class="px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all">✨ Auto</button>
-                <button onclick="setSubtitleMode('gold')" id="sub-mode-gold" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Titanium</button>
-                <button onclick="setSubtitleMode('hormozi')" id="sub-mode-hormozi" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Hormozi</button>
-                <button onclick="setSubtitleMode('clean')" id="sub-mode-clean" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Clean</button>
-                <button onclick="setSubtitleMode('minimal')" id="sub-mode-minimal" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Minimal</button>
-                <button onclick="setSubtitleMode('emerald')" id="sub-mode-emerald" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Emerald</button>
-                <button onclick="setSubtitleMode('crimson')" id="sub-mode-crimson" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all">Crimson</button>
-              </div>
+            <!-- Subtitle Style Preset Selector -->
+            <div class="flex items-center gap-1 bg-[#070916] p-1 border border-white/10 font-mono text-[11px]">
+              <span class="px-2 text-slate-400">SUBS:</span>
+              <button onclick="setSubtitleMode('auto')" id="sub-mode-auto" class="px-2.5 py-0.5 bg-[#55f5d2] text-[#07110f] font-bold transition-all">✦ Auto</button>
+              <button onclick="setSubtitleMode('gold')" id="sub-mode-gold" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Titanium</button>
+              <button onclick="setSubtitleMode('hormozi')" id="sub-mode-hormozi" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Hormozi</button>
+              <button onclick="setSubtitleMode('clean')" id="sub-mode-clean" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Clean</button>
+              <button onclick="setSubtitleMode('minimal')" id="sub-mode-minimal" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Minimal</button>
+              <button onclick="setSubtitleMode('emerald')" id="sub-mode-emerald" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Emerald</button>
+              <button onclick="setSubtitleMode('crimson')" id="sub-mode-crimson" class="px-2.5 py-0.5 text-slate-400 hover:text-white transition-all">Crimson</button>
             </div>
 
           </div>
         </div>
 
-        <!-- ==================== REAL-TIME ENGINE STEPPER & CONSOLE ==================== -->
-        <div id="pipeline-stepper" class="hidden p-4 rounded-xl bg-[#090B10] border border-[#E5C07B]/30 space-y-3">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-slate-300 flex items-center gap-2">
-              <i data-lucide="cpu" class="w-4 h-4 text-[#E5C07B]"></i>
+        <!-- Progress Stepper & Terminal Log Toggle -->
+        <div id="pipeline-stepper" class="hidden p-4 bg-[#070916] border border-[#55f5d2]/40 space-y-3">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <div class="flex items-center gap-2 text-[#55f5d2]">
+              <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
               <span id="stepper-status-text">Processing engine task...</span>
-            </span>
-            <span id="stepper-percent" class="font-mono font-bold text-[#E5C07B]">15%</span>
+            </div>
+            <span id="stepper-percent" class="font-bold text-[#55f5d2]">15%</span>
+          </div>
+          
+          <!-- Stepper Progress Bar -->
+          <div class="w-full h-1.5 bg-white/10 overflow-hidden">
+            <div id="stepper-progress-fill" class="h-full bg-[#55f5d2] transition-all duration-300" style="width: 15%;"></div>
           </div>
 
-          <!-- Progress Bar Line -->
-          <div class="w-full bg-white/[0.04] h-2 rounded-full overflow-hidden border border-white/5">
-            <div id="stepper-progress-fill" class="h-full bg-gradient-to-r from-[#E5C07B] to-[#D4AF37] transition-all duration-300" style="width: 15%;"></div>
-          </div>
-
-          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
-            <span>Real-time speech &amp; video processing</span>
-            <button onclick="toggleTerminalConsole()" class="text-[#E5C07B] hover:underline flex items-center gap-1">
-              <i data-lucide="terminal" class="w-3 h-3"></i>
+          <!-- Console Terminal Toggle -->
+          <div class="flex items-center justify-between text-[11px] font-mono pt-1 text-slate-400">
+            <button onclick="toggleTerminalLogs()" class="hover:text-white flex items-center gap-1.5">
+              <i data-lucide="terminal" class="w-3.5 h-3.5 text-[#55f5d2]"></i>
               <span id="terminal-toggle-label">Hide Console Logs</span>
             </button>
+            <span>Task ID: <code id="active-task-id" class="text-white">init_001</code></span>
           </div>
 
-          <!-- Expandable Live Diagnostic Log Stream -->
-          <div id="live-engine-console" class="p-3 rounded-lg bg-black/90 border border-white/10 font-mono text-[11px] text-emerald-400 h-32 overflow-y-auto space-y-1">
-            <div class="text-slate-500">// Engine diagnostic stream ready</div>
+          <!-- Live Console Output Box -->
+          <div id="live-engine-console" class="p-3 bg-black/95 border border-white/10 font-mono text-[11px] text-[#55f5d2] h-32 overflow-y-auto space-y-1">
+            <p class="text-slate-500">[system] Hooky Engine pipeline monitoring active</p>
           </div>
         </div>
 
       </div>
 
-      <!-- ==================== 2-COLUMN WORKSTATION (CLEAN & AIRY) ==================== -->
+      <!-- ==================== SPLIT WORKBENCH ==================== -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- Left: Detected Viral Moments List (6 Cols) -->
-        <div class="lg:col-span-6 space-y-4">
-          <div class="flex items-center justify-between pb-1">
-            <div class="flex items-center gap-2">
-              <i data-lucide="sparkles" class="w-4 h-4 text-[#E5C07B]"></i>
-              <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Extracted Moments</h3>
-            </div>
-            <span id="hook-count" class="text-xs font-mono text-[#E5C07B] bg-[#E5C07B]/10 px-2.5 py-0.5 rounded-full border border-[#E5C07B]/20">
-              4 Hooks Extracted
+        <!-- LEFT COLUMN: Hook Candidates List (5 Cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-extrabold text-sm uppercase tracking-wider text-white flex items-center gap-2">
+              <i data-lucide="flame" class="w-4 h-4 text-[#ff6b62]"></i>
+              <span>High-Retention Hook Moments</span>
+            </h3>
+            <span id="hook-count" class="text-xs font-mono text-[#55f5d2] bg-[#55f5d2]/10 px-2.5 py-0.5 border border-[#55f5d2]/30">
+              4 Hooks Detected
             </span>
           </div>
 
+          <!-- Hook Cards Scrollable List -->
           <div id="hooks-container" class="space-y-3">
             <!-- Dynamically populated hook cards -->
           </div>
         </div>
 
-        <!-- Right: Focused Visual Studio & Player (6 Cols) -->
-        <div class="lg:col-span-6 space-y-4">
-          <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 space-y-4 shadow-xl">
+        <!-- RIGHT COLUMN: Dual-Mode Interactive Visual Studio (7 Cols) -->
+        <div class="lg:col-span-7 space-y-4">
+          
+          <div class="brutal-card p-5 space-y-4">
             
-            <!-- View Mode Switcher Header -->
-            <div class="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs">
+            <!-- Preview Controls Header -->
+            <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
               <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="font-bold text-white">Visual Studio Preview</span>
+                <span class="font-bold text-sm text-white">Visual Studio Preview</span>
+                <span id="preview-mode-tag" class="text-[10px] font-mono px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 uppercase">
+                  9:16 Simulator
+                </span>
               </div>
-              <div class="flex items-center gap-1 p-0.5 rounded-lg bg-[#10141E] border border-white/10">
+
+              <!-- Switcher: YouTube Source vs Vertical Canvas -->
+              <div class="flex items-center gap-1 bg-[#070916] p-1 border border-white/10 text-xs font-mono">
                 <button
                   id="preview-tab-player"
                   onclick="switchPreviewMode('player')"
-                  class="px-2.5 py-1 rounded text-[11px] font-semibold bg-[#E5C07B] text-[#0A0D14] transition-all"
+                  class="px-3 py-1 text-slate-400 hover:text-white transition-all"
                 >
-                  <i data-lucide="play" class="w-3 h-3 inline mr-1"></i>YouTube Segment
+                  Source Video
                 </button>
                 <button
                   id="preview-tab-canvas"
                   onclick="switchPreviewMode('canvas')"
-                  class="px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition-all"
+                  class="px-3 py-1 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all"
                 >
-                  <i data-lucide="smartphone" class="w-3 h-3 inline mr-1"></i>9:16 Simulator
+                  9:16 Canvas
                 </button>
               </div>
             </div>
 
-            <!-- PREVIEW MODE 1: Embedded YouTube Player Cueing Exact Segment -->
-            <div id="preview-player-container" class="aspect-[16/9] w-full rounded-xl bg-black border border-white/10 relative overflow-hidden flex items-center justify-center">
+            <!-- Sub-View A: Embedded YouTube Player -->
+            <div id="preview-player-container" class="aspect-[16/9] w-full bg-black border border-white/10 relative overflow-hidden flex items-center justify-center">
               <iframe
                 id="youtube-embed-frame"
                 src="https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=37&end=51&autoplay=0&enablejsapi=1"
@@ -282,84 +339,69 @@
               ></iframe>
             </div>
 
-            <!-- PREVIEW MODE 2: 9:16 Vertical Smartphone Canvas Simulator -->
-            <div id="preview-canvas-container" class="hidden aspect-[16/9] w-full rounded-xl bg-[#090B10] border border-white/10 relative overflow-hidden flex items-center justify-center">
-              <div class="absolute inset-0 bg-gradient-to-r from-[#0C101A] via-[#141A28] to-[#0C101A] opacity-90"></div>
+            <!-- Sub-View B: Interactive 9:16 Vertical Video Canvas Simulator -->
+            <div id="preview-canvas-container" class="hidden aspect-[16/9] w-full bg-[#070916] border border-white/10 relative overflow-hidden flex items-center justify-center">
+              
+              <!-- Ambient Blurred Backdrop for Canvas Fit Mode -->
+              <div id="ambient-blur-backdrop" class="absolute inset-0 bg-cover bg-center filter blur-xl opacity-30 scale-110"></div>
 
-              <!-- Host Avatar -->
+              <!-- Simulated Multi-Speaker Table Avatars -->
               <div id="avatar-host" class="absolute left-[16%] top-[26%] flex flex-col items-center opacity-35 transition-opacity duration-300">
-                <div class="w-14 h-14 rounded-full bg-slate-800 mb-2 border border-white/10"></div>
-                <div class="w-24 h-12 rounded-t-full bg-slate-800/80"></div>
-                <span class="text-[10px] font-mono text-slate-500 mt-1">Host</span>
-              </div>
-
-              <!-- Active Speaker Avatar -->
-              <div class="absolute right-[28%] top-[24%] flex flex-col items-center">
-                <div class="w-16 h-16 rounded-full bg-[#1A2234] border border-[#E5C07B]/50 shadow-lg shadow-[#E5C07B]/10 mb-2 relative">
-                  <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-[#10141E]"></span>
+                <div class="w-14 h-14 rounded-full bg-[#1b233a] border-2 border-slate-600 flex items-center justify-center text-slate-400 font-bold text-xs">
+                  Speaker A
                 </div>
-                <div class="w-28 h-14 rounded-t-full bg-[#1A2234] border-t border-[#E5C07B]/30"></div>
-                <span class="text-[10px] font-mono text-[#E5C07B] mt-1 font-semibold">Active Speaker</span>
+                <span class="text-[10px] font-mono text-slate-400 mt-1">Host</span>
               </div>
 
-              <!-- Audio Waveform Live Indicator -->
-              <div class="absolute top-4 right-4 flex items-end gap-1 h-5 z-20">
-                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.1s"></div>
-                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.3s"></div>
-                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.2s"></div>
-                <div class="w-1 bg-[#E5C07B] rounded-full waveform-bar" style="animation-delay: 0.4s"></div>
-              </div>
-
-              <!-- Center Crop 9:16 Overlay Phone Box -->
-              <div id="crop-box" class="absolute inset-y-0 w-[42%] border-2 border-[#E5C07B] rounded-lg pointer-events-none z-10 flex flex-col justify-end p-4">
-                <div class="w-full text-center pb-6">
-                  <div id="sub-pill" class="inline-block px-3 py-1.5 rounded-lg max-w-full bg-black/85 border border-[#E5C07B]/30 backdrop-blur-md">
-                    <div id="sub-words-container" class="flex flex-wrap items-center justify-center gap-1.5 text-xs font-extrabold uppercase tracking-wide">
-                      <!-- Subtitle words populated here -->
-                    </div>
-                  </div>
+              <div id="avatar-speaker1" class="absolute left-[44%] top-[22%] flex flex-col items-center opacity-100 transition-opacity duration-300">
+                <div class="w-16 h-16 rounded-full bg-[#55f5d2]/20 border-2 border-[#55f5d2] flex items-center justify-center text-[#55f5d2] font-bold text-sm shadow-lg shadow-[#55f5d2]/20">
+                  Speaker B
                 </div>
+                <span class="text-[10px] font-mono text-[#55f5d2] mt-1 flex items-center gap-1 font-bold">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#55f5d2] pulse-dot"></span> Active Voice
+                </span>
               </div>
 
-              <!-- Canvas Fit Overlay -->
-              <div id="fit-box" class="hidden absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-3">
-                <div class="w-full h-7 bg-black/60 backdrop-blur-md flex items-center justify-center">
-                  <span class="text-[10px] font-mono text-slate-400 truncate max-w-xs">Ambient Blur 9:16 Canvas</span>
+              <div id="avatar-speaker2" class="absolute right-[16%] top-[26%] flex flex-col items-center opacity-35 transition-opacity duration-300">
+                <div class="w-14 h-14 rounded-full bg-[#1b233a] border-2 border-slate-600 flex items-center justify-center text-slate-400 font-bold text-xs">
+                  Speaker C
                 </div>
-                <div class="w-full text-center pb-2">
-                  <div id="fit-sub-pill" class="inline-block px-3 py-1.5 rounded-lg max-w-full bg-black/85 border border-[#E5C07B]/30 backdrop-blur-md">
-                    <div id="fit-sub-words-container" class="flex flex-wrap items-center justify-center gap-1.5 text-xs font-extrabold uppercase tracking-wide">
-                      <!-- Words -->
-                    </div>
-                  </div>
+                <span class="text-[10px] font-mono text-slate-400 mt-1">Guest</span>
+              </div>
+
+              <!-- 9:16 Vertical Cut Wireframe Indicator -->
+              <div id="crop-box" class="absolute inset-y-0 w-[42%] border-2 border-[#55f5d2] shadow-[0_0_20px_rgba(85,245,210,0.15)] pointer-events-none z-10 flex flex-col justify-end p-4">
+                <div class="bg-black/60 backdrop-blur-sm p-1.5 border border-[#55f5d2]/40 text-center mb-10">
+                  <span id="canvas-subtitle-preview" class="text-xs font-black tracking-tight text-white uppercase leading-snug">
+                    I'm going for the <span class="text-[#55f5d2]">unhinged crazy</span> tonight!
+                  </span>
+                </div>
+                <div class="text-[10px] font-mono text-center text-[#55f5d2] bg-black/80 py-0.5 border border-[#55f5d2]/40 uppercase tracking-wider font-bold">
+                  1080 × 1920 (9:16 Reel)
                 </div>
               </div>
             </div>
 
-            <!-- Dialogue Script Inspector -->
-            <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-2">
+            <!-- Dialogue Transcript Inspector -->
+            <div class="p-3 bg-[#070916] border border-white/10 space-y-2">
               <div class="flex items-center justify-between text-xs">
-                <span class="font-bold text-slate-300 flex items-center gap-1.5">
-                  <i data-lucide="message-square" class="w-3.5 h-3.5 text-[#E5C07B]"></i>
-                  <span>Spoken Dialogue Script</span>
-                </span>
-                <span id="selected-hook-time-badge" class="font-mono text-[#E5C07B] text-[11px]">0:37 - 0:51 (13.4s)</span>
+                <span class="font-bold text-slate-300 font-mono text-[11px] uppercase">Hook Dialogue Transcript:</span>
+                <span id="transcript-time-badge" class="font-mono text-slate-400 text-[11px]">00:37.36 - 00:50.79</span>
               </div>
-              
-              <div id="dialogue-lines-container" class="max-h-32 overflow-y-auto space-y-1 font-mono text-xs pr-1">
+              <div id="dialogue-lines-box" class="max-h-24 overflow-y-auto space-y-1 font-mono text-xs text-slate-300 pr-1">
                 <!-- Dialogue cues populated here -->
               </div>
             </div>
 
             <!-- Fine-Tune Timing Nudge Bar -->
-            <div class="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between text-xs">
-              <span class="font-bold text-slate-400 font-mono text-[11px]">Boundary Nudge:</span>
+            <div class="p-2.5 bg-[#070916] border border-white/10 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-400 font-mono text-[11px] uppercase">Boundary Nudge:</span>
               <div class="flex items-center gap-1.5 font-mono text-[11px]">
-                <button onclick="nudgeTime('start', -0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">-0.5s Start</button>
-                <button onclick="nudgeTime('start', +0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">+0.5s Start</button>
+                <button onclick="nudgeTime('start', -0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">-0.5s Start</button>
+                <button onclick="nudgeTime('start', +0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">+0.5s Start</button>
                 <span class="text-slate-600">|</span>
-                <button onclick="nudgeTime('end', -0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">-0.5s End</button>
-                <button onclick="nudgeTime('end', +0.5)" class="px-2 py-0.5 rounded bg-white/[0.05] hover:bg-white/10 text-slate-300">+0.5s End</button>
+                <button onclick="nudgeTime('end', -0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">-0.5s End</button>
+                <button onclick="nudgeTime('end', +0.5)" class="px-2 py-0.5 bg-[#10142a] hover:bg-[#1a2142] text-slate-300 border border-white/10">+0.5s End</button>
               </div>
             </div>
           </div>
@@ -370,43 +412,43 @@
 
     <!-- ==================== VIEW 2: SETTINGS (.ENV EDITOR) ==================== -->
     <section id="view-settings" class="hidden space-y-6">
-      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+      <div class="brutal-card p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="sliders" class="w-5 h-5 text-[#E5C07B]"></i>
-              <span>Environment Configuration (.env)</span>
+              <i data-lucide="sliders" class="w-5 h-5 text-[#55f5d2]"></i>
+              <span class="uppercase tracking-tight">Environment Configuration (.env)</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">Manage API keys, model rotations, video output options, and hardware threads directly.</p>
           </div>
-          <button onclick="saveEnvForm()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E5C07B] to-[#D4AF37] text-[#0A0D14] font-extrabold text-xs hover:brightness-110 flex items-center gap-2 shadow-lg shadow-[#E5C07B]/10 transition-all">
+          <button onclick="saveEnvForm()" class="brutal-btn-acid px-5 py-2.5 text-xs uppercase tracking-wider flex items-center gap-2">
             <i data-lucide="save" class="w-4 h-4"></i>
             <span>Save .env Configuration</span>
           </button>
         </div>
 
         <!-- Settings Tabs: Visual Form vs Raw Editor -->
-        <div class="flex items-center gap-2 border-b border-white/[0.08] pb-3 text-xs">
-          <button onclick="switchEnvTab('form')" id="env-tab-form" class="px-3.5 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold transition-all">
+        <div class="flex items-center gap-2 border-b border-white/[0.08] pb-3 text-xs font-mono">
+          <button onclick="switchEnvTab('form')" id="env-tab-form" class="px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all">
             Visual Form
           </button>
-          <button onclick="switchEnvTab('raw')" id="env-tab-raw" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+          <button onclick="switchEnvTab('raw')" id="env-tab-raw" class="px-3.5 py-1.5 text-slate-400 hover:text-white transition-all">
             Raw .env Editor
           </button>
         </div>
 
         <!-- Sub-View 1: Visual Form -->
-        <div id="env-form-view" class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+        <div id="env-form-view" class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-mono">
           
           <!-- Gemini API Key -->
           <div class="space-y-1.5 md:col-span-2">
-            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">GEMINI_API_KEY:</label>
+            <label class="text-slate-300 font-bold uppercase tracking-wider block">GEMINI_API_KEY:</label>
             <div class="relative">
               <input
                 id="env-gemini-key"
                 type="password"
                 placeholder="AQ.Ab8RN6KAg..."
-                class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#E5C07B]"
+                class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#55f5d2]"
               />
               <button
                 type="button"
@@ -416,29 +458,28 @@
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
             </div>
-            <p class="text-[11px] text-slate-500 font-mono">Free key from Google AI Studio (https://aistudio.google.com/apikey)</p>
+            <p class="text-[11px] text-slate-500">Free key from Google AI Studio (https://aistudio.google.com/apikey)</p>
           </div>
 
           <!-- Gemini Primary Model -->
           <div class="space-y-1.5">
-            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL (Primary):</label>
+            <label class="text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL (Primary):</label>
             <select
               id="env-gemini-model"
-              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
             >
-              <option value="gemini-2.5-flash">gemini-2.5-flash (Fast &amp; Accurate)</option>
-              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra Fast)</option>
-              <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Deep Reasoning)</option>
-              <option value="gemini-flash-latest">gemini-flash-latest</option>
+              <option value="gemini-3.8-flash">gemini-3.8-flash (Primary Active Flash)</option>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra Fast Lite)</option>
+              <option value="gemini-flash-latest">gemini-flash-latest (Auto Tracking)</option>
             </select>
           </div>
 
           <!-- Default Subtitle Style -->
           <div class="space-y-1.5">
-            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">SUB_STYLE (Default Preset):</label>
+            <label class="text-slate-300 font-bold uppercase tracking-wider block">SUB_STYLE (Default Preset):</label>
             <select
               id="env-sub-style"
-              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
             >
               <option value="gold">Warm Titanium (gold)</option>
               <option value="hormozi">Hormozi Classic</option>
@@ -451,40 +492,40 @@
 
           <!-- Fallback Models Chain -->
           <div class="space-y-1.5 md:col-span-2">
-            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL_FALLBACKS (Order):</label>
+            <label class="text-slate-300 font-bold uppercase tracking-wider block">GEMINI_MODEL_FALLBACKS (Order):</label>
             <input
               id="env-gemini-fallbacks"
               type="text"
-              placeholder="gemini-2.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro-preview,gemini-flash-latest"
-              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#E5C07B]"
+              placeholder="gemini-3.1-flash-lite,gemini-flash-latest"
+              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#55f5d2]"
             />
-            <p class="text-[11px] text-slate-500 font-mono">Comma-separated models to try if primary hits free-tier rate limits</p>
+            <p class="text-[11px] text-slate-500">Comma-separated models to rotate onto when hitting rate limits</p>
           </div>
 
           <!-- Auto Clip Density -->
           <div class="space-y-1.5">
-            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">AUTO_CLIP_DENSITY_MINUTES:</label>
+            <label class="text-slate-300 font-bold uppercase tracking-wider block">AUTO_CLIP_DENSITY_MINUTES:</label>
             <input
               id="env-density-minutes"
               type="number"
               min="2"
               max="60"
-              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
             />
-            <p class="text-[11px] text-slate-500 font-mono">One clip extracted per N minutes of source footage</p>
+            <p class="text-[11px] text-slate-500">One clip extracted per N minutes of source footage</p>
           </div>
 
           <!-- Hardware Threads -->
           <div class="space-y-1.5">
-            <label class="font-mono text-slate-300 font-bold uppercase tracking-wider block">FFMPEG_THREADS:</label>
+            <label class="text-slate-300 font-bold uppercase tracking-wider block">FFMPEG_THREADS:</label>
             <input
               id="env-ffmpeg-threads"
               type="number"
               min="1"
               max="32"
-              class="w-full bg-[#10141E] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-[#E5C07B]"
+              class="w-full bg-[#10142a] border border-white/10 px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#55f5d2]"
             />
-            <p class="text-[11px] text-slate-500 font-mono">CPU cores allocated for encoding &amp; video cutting</p>
+            <p class="text-[11px] text-slate-500">CPU worker threads allocated for multi-threaded FFmpeg encoding</p>
           </div>
         </div>
 
@@ -493,11 +534,11 @@
           <textarea
             id="env-raw-textarea"
             rows="16"
-            class="w-full bg-black/90 border border-white/10 rounded-xl p-4 font-mono text-xs text-emerald-400 focus:outline-none focus:border-[#E5C07B] leading-relaxed"
+            class="w-full bg-black/95 border border-white/10 p-4 font-mono text-xs text-[#55f5d2] focus:outline-none focus:border-[#55f5d2] leading-relaxed"
           ></textarea>
         </div>
 
-        <div id="env-status-alert" class="hidden p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+        <div id="env-status-alert" class="hidden p-3 bg-[#55f5d2]/10 border border-[#55f5d2]/30 text-[#55f5d2] text-xs font-mono">
           ✓ Environment configuration saved successfully and reloaded into engine.
         </div>
       </div>
@@ -505,37 +546,37 @@
 
     <!-- ==================== VIEW 3: CHANNEL RADAR ==================== -->
     <section id="view-radar" class="hidden space-y-6">
-      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+      <div class="brutal-card p-6 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="radio" class="w-5 h-5 text-[#E5C07B]"></i>
-              <span>Channel Radar Monitor</span>
+              <i data-lucide="radio" class="w-5 h-5 text-[#55f5d2]"></i>
+              <span class="uppercase tracking-tight">Channel Radar Monitor</span>
             </h2>
-            <p class="text-xs text-slate-400">Autonomous YouTube channel radar saved in <code class="text-[#E5C07B] font-mono">channels.txt</code></p>
+            <p class="text-xs text-slate-400">Autonomous YouTube channel radar saved in <code class="text-[#55f5d2] font-mono">channels.txt</code></p>
           </div>
-          <button onclick="saveActiveChannels()" class="px-4 py-2 rounded-xl bg-[#E5C07B] text-[#0A0D14] font-bold text-xs hover:brightness-110 flex items-center gap-2 transition-all">
+          <button onclick="saveActiveChannels()" class="brutal-btn-acid px-4 py-2 text-xs uppercase flex items-center gap-2">
             <i data-lucide="save" class="w-4 h-4"></i>
             <span>Save channels.txt</span>
           </button>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex gap-2">
+        <div class="p-3.5 bg-[#070916] border border-white/10 flex gap-2">
           <input
             id="new-channel-input"
             type="text"
             placeholder="@CreatorHandle | clips=2 | focus=high energy moments"
-            class="flex-1 bg-[#10141E] border border-white/10 rounded-lg px-4 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#E5C07B]"
+            class="flex-1 bg-[#10142a] border border-white/10 px-4 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#55f5d2]"
           />
-          <button onclick="addNewChannel()" class="px-4 py-2 rounded-lg bg-[#171D2B] text-[#E5C07B] border border-[#E5C07B]/30 hover:bg-[#1E2536] text-xs font-bold transition-all">
+          <button onclick="addNewChannel()" class="px-4 py-2 bg-[#10142a] text-[#55f5d2] border border-[#55f5d2]/40 hover:bg-[#1a2142] text-xs font-mono font-bold transition-all">
             Add Channel
           </button>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
+          <table class="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr class="border-b border-white/10 text-slate-400 font-mono text-[11px]">
+              <tr class="border-b border-white/10 text-slate-400 text-[11px]">
                 <th class="p-3">Handle / URL</th>
                 <th class="p-3">Clips Desired</th>
                 <th class="p-3">Editing Focus</th>
@@ -552,28 +593,28 @@
 
     <!-- ==================== VIEW 4: OUTPUT GALLERY ==================== -->
     <section id="view-gallery" class="hidden space-y-6">
-      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+      <div class="brutal-card p-6 space-y-6">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-              <i data-lucide="folder" class="w-5 h-5 text-[#E5C07B]"></i>
-              <span>Rendered 9:16 Reels Gallery</span>
+              <i data-lucide="folder" class="w-5 h-5 text-[#55f5d2]"></i>
+              <span class="uppercase tracking-tight">Rendered 9:16 Reels Gallery</span>
             </h2>
-            <p class="text-xs text-slate-400">All MP4 videos rendered to <code class="text-[#E5C07B] font-mono">D:\Clipper\output\</code></p>
+            <p class="text-xs text-slate-400">All MP4 videos rendered to <code class="text-[#55f5d2] font-mono">output/</code></p>
           </div>
-          <button onclick="loadOutputs()" class="px-3.5 py-1.5 rounded-lg bg-white/[0.04] text-slate-300 hover:text-white border border-white/10 text-xs font-mono flex items-center gap-1.5 transition-all">
+          <button onclick="loadOutputs()" class="px-3.5 py-1.5 bg-[#10142a] text-slate-300 hover:text-white border border-white/10 text-xs font-mono flex items-center gap-1.5 transition-all">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Refresh</span>
           </button>
         </div>
 
         <!-- Video Player Modal / Active Video Card -->
-        <div id="active-video-player-box" class="hidden p-5 rounded-2xl bg-black/80 border border-[#E5C07B]/40 space-y-3">
+        <div id="active-video-player-box" class="hidden p-5 bg-black/90 border border-[#55f5d2]/50 space-y-3">
           <div class="flex items-center justify-between">
-            <span id="active-playing-title" class="font-bold text-white text-sm">Now Playing</span>
+            <span id="active-playing-title" class="font-bold text-white text-sm font-mono">Now Playing</span>
             <button onclick="closeActivePlayer()" class="text-slate-400 hover:text-white text-xs font-mono">✕ Close Player</button>
           </div>
-          <div class="max-w-xs mx-auto aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/20 shadow-2xl">
+          <div class="max-w-xs mx-auto aspect-[9/16] overflow-hidden bg-black border border-white/20 shadow-2xl">
             <video id="html5-video-player" controls class="w-full h-full object-cover">
               <source id="video-source-elem" src="" type="video/mp4">
             </video>
@@ -588,16 +629,16 @@
 
     <!-- ==================== VIEW 5: SYSTEM DOCTOR ==================== -->
     <section id="view-doctor" class="hidden space-y-6">
-      <div class="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 space-y-6 shadow-xl">
+      <div class="brutal-card p-6 space-y-6">
         <div>
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i data-lucide="activity" class="w-5 h-5 text-[#E5C07B]"></i>
-            <span>System Health &amp; Diagnostics</span>
+            <i data-lucide="activity" class="w-5 h-5 text-[#55f5d2]"></i>
+            <span class="uppercase tracking-tight">System Health &amp; Diagnostics</span>
           </h2>
-          <p class="text-xs text-slate-400">Dependency verification across FFmpeg, Whisper, CUDA hardware acceleration, and Gemini API</p>
+          <p class="text-xs text-slate-400">Dependency verification across FFmpeg, Whisper, CPU/GPU hardware profiles, and Gemini API</p>
         </div>
 
-        <div id="doctor-checks-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div id="doctor-checks-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono">
           <!-- Dynamically loaded checks -->
         </div>
       </div>
@@ -672,80 +713,82 @@
         category: "Shock Humor",
         retention_score: 97,
         start: 254.40,
-        end: 310.47,
+        end: 278.10,
         start_fmt: "4:14",
-        end_fmt: "5:10",
-        duration: "56.1s",
-        reason: "Surprise comedic interjection during game rules creates an unexpected laugh moment.",
-        boundary: "Natural speech pause aligned",
-        words: ["DISCRIMINATORY", "SECOND", "AMENDMENT", "RIGHTS", "ENTHUSIASTS", "CRIMINAL", "GUNS"],
+        end_fmt: "4:38",
+        duration: "23.7s",
+        reason: "Outlandish comparison between game rules and constitutional rights stops viewers immediately.",
+        boundary: "Natural sentence climax",
+        words: ["MIKE", "DISCRIMINATORY", "SECOND", "AMENDMENT", "RIGHTS", "ENTHUSIASTS"],
         dialogue: [
-          { time: "4:14", text: ">> Mike, this seems kind of discriminatory against second amendment rights enthusiasts." },
-          { time: "4:20", text: ">> If you are in the mafia, you have guns." },
-          { time: "4:25", text: ">> The criminal element in this town is the problem." }
+          { time: "4:14", text: ">> Mike, this seems kind of discriminatory..." },
+          { time: "4:17", text: ">> Against second amendment rights enthusiasts." },
+          { time: "4:21", text: ">> There are no guns allowed in this town!" },
+          { time: "4:25", text: ">> Then how are we killing people every night?" }
         ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=254&end=310&autoplay=0&enablejsapi=1"
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=254&end=278&autoplay=0&enablejsapi=1"
       },
       {
         id: "hook_3",
-        title: "First Murder: Dylan's Demise",
-        hook_quote: "Dylan was found in his basement riddled with bullets.",
-        category: "Murder Mystery",
-        retention_score: 99,
-        start: 518.48,
-        end: 553.19,
-        start_fmt: "8:38",
-        end_fmt: "9:13",
-        duration: "34.7s",
-        reason: "Dramatic announcement of the first murder victim kicks off high-stakes accusations.",
-        boundary: "Natural speech pause aligned",
-        words: ["DYLAN", "BASEMENT", "RIDDLED", "BULLETS", "RELIEF", "FRIENDS", "GAME"],
+        title: "Founders vs The Electric Chair",
+        hook_quote: "They put an electric chair in the basement. It's totally fine.",
+        category: "Dramatic Twist",
+        retention_score: 95,
+        start: 512.20,
+        end: 541.00,
+        start_fmt: "8:32",
+        end_fmt: "9:01",
+        duration: "28.8s",
+        reason: "Absurdist deadpan delivery creates strong curiosity loop.",
+        boundary: "Comedic timing pause",
+        words: ["ELECTRIC", "CHAIR", "BASEMENT", "TOTALLY", "FINE", "SIGNAL", "FOUNDER"],
         dialogue: [
-          { time: "8:38", text: ">> Dylan was found in his basement riddled with bullets." },
-          { time: "8:44", text: ">> It's a relief to his friends who know how good he is at this game." }
+          { time: "8:32", text: ">> They put an electric chair in the basement." },
+          { time: "8:36", text: ">> It's totally fine, nobody worry about it." },
+          { time: "8:42", text: ">> Is this an official Signal Foundation policy?" }
         ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=518&end=553&autoplay=0&enablejsapi=1"
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=512&end=541&autoplay=0&enablejsapi=1"
       },
       {
         id: "hook_4",
-        title: "Signal Founder on Privacy",
-        hook_quote: "You're the founder of Signal? You sure don't seem to care about privacy!",
-        category: "Debate Clash",
-        retention_score: 96,
-        start: 901.84,
-        end: 915.51,
-        start_fmt: "15:02",
-        end_fmt: "15:16",
-        duration: "13.7s",
-        reason: "Hilarious insider roast of the Signal founder during a secret voting round.",
-        boundary: "Natural speech pause aligned",
-        words: ["FOUNDER", "SIGNAL", "SURE", "DONT", "SEEM", "CARE", "PRIVACY"],
+        title: "Who Is The Angel?",
+        hook_quote: "I'm literally the angel saving your lives every single round!",
+        category: "Climactic Confrontation",
+        retention_score: 92,
+        start: 780.00,
+        end: 809.50,
+        start_fmt: "13:00",
+        end_fmt: "13:30",
+        duration: "29.5s",
+        reason: "High-stakes debate with rising vocal energy and urgent accusations.",
+        boundary: "Natural conflict resolution",
+        words: ["LITERALLY", "ANGEL", "SAVING", "LIVES", "EVERY", "ROUND"],
         dialogue: [
-          { time: "15:02", text: ">> Do we learn people's votes?" },
-          { time: "15:05", text: ">> Aren't you the founder of Signal? You sure don't seem to care about privacy! [laughter]" }
+          { time: "13:00", text: ">> I'm literally the angel saving your lives!" },
+          { time: "13:04", text: ">> That is exactly what a mafia member would say." },
+          { time: "13:08", text: ">> Vote him out right now before night falls." }
         ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=901&end=915&autoplay=0&enablejsapi=1"
+        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=780&end=810&autoplay=0&enablejsapi=1"
       }
     ];
 
     let selectedHookId = "hook_1";
-    let framingMode = "auto";       // "auto", "fit", "center"
-    let subtitleMode = "auto";     // "auto", "gold", "hormozi", "clean", "minimal", "emerald", "crimson"
-    let resolvedFraming = "fit";   // Active effective framing
-    let resolvedStyle = "gold";    // Active effective style
-    let currentPreviewMode = "player";
-    let SCRIPT_WORDS = ["GOOD", "GAME", "PROFESSIONAL", "NEGOTIATOR", "UNHINGED", "CRAZY", "TONIGHT"];
-    let wordIdx = 0;
-    let isPlaying = true;
-    let activeChannelsList = [];
+    let activeFramingMode = "auto";
+    let activeSubtitleMode = "auto";
+    let autoDetectedFraming = "fit";
+    let autoDetectedStyle = "gold";
+    let currentPreviewMode = "canvas";
+    let cachedChannels = [];
     let cachedEnvConfig = { raw: "", values: {} };
+    let isPlaying = true;
+    let wordIdx = 0;
+    const SCRIPT_WORDS = ["I'M", "GOING", "FOR", "THE", "UNHINGED", "CRAZY", "TONIGHT!"];
 
-    window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      applyAutoDecisions("fit", "gold", "Canvas Fit (Multi-speaker table) + Warm Titanium");
-      renderHooks(CURRENT_HOOKS);
-      selectHook("hook_1");
-      loadDoctorStatus();
+      renderHooksList();
+      updateSelectedHookDetails();
+      loadDoctorReport();
       loadChannels();
       loadOutputs();
       loadEnvConfig();
@@ -763,390 +806,368 @@
         const btn = document.getElementById(`tab-${t}`);
         if (btn) {
           if (t === tabId) {
-            btn.className = "tab-btn px-4 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-semibold transition-all";
+            btn.className = "tab-btn px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold border border-[#55f5d2] shadow-[2px_2px_0_#9c8cff] transition-all";
           } else {
-            btn.className = "tab-btn px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+            btn.className = "tab-btn px-3.5 py-1.5 text-slate-400 hover:text-white transition-all";
           }
         }
       });
       lucide.createIcons();
     }
 
-    function switchPreviewMode(mode) {
-      currentPreviewMode = mode;
-      document.getElementById('preview-player-container').classList.toggle('hidden', mode !== 'player');
-      document.getElementById('preview-canvas-container').classList.toggle('hidden', mode !== 'canvas');
-
-      const btnPlayer = document.getElementById('preview-tab-player');
-      const btnCanvas = document.getElementById('preview-tab-canvas');
-
-      if (mode === 'player') {
-        btnPlayer.className = "px-2.5 py-1 rounded text-[11px] font-semibold bg-[#E5C07B] text-[#0A0D14] transition-all";
-        btnCanvas.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition-all";
-      } else {
-        btnPlayer.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition-all";
-        btnCanvas.className = "px-2.5 py-1 rounded text-[11px] font-semibold bg-[#E5C07B] text-[#0A0D14] transition-all";
-      }
-      lucide.createIcons();
-    }
-
-    // ==================== AUTO DETECTION & SETTINGS ====================
-    function applyAutoDecisions(autoF, autoS, reason) {
-      if (framingMode === 'auto') {
-        resolvedFraming = autoF || 'fit';
-      }
-      if (subtitleMode === 'auto') {
-        resolvedStyle = autoS || 'gold';
-      }
-
-      if (reason) {
-        document.getElementById('smart-recommendation-text').innerText = `Auto-Tuned: ${resolvedFraming === 'fit' ? 'Canvas Fit' : 'Center Crop'} + ${resolvedStyle.toUpperCase()} (${reason})`;
-      }
-
-      updateVisualSimulatorFraming();
-      renderSubtitles();
-    }
-
     function setFramingMode(mode) {
-      framingMode = mode;
+      activeFramingMode = mode;
       ['auto', 'fit', 'center'].forEach(m => {
         const btn = document.getElementById(`frame-mode-${m}`);
         if (m === mode) {
-          btn.className = "px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all";
+          btn.className = "px-2.5 py-0.5 bg-[#55f5d2] text-[#07110f] font-bold transition-all";
         } else {
-          btn.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all";
+          btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white transition-all";
         }
       });
-
-      if (mode !== 'auto') {
-        resolvedFraming = mode;
-      }
-      updateVisualSimulatorFraming();
+      applyVisualFramingState();
     }
 
-    function updateVisualSimulatorFraming() {
-      const isCenter = resolvedFraming === 'center';
-      document.getElementById('crop-box').classList.toggle('hidden', !isCenter);
-      document.getElementById('fit-box').classList.toggle('hidden', isCenter);
-      document.getElementById('avatar-host').classList.toggle('opacity-35', isCenter);
-      document.getElementById('avatar-host').classList.toggle('opacity-90', !isCenter);
-    }
-
-    function setSubtitleMode(mode) {
-      subtitleMode = mode;
+    function setSubtitleMode(style) {
+      activeSubtitleMode = style;
       ['auto', 'gold', 'hormozi', 'clean', 'minimal', 'emerald', 'crimson'].forEach(s => {
         const btn = document.getElementById(`sub-mode-${s}`);
-        if (s === mode) {
-          btn.className = "px-2.5 py-1 rounded bg-[#E5C07B] text-[#0A0D14] font-bold transition-all";
-        } else {
-          btn.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition-all";
+        if (btn) {
+          if (s === style) {
+            btn.className = "px-2.5 py-0.5 bg-[#55f5d2] text-[#07110f] font-bold transition-all";
+          } else {
+            btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white transition-all";
+          }
         }
       });
-
-      if (mode !== 'auto') {
-        resolvedStyle = mode;
-      }
       renderSubtitles();
     }
 
-    function renderHooks(hooks) {
+    function applyVisualFramingState() {
+      const effectiveMode = activeFramingMode === 'auto' ? autoDetectedFraming : activeFramingMode;
+      const cropBox = document.getElementById('crop-box');
+      const backdrop = document.getElementById('ambient-blur-backdrop');
+      const tag = document.getElementById('preview-mode-tag');
+
+      if (effectiveMode === 'fit') {
+        cropBox.style.width = "40%";
+        cropBox.style.left = "30%";
+        backdrop.style.opacity = "0.35";
+        tag.innerText = "Canvas Fit (Ambient Blur)";
+        document.getElementById('avatar-host').style.opacity = "0.7";
+        document.getElementById('avatar-speaker2').style.opacity = "0.7";
+      } else {
+        cropBox.style.width = "46%";
+        cropBox.style.left = "27%";
+        backdrop.style.opacity = "0.08";
+        tag.innerText = "Center Crop (Solo Speaker)";
+        document.getElementById('avatar-host').style.opacity = "0.2";
+        document.getElementById('avatar-speaker2').style.opacity = "0.2";
+      }
+    }
+
+    function switchPreviewMode(mode) {
+      currentPreviewMode = mode;
+      const isPlayer = mode === 'player';
+      document.getElementById('preview-player-container').classList.toggle('hidden', !isPlayer);
+      document.getElementById('preview-canvas-container').classList.toggle('hidden', isPlayer);
+      
+      const tabPlayer = document.getElementById('preview-tab-player');
+      const tabCanvas = document.getElementById('preview-tab-canvas');
+
+      if (isPlayer) {
+        tabPlayer.className = "px-3 py-1 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
+        tabCanvas.className = "px-3 py-1 text-slate-400 hover:text-white transition-all";
+      } else {
+        tabCanvas.className = "px-3 py-1 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
+        tabPlayer.className = "px-3 py-1 text-slate-400 hover:text-white transition-all";
+      }
+    }
+
+    function selectHook(hookId) {
+      selectedHookId = hookId;
+      renderHooksList();
+      updateSelectedHookDetails();
+    }
+
+    function updateSelectedHookDetails() {
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || CURRENT_HOOKS[0];
+      if (!hook) return;
+
+      const iframe = document.getElementById('youtube-embed-frame');
+      if (iframe && hook.youtube_embed_url) {
+        iframe.src = hook.youtube_embed_url;
+      }
+
+      const timeBadge = document.getElementById('transcript-time-badge');
+      if (timeBadge) {
+        timeBadge.innerText = `${hook.start_fmt} - ${hook.end_fmt} (${hook.duration})`;
+      }
+
+      const dialogueBox = document.getElementById('dialogue-lines-box');
+      if (dialogueBox && hook.dialogue) {
+        dialogueBox.innerHTML = hook.dialogue.map(d => `
+          <div class="flex items-start gap-2 hover:bg-white/[0.04] p-1 transition-colors">
+            <span class="text-[#55f5d2] select-none text-[10px] w-10 shrink-0 font-bold">${d.time}</span>
+            <span class="leading-relaxed text-slate-200">${d.text}</span>
+          </div>
+        `).join('');
+      }
+
+      renderSubtitles();
+    }
+
+    function renderSubtitles() {
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || CURRENT_HOOKS[0];
+      if (!hook) return;
+
+      const style = activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode;
+      const words = (hook.words && hook.words.length > 0) ? hook.words : SCRIPT_WORDS;
+      const activeWord = words[wordIdx % words.length];
+
+      const previewElem = document.getElementById('canvas-subtitle-preview');
+      if (!previewElem) return;
+
+      let styledHTML = "";
+      if (style === 'gold') {
+        styledHTML = `I'M GOING FOR THE <span class="text-[#ffd166] drop-shadow-[0_2px_10px_rgba(255,209,102,0.8)] font-black text-sm">${activeWord}</span> TONIGHT!`;
+      } else if (style === 'hormozi') {
+        styledHTML = `<span class="bg-[#ffff00] text-black px-1.5 py-0.5 font-black uppercase text-sm">${activeWord}</span>`;
+      } else if (style === 'emerald') {
+        styledHTML = `UNHINGED <span class="text-[#55f5d2] drop-shadow-[0_0_12px_#55f5d2] underline decoration-2">${activeWord}</span> STRATEGY`;
+      } else if (style === 'crimson') {
+        styledHTML = `<span class="text-[#ff6b62] drop-shadow-[0_0_15px_#ff6b62] font-black">${activeWord}</span>`;
+      } else if (style === 'minimal') {
+        styledHTML = `<span class="italic text-slate-100 font-serif border-b border-white">${activeWord}</span>`;
+      } else {
+        styledHTML = `UNHINGED <span class="text-white bg-black/80 px-2 py-0.5 border border-white/20">${activeWord}</span> TONIGHT`;
+      }
+      previewElem.innerHTML = styledHTML;
+    }
+
+    function renderHooksList() {
       const container = document.getElementById('hooks-container');
-      document.getElementById('hook-count').innerText = `${hooks.length} Hooks Extracted`;
-      container.innerHTML = hooks.map(h => `
-        <div
-          onclick="selectHook('${h.id}')"
-          class="p-4 rounded-xl border cursor-pointer transition-all ${
-            selectedHookId === h.id
-              ? 'border-[#E5C07B] bg-white/[0.04] shadow-lg shadow-[#E5C07B]/5'
-              : 'border-white/[0.07] bg-white/[0.015] hover:bg-white/[0.03]'
-          }"
-        >
-          <div class="flex items-center justify-between mb-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                ${h.category || "Viral Clip"}
-              </span>
-              <span class="text-[10px] font-mono text-[#E5C07B] flex items-center gap-1">
-                <i data-lucide="zap" class="w-3 h-3 fill-current inline"></i>
-                ${h.retention_score || 95}% Retain
-              </span>
-            </div>
-            <span class="font-mono text-xs text-[#E5C07B] bg-[#E5C07B]/10 px-2 py-0.5 rounded font-bold">
-              ${h.start_fmt} - ${h.end_fmt}
-            </span>
-          </div>
+      if (!container) return;
 
-          <h4 class="font-bold text-white text-sm leading-snug mb-1">${h.title}</h4>
-          ${h.hook_quote ? `<p class="text-xs text-[#E5C07B]/90 italic mb-2">"${h.hook_quote}"</p>` : ''}
-          <p class="text-xs text-slate-400 leading-relaxed mb-3">${h.reason}</p>
+      document.getElementById('hook-count').innerText = `${CURRENT_HOOKS.length} Hooks Detected`;
 
-          <div class="flex items-center justify-between pt-2 border-t border-white/[0.06] text-xs">
-            <span class="text-[11px] font-mono text-emerald-400">✓ ${h.boundary || "Speech pause snapped"}</span>
-            <button
-              onclick="event.stopPropagation(); selectHook('${h.id}'); executeRenderClip();"
-              class="px-3 py-1 rounded-lg bg-[#171D2B] hover:bg-[#1E2536] text-[#E5C07B] border border-[#E5C07B]/30 font-bold text-xs flex items-center gap-1 transition-all"
-            >
-              <i data-lucide="zap" class="w-3 h-3 fill-current"></i>
-              <span>Export</span>
-            </button>
-          </div>
-        </div>
-      `).join('');
-      lucide.createIcons();
-    }
-
-    function selectHook(id) {
-      selectedHookId = id;
-      const hook = CURRENT_HOOKS.find(h => h.id === id);
-      if (hook) {
-        if (Array.isArray(hook.words)) {
-          SCRIPT_WORDS = hook.words;
-        } else if (typeof hook.words === 'string') {
-          SCRIPT_WORDS = hook.words.split(' ').filter(w => w.trim());
-        } else {
-          SCRIPT_WORDS = ["VIRAL", "MOMENT", "DETECTED"];
-        }
-        wordIdx = 0;
+      container.innerHTML = CURRENT_HOOKS.map((h, idx) => {
+        const isSelected = h.id === selectedHookId;
+        const borderClass = isSelected ? "border-[#55f5d2] bg-[#0d1124] shadow-[4px_4px_0_#9c8cff]" : "border-white/10 bg-[#070916] hover:border-white/30";
         
-        // Update YouTube embed player
-        const frame = document.getElementById('youtube-embed-frame');
-        if (hook.youtube_embed_url) {
-          frame.src = hook.youtube_embed_url;
-        }
-
-        // Update timing badge
-        document.getElementById('selected-hook-time-badge').innerText = `${hook.start_fmt} - ${hook.end_fmt} (${hook.duration})`;
-
-        // Render dialogue script
-        const dContainer = document.getElementById('dialogue-lines-container');
-        const dList = Array.isArray(hook.dialogue) ? hook.dialogue : [];
-        if (dList.length > 0) {
-          dContainer.innerHTML = dList.map(d => `
-            <div class="flex items-start gap-2">
-              <span class="text-slate-500 shrink-0 select-none">${d.time || ''}</span>
-              <span class="text-slate-300">${d.text || ''}</span>
+        return `
+          <div 
+            onclick="selectHook('${h.id}')"
+            class="p-4 border ${borderClass} transition-all cursor-pointer space-y-3 group"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 grid place-items-center bg-[#10142a] text-slate-400 font-mono text-[10px] font-bold border border-white/10">0${idx + 1}</span>
+                <span class="text-xs font-mono px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 uppercase font-bold tracking-wider text-[10px]">
+                  ${h.category || 'High-Retention'}
+                </span>
+              </div>
+              <div class="flex items-center gap-1 font-mono text-xs">
+                <span class="text-[#55f5d2] font-black">${h.retention_score}%</span>
+                <span class="text-slate-500 text-[10px]">RETENTION</span>
+              </div>
             </div>
-          `).join('');
-        } else {
-          dContainer.innerHTML = `<div class="text-slate-500 italic">Dialogue transcript cue stream active.</div>`;
-        }
-      }
-      renderHooks(CURRENT_HOOKS);
-      renderSubtitles();
+
+            <div>
+              <h4 class="font-extrabold text-sm text-white group-hover:text-[#55f5d2] transition-colors leading-snug">
+                "${h.title}"
+              </h4>
+              <p class="text-xs text-slate-400 mt-1 line-clamp-2 italic font-mono leading-relaxed">
+                "${h.hook_quote}"
+              </p>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-white/5 text-[11px] font-mono">
+              <span class="text-slate-400">
+                ⏱ ${h.start_fmt} - ${h.end_fmt} (${h.duration})
+              </span>
+              <button
+                onclick="event.stopPropagation(); renderSingleHookById('${h.id}')"
+                class="px-3 py-1 bg-[#10142a] hover:bg-[#55f5d2] hover:text-[#07110f] border border-white/10 hover:border-[#55f5d2] text-white font-bold transition-all"
+              >
+                Export Reel →
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
     }
 
     function nudgeTime(type, delta) {
       const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId);
       if (!hook) return;
+
       if (type === 'start') {
         hook.start = Math.max(0, hook.start + delta);
-        hook.start_fmt = formatSeconds(hook.start);
+        hook.start_fmt = formatSecondsToMMSS(hook.start);
       } else {
-        hook.end = Math.max(hook.start + 2, hook.end + delta);
-        hook.end_fmt = formatSeconds(hook.end);
+        hook.end = Math.max(hook.start + 5, hook.end + delta);
+        hook.end_fmt = formatSecondsToMMSS(hook.end);
       }
       hook.duration = `${(hook.end - hook.start).toFixed(1)}s`;
       hook.youtube_embed_url = `https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=${Math.floor(hook.start)}&end=${Math.floor(hook.end)}&autoplay=1&enablejsapi=1`;
-      selectHook(selectedHookId);
+      
+      updateSelectedHookDetails();
+      renderHooksList();
+      appendConsoleLog(`[nudge] Adjusted ${type} boundary by ${delta > 0 ? '+' : ''}${delta}s -> [${hook.start_fmt} - ${hook.end_fmt}]`);
     }
 
-    function formatSeconds(s) {
-      const m = Math.floor(s / 60);
-      const rem = Math.floor(s % 60);
-      return `${m}:${rem < 10 ? '0' : ''}${rem}`;
-    }
-
-    function renderSubtitles() {
-      const getActiveWordStyle = (isActive) => {
-        if (!isActive) return "text-white/80";
-        switch (resolvedStyle) {
-          case "hormozi": return "text-yellow-400 scale-110 drop-shadow-[0_2px_8px_rgba(250,204,21,0.6)] font-black";
-          case "gold": return "text-[#E5C07B] scale-110 drop-shadow-[0_2px_8px_rgba(229,192,123,0.5)] font-bold";
-          case "clean": return "text-white underline decoration-[#E5C07B] decoration-2";
-          case "minimal": return "text-white border-b border-[#E5C07B] font-serif italic";
-          case "emerald": return "text-emerald-400 scale-110 drop-shadow-[0_2px_8px_rgba(52,211,153,0.6)] font-mono";
-          case "crimson": return "text-rose-400 scale-110 drop-shadow-[0_2px_8px_rgba(244,63,94,0.6)] font-black";
-          default: return "text-[#E5C07B]";
-        }
-      };
-
-      const getPillStyle = () => {
-        switch (resolvedStyle) {
-          case "clean": return "bg-black/90 border border-white/20";
-          case "gold": return "bg-black/85 border border-[#E5C07B]/30";
-          case "emerald": return "bg-black/90 border border-emerald-500/30 font-mono";
-          case "crimson": return "bg-black/90 border border-rose-500/30";
-          case "minimal": return "bg-transparent";
-          default: return "bg-black/80 backdrop-blur-md border border-white/10";
-        }
-      };
-
-      const pillClass = `inline-block px-3 py-1.5 rounded-lg max-w-full transition-all ${getPillStyle()}`;
-      document.getElementById('sub-pill').className = pillClass;
-      document.getElementById('fit-sub-pill').className = pillClass;
-
-      const wordsHtml = SCRIPT_WORDS.map((word, idx) => `
-        <span class="transition-all duration-150 ${getActiveWordStyle(idx === wordIdx)}">${word}</span>
-      `).join('');
-
-      document.getElementById('sub-words-container').innerHTML = wordsHtml;
-      document.getElementById('fit-sub-words-container').innerHTML = wordsHtml;
-    }
-
-    function toggleTerminalConsole() {
-      const box = document.getElementById('live-engine-console');
-      box.classList.toggle('hidden');
-      document.getElementById('terminal-toggle-label').innerText = box.classList.contains('hidden') ? 'Show Console Logs' : 'Hide Console Logs';
+    function formatSecondsToMMSS(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
     function appendConsoleLog(msg) {
       const box = document.getElementById('live-engine-console');
-      const div = document.createElement('div');
-      div.innerText = msg;
-      box.appendChild(div);
+      if (!box) return;
+      const line = document.createElement('p');
+      line.innerText = msg;
+      box.appendChild(line);
       box.scrollTop = box.scrollHeight;
     }
 
-    // ==================== ENGINE ACTIONS (ANALYZE & RENDER) ====================
-    async function triggerAnalyze() {
-      const btn = document.getElementById('analyze-btn');
-      const stepper = document.getElementById('pipeline-stepper');
+    function toggleTerminalLogs() {
       const consoleBox = document.getElementById('live-engine-console');
-      
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Analyzing...`;
-      stepper.classList.remove('hidden');
-      consoleBox.classList.remove('hidden');
-      consoleBox.innerHTML = '<div class="text-[#E5C07B] font-bold">=== Starting Smart Hook Detection Pipeline ===</div>';
+      const label = document.getElementById('terminal-toggle-label');
+      consoleBox.classList.toggle('hidden');
+      label.innerText = consoleBox.classList.contains('hidden') ? 'Show Console Logs' : 'Hide Console Logs';
+    }
+
+    // ==================== ENGINE API CALLS ====================
+
+    async function triggerAnalyze() {
+      const urlInput = document.getElementById('source-url');
+      const url = urlInput.value.trim();
+      if (!url) return;
+
+      const analyzeBtn = document.getElementById('analyze-btn');
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Analyzing...</span>`;
       lucide.createIcons();
 
+      const stepper = document.getElementById('pipeline-stepper');
+      stepper.classList.remove('hidden');
+
       try {
+        appendConsoleLog(`[pipeline] Dispatching hook analysis request for ${url}`);
         const startRes = await fetch('/api/analyze/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: document.getElementById('source-url').value })
+          body: JSON.stringify({ url })
         });
-        if (!startRes.ok) {
-          const errData = await startRes.json().catch(() => ({}));
-          throw new Error(errData.detail || `Server error: HTTP ${startRes.status}`);
-        }
-        const data = await startRes.json();
-        const job_id = data.job_id;
-        if (!job_id) throw new Error("No job_id returned");
+        const startData = await startRes.json();
+        const job_id = startData.job_id;
+        document.getElementById('active-task-id').innerText = job_id;
 
-        const poll = setInterval(async () => {
+        const pollInterval = setInterval(async () => {
           try {
             const sRes = await fetch(`/api/analyze/status/${job_id}`);
-            if (!sRes.ok) {
-              clearInterval(poll);
-              appendConsoleLog(`[poll error] Status check failed: HTTP ${sRes.status}`);
-              return;
-            }
             const job = await sRes.json();
 
-            document.getElementById('stepper-status-text').innerText = job.step;
-            document.getElementById('stepper-percent').innerText = `${job.progress}%`;
-            document.getElementById('stepper-progress-fill').style.width = `${job.progress}%`;
+            document.getElementById('stepper-status-text').innerText = job.step || 'Running AI Hook Detection...';
+            document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
+            document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
             if (job.logs && job.logs.length > 0) {
-              consoleBox.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
-              consoleBox.scrollTop = consoleBox.scrollHeight;
+              job.logs.forEach(l => appendConsoleLog(l));
             }
 
             if (job.status === 'completed' || job.status === 'failed') {
-              clearInterval(poll);
-              btn.disabled = false;
-              btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Auto-Detect Hooks`;
+              clearInterval(pollInterval);
+              analyzeBtn.disabled = false;
+              analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Auto-Detect Hooks</span>`;
               lucide.createIcons();
 
-              if (job.status === 'completed' && job.result) {
-                const res = job.result;
-                if (res.hooks && res.hooks.length > 0) {
-                  CURRENT_HOOKS = res.hooks;
-                  renderHooks(CURRENT_HOOKS);
-                  selectHook(CURRENT_HOOKS[0].id);
-                }
-                // Apply smart auto decisions
-                applyAutoDecisions(res.recommended_framing, res.recommended_style, res.framing_reason);
-                document.getElementById('stepper-status-text').innerText = `✓ Successfully extracted ${CURRENT_HOOKS.length} viral hooks!`;
+              if (job.result && job.result.hooks && job.result.hooks.length > 0) {
+                CURRENT_HOOKS = job.result.hooks;
+                autoDetectedFraming = job.result.recommended_framing || 'fit';
+                autoDetectedStyle = job.result.recommended_style || 'gold';
+
+                document.getElementById('smart-recommendation-text').innerText = 
+                  `Auto-Tuned: ${autoDetectedFraming === 'fit' ? 'Canvas Fit' : 'Center Crop'} + ${autoDetectedStyle.toUpperCase()}`;
+
+                setFramingMode(autoDetectedFraming);
+                setSubtitleMode(autoDetectedStyle);
+                renderHooksList();
+                updateSelectedHookDetails();
+                appendConsoleLog(`[pipeline] Hook analysis completed successfully! ${CURRENT_HOOKS.length} moments ready.`);
               }
             }
           } catch (pollErr) {
             console.error(pollErr);
           }
-        }, 600);
+        }, 800);
 
       } catch (e) {
         console.error(e);
-        appendConsoleLog(`[error] ${e.message}`);
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> Auto-Detect Hooks`;
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Auto-Detect Hooks</span>`;
         lucide.createIcons();
       }
     }
 
-    async function executeRenderClip() {
+    async function renderSelectedHook() {
       const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId);
+      if (!hook) return;
+      await renderSingleHookById(hook.id);
+    }
+
+    async function renderSingleHookById(hookId) {
+      const hook = CURRENT_HOOKS.find(h => h.id === hookId);
       if (!hook) return;
 
       const btn = document.getElementById('top-render-btn');
-      const stepper = document.getElementById('pipeline-stepper');
-      const consoleBox = document.getElementById('live-engine-console');
-
       btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Rendering Reel...`;
-      stepper.classList.remove('hidden');
-      consoleBox.classList.remove('hidden');
-      consoleBox.innerHTML = `<div class="text-[#E5C07B] font-bold">=== Rendering 9:16 Reel: "${hook.title}" [${hook.start_fmt} - ${hook.end_fmt}] ===</div>`;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Exporting Reel...</span>`;
       lucide.createIcons();
 
+      const stepper = document.getElementById('pipeline-stepper');
+      stepper.classList.remove('hidden');
+
+      const framing = activeFramingMode === 'auto' ? autoDetectedFraming : activeFramingMode;
+      const style = activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode;
+
       try {
+        appendConsoleLog(`[renderer] Initiating 9:16 export: "${hook.title}" [${hook.start}s - ${hook.end}s]`);
         const res = await fetch('/api/jobs/render_clip', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            url: document.getElementById('source-url').value,
+            url: document.getElementById('source-url').value.trim(),
             start: hook.start,
             end: hook.end,
-            style: resolvedStyle,
-            framing: resolvedFraming,
+            style: style,
+            framing: framing,
             title: hook.title
           })
         });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.detail || `Server error: HTTP ${res.status}`);
-        }
         const data = await res.json();
         const job_id = data.job_id;
-        if (!job_id) throw new Error("No job_id returned");
+        document.getElementById('active-task-id').innerText = job_id;
 
-        const poll = setInterval(async () => {
+        const pollRender = setInterval(async () => {
           const sRes = await fetch(`/api/jobs/${job_id}`);
-          if (!sRes.ok) {
-            clearInterval(poll);
-            appendConsoleLog(`[poll error] Status check failed: HTTP ${sRes.status}`);
-            return;
-          }
           const job = await sRes.json();
 
-          document.getElementById('stepper-status-text').innerText = job.step;
-          document.getElementById('stepper-percent').innerText = `${job.progress}%`;
-          document.getElementById('stepper-progress-fill').style.width = `${job.progress}%`;
-
-          if (job.logs && job.logs.length > 0) {
-            consoleBox.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
-            consoleBox.scrollTop = consoleBox.scrollHeight;
-          }
+          document.getElementById('stepper-status-text').innerText = job.step || 'Encoding Vertical 1080x1920 Reel...';
+          document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
+          document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
           if (job.status === 'completed' || job.status === 'failed') {
-            clearInterval(poll);
+            clearInterval(pollRender);
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i> <span>Export 9:16 Reel</span>`;
+            btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i><span>Export 9:16 Reel</span>`;
             lucide.createIcons();
 
             if (job.status === 'completed') {
-              document.getElementById('stepper-status-text').innerText = `✓ Render Complete! Video saved to Output Gallery.`;
+              appendConsoleLog(`[renderer] Reel rendered successfully: ${job.output_file}`);
               await loadOutputs();
               switchTab('gallery');
               if (job.output_file) {
@@ -1160,57 +1181,48 @@
         console.error(e);
         appendConsoleLog(`[render error] ${e.message}`);
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i> <span>Export 9:16 Reel</span>`;
+        btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4 fill-current"></i><span>Export 9:16 Reel</span>`;
         lucide.createIcons();
       }
     }
 
-    async function executeMakePipeline() {
-      const stepper = document.getElementById('pipeline-stepper');
-      const consoleBox = document.getElementById('live-engine-console');
+    async function triggerMakePipeline() {
+      const btn = document.getElementById('execute-make-btn');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Running...</span>`;
+      lucide.createIcons();
 
+      const stepper = document.getElementById('pipeline-stepper');
       stepper.classList.remove('hidden');
-      consoleBox.classList.remove('hidden');
-      consoleBox.innerHTML = '<div class="text-[#E5C07B] font-bold">=== Launching Pipeline: hooky make ===</div>';
 
       try {
+        const target = document.getElementById('source-url').value.trim();
         const res = await fetch('/api/jobs/make', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            target: document.getElementById('source-url').value,
-            framing: resolvedFraming,
-            style: resolvedStyle
+            target: target,
+            framing: activeFramingMode === 'auto' ? autoDetectedFraming : activeFramingMode,
+            style: activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode
           })
         });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.detail || `Server error: HTTP ${res.status}`);
-        }
         const data = await res.json();
         const job_id = data.job_id;
-        if (!job_id) throw new Error("No job_id returned");
+        document.getElementById('active-task-id').innerText = job_id;
 
-        const poll = setInterval(async () => {
+        const pollMake = setInterval(async () => {
           const sRes = await fetch(`/api/jobs/${job_id}`);
-          if (!sRes.ok) {
-            clearInterval(poll);
-            appendConsoleLog(`[poll error] Status check failed: HTTP ${sRes.status}`);
-            return;
-          }
           const job = await sRes.json();
 
-          document.getElementById('stepper-status-text').innerText = job.step;
-          document.getElementById('stepper-percent').innerText = `${job.progress}%`;
-          document.getElementById('stepper-progress-fill').style.width = `${job.progress}%`;
-
-          if (job.logs && job.logs.length > 0) {
-            consoleBox.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
-            consoleBox.scrollTop = consoleBox.scrollHeight;
-          }
+          document.getElementById('stepper-status-text').innerText = job.step || 'Autonomous pipeline active...';
+          document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
+          document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
           if (job.status === 'completed' || job.status === 'failed') {
-            clearInterval(poll);
+            clearInterval(pollMake);
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#55f5d2]"></i><span>Run Pipeline</span>`;
+            lucide.createIcons();
             loadOutputs();
           }
         }, 800);
@@ -1229,49 +1241,36 @@
         const vals = data.values || {};
 
         document.getElementById('env-gemini-key').value = vals.GEMINI_API_KEY || '';
-        document.getElementById('env-gemini-model').value = vals.GEMINI_MODEL || 'gemini-2.5-flash';
-        document.getElementById('env-gemini-fallbacks').value = vals.GEMINI_MODEL_FALLBACKS || '';
-        document.getElementById('env-sub-style').value = vals.SUB_STYLE || 'gold';
-        document.getElementById('env-density-minutes').value = vals.AUTO_CLIP_DENSITY_MINUTES || '10';
-        document.getElementById('env-ffmpeg-threads').value = vals.FFMPEG_THREADS || '8';
+        if (vals.GEMINI_MODEL) document.getElementById('env-gemini-model').value = vals.GEMINI_MODEL;
+        if (vals.SUB_STYLE) document.getElementById('env-sub-style').value = vals.SUB_STYLE;
+        if (vals.GEMINI_MODEL_FALLBACKS) document.getElementById('env-gemini-fallbacks').value = vals.GEMINI_MODEL_FALLBACKS;
+        if (vals.AUTO_CLIP_DENSITY_MINUTES) document.getElementById('env-density-minutes').value = vals.AUTO_CLIP_DENSITY_MINUTES;
+        if (vals.FFMPEG_THREADS) document.getElementById('env-ffmpeg-threads').value = vals.FFMPEG_THREADS;
+
         document.getElementById('env-raw-textarea').value = data.raw || '';
       } catch (e) {
-        console.error('Error loading .env config:', e);
+        console.error(e);
       }
     }
 
-    function switchEnvTab(tab) {
-      document.getElementById('env-form-view').classList.toggle('hidden', tab !== 'form');
-      document.getElementById('env-raw-view').classList.toggle('hidden', tab !== 'raw');
-      document.getElementById('env-tab-form').className = tab === 'form'
-        ? 'px-3.5 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold transition-all'
-        : 'px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all';
-      document.getElementById('env-tab-raw').className = tab === 'raw'
-        ? 'px-3.5 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold transition-all'
-        : 'px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all';
-    }
-
-    function togglePasswordVisibility(inputId, btn) {
-      const input = document.getElementById(inputId);
-      input.type = input.type === 'password' ? 'text' : 'password';
-      btn.innerHTML = `<i data-lucide="${input.type === 'password' ? 'eye' : 'eye-off'}" class="w-4 h-4"></i>`;
-      lucide.createIcons();
-    }
-
     async function saveEnvForm() {
-      const isRaw = !document.getElementById('env-raw-view').classList.contains('hidden');
-      const payload = isRaw
-        ? { raw: document.getElementById('env-raw-textarea').value }
-        : {
-            values: {
-              GEMINI_API_KEY: document.getElementById('env-gemini-key').value,
-              GEMINI_MODEL: document.getElementById('env-gemini-model').value,
-              GEMINI_MODEL_FALLBACKS: document.getElementById('env-gemini-fallbacks').value,
-              SUB_STYLE: document.getElementById('env-sub-style').value,
-              AUTO_CLIP_DENSITY_MINUTES: document.getElementById('env-density-minutes').value,
-              FFMPEG_THREADS: document.getElementById('env-ffmpeg-threads').value,
-            }
-          };
+      const activeIsRaw = !document.getElementById('env-raw-view').classList.contains('hidden');
+      let payload = {};
+
+      if (activeIsRaw) {
+        payload = { raw: document.getElementById('env-raw-textarea').value };
+      } else {
+        payload = {
+          values: {
+            GEMINI_API_KEY: document.getElementById('env-gemini-key').value.trim(),
+            GEMINI_MODEL: document.getElementById('env-gemini-model').value,
+            SUB_STYLE: document.getElementById('env-sub-style').value,
+            GEMINI_MODEL_FALLBACKS: document.getElementById('env-gemini-fallbacks').value.trim(),
+            AUTO_CLIP_DENSITY_MINUTES: document.getElementById('env-density-minutes').value,
+            FFMPEG_THREADS: document.getElementById('env-ffmpeg-threads').value
+          }
+        };
+      }
 
       try {
         const res = await fetch('/api/env', {
@@ -1279,48 +1278,52 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        const alertBox = document.getElementById('env-status-alert');
-        alertBox.classList.remove('hidden');
-        alertBox.innerText = `✓ ${data.message || '.env saved successfully!'}`;
-        await loadEnvConfig();
-        setTimeout(() => alertBox.classList.add('hidden'), 4000);
-      } catch (e) {
-        alert(`Error saving .env: ${e.message}`);
-      }
-    }
-
-    // ==================== CHANNELS & OUTPUTS ====================
-    async function loadDoctorStatus() {
-      try {
-        const res = await fetch('/api/doctor');
-        const data = await res.json();
-        document.getElementById('gpu-text').innerText = data.gpu;
-
-        const container = document.getElementById('doctor-checks-container');
-        container.innerHTML = data.checks.map(c => `
-          <div class="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
-            <div>
-              <span class="font-bold text-white block">${c.name}</span>
-              <span class="text-slate-400 text-[11px] truncate max-w-[280px] font-mono">${c.detail}</span>
-            </div>
-            <span class="px-2 py-0.5 rounded text-[11px] font-bold font-mono ${
-              c.ok ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-            }">
-              ${c.ok ? 'PASS' : 'WARN'}
-            </span>
-          </div>
-        `).join('');
+        if (res.ok) {
+          const alertElem = document.getElementById('env-status-alert');
+          alertElem.classList.remove('hidden');
+          setTimeout(() => alertElem.classList.add('hidden'), 3500);
+          await loadEnvConfig();
+        }
       } catch (e) {
         console.error(e);
       }
     }
 
+    function switchEnvTab(mode) {
+      const isRaw = mode === 'raw';
+      document.getElementById('env-form-view').classList.toggle('hidden', isRaw);
+      document.getElementById('env-raw-view').classList.toggle('hidden', !isRaw);
+      
+      const tabForm = document.getElementById('env-tab-form');
+      const tabRaw = document.getElementById('env-tab-raw');
+
+      if (isRaw) {
+        tabRaw.className = "px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
+        tabForm.className = "px-3.5 py-1.5 text-slate-400 hover:text-white transition-all";
+      } else {
+        tabForm.className = "px-3.5 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold shadow-[2px_2px_0_#9c8cff] transition-all";
+        tabRaw.className = "px-3.5 py-1.5 text-slate-400 hover:text-white transition-all";
+      }
+    }
+
+    function togglePasswordVisibility(fieldId, btn) {
+      const field = document.getElementById(fieldId);
+      if (field.type === 'password') {
+        field.type = 'text';
+        btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i>`;
+      } else {
+        field.type = 'password';
+        btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i>`;
+      }
+      lucide.createIcons();
+    }
+
+    // ==================== CHANNELS.TXT RADAR ====================
     async function loadChannels() {
       try {
         const res = await fetch('/api/channels');
         const data = await res.json();
-        activeChannelsList = data.channels || [];
+        cachedChannels = data.channels || [];
         renderChannelsTable();
       } catch (e) {
         console.error(e);
@@ -1329,28 +1332,27 @@
 
     function renderChannelsTable() {
       const tbody = document.getElementById('channels-table-body');
-      if (activeChannelsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 font-mono">No channels in channels.txt</td></tr>';
+      if (!tbody) return;
+
+      if (cachedChannels.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500 font-mono">No channels configured in channels.txt</td></tr>`;
         return;
       }
-      tbody.innerHTML = activeChannelsList.map((ch, idx) => {
-        const parts = ch.split('|').map(s => s.trim());
+
+      tbody.innerHTML = cachedChannels.map((line, idx) => {
+        const parts = line.split('|').map(s => s.trim());
         const handle = parts[0] || '';
-        let clips = 'auto';
-        let focus = 'General';
-        parts.slice(1).forEach(p => {
-          if (p.startsWith('clips=')) clips = p.replace('clips=', '');
-          if (p.startsWith('focus=')) focus = p.replace('focus=', '');
-        });
+        const clips = parts.find(p => p.startsWith('clips=')) || 'clips=auto';
+        const focus = parts.find(p => p.startsWith('focus=')) || 'focus=general';
 
         return `
-          <tr class="hover:bg-white/[0.02] font-mono">
-            <td class="p-3 font-bold text-white">${handle}</td>
-            <td class="p-3 text-slate-300">${clips}</td>
-            <td class="p-3 text-slate-400">${focus}</td>
+          <tr class="hover:bg-white/[0.02] transition-colors">
+            <td class="p-3 font-mono font-bold text-white">${handle}</td>
+            <td class="p-3 text-slate-400 font-mono">${clips}</td>
+            <td class="p-3 text-slate-400 font-mono">${focus}</td>
             <td class="p-3 text-right">
-              <button onclick="removeChannel(${idx})" class="text-rose-400 hover:text-rose-300 text-xs font-mono">
-                Delete
+              <button onclick="removeChannel(${idx})" class="text-rose-400 hover:text-rose-300 font-mono text-[11px]">
+                Remove
               </button>
             </td>
           </tr>
@@ -1362,13 +1364,13 @@
       const input = document.getElementById('new-channel-input');
       const val = input.value.trim();
       if (!val) return;
-      activeChannelsList.push(val);
+      cachedChannels.push(val);
       input.value = '';
       renderChannelsTable();
     }
 
     function removeChannel(idx) {
-      activeChannelsList.splice(idx, 1);
+      cachedChannels.splice(idx, 1);
       renderChannelsTable();
     }
 
@@ -1377,14 +1379,15 @@
         await fetch('/api/channels', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ channels: activeChannelsList })
+          body: JSON.stringify({ channels: cachedChannels })
         });
-        alert('Saved successfully to channels.txt!');
+        appendConsoleLog('[channels] Successfully saved channels.txt');
       } catch (e) {
-        alert(`Error saving channels: ${e.message}`);
+        console.error(e);
       }
     }
 
+    // ==================== GALLERY & OUTPUTS ====================
     async function loadOutputs() {
       try {
         const res = await fetch('/api/outputs');
@@ -1399,19 +1402,19 @@
         }
 
         grid.innerHTML = files.map(f => `
-          <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:border-[#E5C07B]/40 transition-all space-y-3">
+          <div class="p-4 bg-[#070916] border border-white/10 hover:border-[#55f5d2]/40 transition-all space-y-3 font-mono">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">1080x1920 MP4</span>
-              <span class="text-xs font-mono text-slate-400">${f.size_mb} MB</span>
+              <span class="text-xs px-2 py-0.5 bg-[#55f5d2]/10 text-[#55f5d2] border border-[#55f5d2]/30 font-bold">1080×1920 MP4</span>
+              <span class="text-xs text-slate-400">${f.size_mb} MB</span>
             </div>
             <div>
-              <h4 class="font-bold text-white text-xs truncate max-w-full" title="${f.name}">${f.name}</h4>
-              <p class="text-[11px] text-slate-500 font-mono mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
+              <h4 class="font-bold text-white text-xs truncate max-w-full font-sans" title="${f.name}">${f.name}</h4>
+              <p class="text-[11px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
             </div>
             <div class="flex items-center gap-2 pt-2 border-t border-white/5">
               <button
                 onclick="playOutputVideo('${f.name}', '${f.name}')"
-                class="flex-1 py-1.5 rounded-lg bg-[#E5C07B] text-[#0A0D14] font-bold text-xs hover:brightness-110 flex items-center justify-center gap-1.5 transition-all"
+                class="flex-1 py-1.5 bg-[#55f5d2] text-[#07110f] font-bold text-xs hover:brightness-110 flex items-center justify-center gap-1.5 transition-all shadow-[2px_2px_0_#9c8cff]"
               >
                 <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
                 <span>Watch</span>
@@ -1419,7 +1422,7 @@
               <a
                 href="${f.url}${window.__HOOKY_TOKEN__ ? '?token=' + encodeURIComponent(window.__HOOKY_TOKEN__) : ''}"
                 download
-                class="px-3 py-1.5 rounded-lg bg-white/[0.05] text-slate-300 hover:text-white border border-white/10 text-xs font-mono transition-all"
+                class="px-3 py-1.5 bg-[#10142a] text-slate-300 hover:text-white border border-white/10 text-xs transition-all"
               >
                 <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
               </a>
@@ -1451,6 +1454,35 @@
       box.classList.add('hidden');
       const player = document.getElementById('html5-video-player');
       player.pause();
+    }
+
+    // ==================== SYSTEM DOCTOR ====================
+    async function loadDoctorReport() {
+      try {
+        const res = await fetch('/api/doctor');
+        const data = await res.json();
+        const container = document.getElementById('doctor-checks-container');
+        if (!container) return;
+
+        if (data.gpu) {
+          document.getElementById('gpu-text').innerText = data.gpu;
+        }
+
+        const checks = data.checks || [];
+        container.innerHTML = checks.map(c => `
+          <div class="p-3 bg-[#070916] border border-white/10 flex items-center justify-between text-xs font-mono">
+            <div class="flex items-center gap-2">
+              <span class="${c.ok ? 'text-[#55f5d2]' : 'text-[#ff6b62]'} font-bold">
+                ${c.ok ? '✓ PASS' : '✗ FAIL'}
+              </span>
+              <span class="text-white font-bold">${c.name}</span>
+            </div>
+            <span class="text-slate-400 text-[11px] truncate max-w-[200px]" title="${c.detail}">${c.detail}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
     }
   </script>
 </body>
