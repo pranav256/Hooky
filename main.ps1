@@ -70,7 +70,7 @@ if ($null -ne $uv) {
 $Python = Join-Path $Root ".venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
     Write-Host "[hooky] Setting up Python virtual environment and dependencies..." -ForegroundColor Cyan
-    Invoke-Checked $uvCommand @("sync", "--locked", "--extra", "all")
+    Invoke-Checked $uvCommand @("sync", "--extra", "all")
 }
 
 # 4. Ensure .env exists
@@ -84,7 +84,7 @@ if (-not (Test-Path -LiteralPath $EnvFile)) {
 }
 
 # 5. Determine command: if no arguments provided, default to launching Web Studio ('web')
-$RunArgs = if ($CommandArgs.Count -eq 0) { @("web") } else { $CommandArgs }
+[string[]]$RunArgs = if ($CommandArgs.Count -eq 0) { @("web") } else { $CommandArgs }
 
 Write-Host "`n[hooky] 🚀 Launching Hooky ($($RunArgs -join ' '))...`n" -ForegroundColor Green
 & $Python -m hooky @RunArgs

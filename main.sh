@@ -76,7 +76,7 @@ if [ ! -f "$ROOT/.venv/bin/python" ]; then
     printf '%s\n' '[hooky] Initializing dependencies & environment...'
     install_system_tools
     install_uv
-    "$UV" sync --locked --extra all
+    "$UV" sync --extra all
 fi
 
 # 2. Ensure .env exists from template
