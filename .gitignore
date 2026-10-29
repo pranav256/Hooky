@@ -32,5 +32,6 @@ dist/
 
 # Runtime lock artifacts from interrupted channel scans and posting passes
 *.lock
+!uv.lock
 *.channels.lock
 *.post.lock
