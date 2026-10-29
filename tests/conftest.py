@@ -1,4 +1,4 @@
-"""Pytest defaults for the fast, offline test suite."""
+﻿"""Pytest defaults for the fast, offline test suite."""
 import pytest
 
 
@@ -14,3 +14,4 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "integration" in item.keywords and not config.getoption("--run-integration"):
             item.add_marker(pytest.mark.skip(reason="use --run-integration for media renders"))
+

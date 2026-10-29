@@ -1,4 +1,4 @@
-"""Posting/CLI boundaries with fake network/time and exclusively temporary IO."""
+﻿"""Posting/CLI boundaries with fake network/time and exclusively temporary IO."""
 import json
 import os
 import subprocess
@@ -9,9 +9,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from ziv import config, pipeline_cli as cli
-from ziv.core import queue as post_queue
-from ziv.platforms import instagram
+from hooky import config, pipeline_cli as cli
+from hooky.core import queue as post_queue
+from hooky.platforms import instagram
 
 
 @pytest.fixture(autouse=True)
@@ -253,8 +253,8 @@ def test_hard_crash_leaves_hold_and_os_releases_poster_lock(tmp_path):
 import os, sys
 from pathlib import Path
 from types import SimpleNamespace
-from ziv import pipeline_cli as cli
-from ziv.core import queue as q
+from hooky import pipeline_cli as cli
+from hooky.core import queue as q
 q.QUEUE_FILE = Path(sys.argv[1])
 q.POST_HOURS = ''
 cli.is_configured = lambda: True
@@ -433,3 +433,4 @@ def test_invalid_bounds_fail_before_download(tmp_path, monkeypatch, name, value)
     monkeypatch.setenv(name, value)
     assert cli.main(["--links", str(links)]) == 2
     assert events == []
+

@@ -29,7 +29,7 @@ $startInfo = New-Object System.Diagnostics.ProcessStartInfo
 $startInfo.FileName = $Python
 $startInfo.WorkingDirectory = $Root
 $startInfo.UseShellExecute = $false
-$nativeArgs = @("-m", "ziv") + $ZivArgs
+$nativeArgs = @("-m", "hooky") + $ZivArgs
 if ($null -ne $startInfo.PSObject.Properties["ArgumentList"]) {
     foreach ($argument in $nativeArgs) {
         $startInfo.ArgumentList.Add([string] $argument)

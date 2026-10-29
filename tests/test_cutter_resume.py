@@ -1,7 +1,7 @@
-"""Renderer resume behavior without running FFmpeg."""
+﻿"""Renderer resume behavior without running FFmpeg."""
 from pathlib import Path
 
-from ziv.core import cutter
+from hooky.core import cutter
 
 
 def test_completed_clip_is_reused_when_source_and_window_match(tmp_path: Path,
@@ -61,3 +61,4 @@ def test_renderer_limits_subtitle_work_and_uses_small_fit_background(
 
     assert [word["word"] for word in captured["words"]] == ["inside"]
     assert captured["kwargs"]["background_height"] == 480
+

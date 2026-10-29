@@ -1,4 +1,4 @@
-"""Fast tests for the new brains: AUTO clip planning + speech-boundary snapping.
+﻿"""Fast tests for the new brains: AUTO clip planning + speech-boundary snapping.
 
 Run with:  python -m pytest tests/test_highlights.py  (or: python tests/test_highlights.py)
 No ffmpeg, no Gemini, no network needed.
@@ -10,14 +10,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ziv.core.highlights import (  # noqa: E402
+from hooky.core.highlights import (  # noqa: E402
     plan_auto_clips, snap_clip_boundaries,
 )
 
 
 @pytest.mark.parametrize("count", [3, 10])
 def test_content_auto_count_comes_from_moments_not_duration(monkeypatch, tmp_path, count):
-    from ziv.core import highlights, gemini
+    from hooky.core import highlights, gemini
 
     candidates = [{"start": i * 25.0, "end": i * 25.0 + 20, "reason": "complete idea"}
                   for i in range(count)]
@@ -42,7 +42,7 @@ def test_content_auto_count_comes_from_moments_not_duration(monkeypatch, tmp_pat
 
 
 def test_content_auto_rejects_incomplete_duration_instead_of_expanding():
-    from ziv.core.highlights import _parse_clips
+    from hooky.core.highlights import _parse_clips
     assert _parse_clips('[{"start": 5, "end": 10}]', 100, 15, 60, strict=True) == []
 
 
@@ -71,7 +71,7 @@ def test_snap_start_lands_after_pause() -> None:
         {"start": 16.0, "end": 18.0, "word": "thought"},
         {"start": 18.0, "end": 20.0, "word": "here."},
     ]
-    from ziv.core.highlights import _snap_start
+    from hooky.core.highlights import _snap_start
     # Gemini wanted 13.0 (mid-pause): snapped start should begin the next word
     t = _snap_start(13.0, words, 7.0, 19.0)
     assert abs(t - 13.52) < 1.0 or abs(t - 14.0) < 0.5, f"start not on speech edge: {t}"
@@ -91,7 +91,7 @@ def test_snap_end_lands_on_sentence() -> None:
         # pause 16.0-18.0
         {"start": 18.0, "end": 20.0, "word": "trailing"},
     ]
-    from ziv.core.highlights import _snap_end
+    from hooky.core.highlights import _snap_end
     # Gemini wanted 14.5 (mid-phrase): should extend to end of "idea." + beat
     t = _snap_end(14.5, words, 11.5, 17.0)
     assert 15.8 <= t <= 17.0, f"end should land on 'idea.' + 0.25, got {t}"
@@ -117,7 +117,7 @@ def test_no_words_is_noop() -> None:
 
 
 def test_visual_analysis_frames_are_reused_for_retries(tmp_path, monkeypatch):
-    from ziv.core import highlights
+    from hooky.core import highlights
 
     source = tmp_path / "video.mp4"
     source.write_bytes(b"source")
@@ -144,3 +144,4 @@ if __name__ == "__main__":
     test_snap_respects_length_limits()
     test_no_words_is_noop()
     print("HIGHLIGHTS_TESTS_PASSED")
+

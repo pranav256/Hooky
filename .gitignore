@@ -11,6 +11,8 @@ __agent__/
 # Local agent/AI handoff instructions and context
 /AGENTS.md
 /CONTEXT.md
+.agents/
+skills-lock.json
 
 # User inputs and generated output
 links.txt

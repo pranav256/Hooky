@@ -32,18 +32,18 @@ dev = [
 ]
 
 [project.scripts]
-hooky = "ziv.cli:main"
-hooky-parts = "ziv.parts_cli:main"
-ziv = "ziv.cli:main"
-ziv-parts = "ziv.parts_cli:main"
+hooky = "hooky.cli:main"
+hooky-parts = "hooky.parts_cli:main"
+ziv = "hooky.cli:main"
+ziv-parts = "hooky.parts_cli:main"
 
 [tool.setuptools.packages.find]
-include = ["ziv*"]
-exclude = ["tests", "tests.*", "ziv.tests", "ziv.tests.*"]
+include = ["hooky*"]
+exclude = ["tests", "tests.*", "hooky.tests", "hooky.tests.*"]
 namespaces = false
 
 [tool.setuptools.package-data]
-"ziv.parts" = ["README.md"]
+"hooky.parts" = ["README.md"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

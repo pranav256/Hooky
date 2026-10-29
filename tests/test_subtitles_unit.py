@@ -1,5 +1,5 @@
-"""Fast regression tests for subtitle timeline normalization."""
-from ziv.core.subtitles import build_ass
+﻿"""Fast regression tests for subtitle timeline normalization."""
+from hooky.core.subtitles import build_ass
 
 
 def dialogue(ass: str) -> list[str]:
@@ -34,3 +34,4 @@ def test_karaoke_uses_next_word_onset_without_accumulated_rounding_drift() -> No
     assert r"{\k50}ONE" in lines[0]
     assert r"{\k60}TWO" in lines[0]
     assert r"{\k40}THREE" in lines[0]
+

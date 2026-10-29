@@ -1,11 +1,11 @@
-"""Public dispatcher contracts for setup and shell completion.
+﻿"""Public dispatcher contracts for setup and shell completion.
 
 These tests deliberately use no shell, subprocess, network, credentials,
 cookies, or files outside pytest's temporary directory.
 """
 from __future__ import annotations
 
-from ziv import cli
+from hooky import cli
 
 
 def test_no_arguments_run_the_default_links_flow(monkeypatch) -> None:
@@ -22,7 +22,7 @@ def test_no_arguments_run_the_default_links_flow(monkeypatch) -> None:
 
 
 def test_setup_command_dispatches_to_the_offline_handler(monkeypatch) -> None:
-    from ziv.setup import cli as setup_cli
+    from hooky.setup import cli as setup_cli
 
     received: list[list[str]] = []
 
@@ -47,3 +47,4 @@ def test_completion_command_dispatches_to_the_shell_handler(monkeypatch) -> None
 
     assert cli.main(["completion", "bash"]) == 23
     assert received == [["bash"]]
+

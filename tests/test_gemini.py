@@ -1,4 +1,4 @@
-"""Unit tests for ziv/core/gemini.py error classification + rotation.
+﻿"""Unit tests for hooky/core/gemini.py error classification + rotation.
 
 No network access: the client and every model call are faked. Run:
     python -m pytest tests/test_gemini.py   (or: python tests/test_gemini.py)
@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import ziv.core.gemini as g  # noqa: E402
+import hooky.core.gemini as g  # noqa: E402
 
 
 @contextlib.contextmanager
@@ -215,3 +215,5 @@ if __name__ == "__main__":
         fn()
         print(f"  ok  {fn.__name__}")
     print(f"GEMINI_TESTS_PASSED ({len(fns)} tests)")
+
+

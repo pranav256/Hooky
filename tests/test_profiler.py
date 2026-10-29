@@ -1,11 +1,11 @@
-"""Offline contract tests for opt-in pipeline profiling."""
+﻿"""Offline contract tests for opt-in pipeline profiling."""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from ziv.core import profiling
-from ziv.setup import profiler as system_profiler
+from hooky.core import profiling
+from hooky.setup import profiler as system_profiler
 
 
 def test_disabled_profile_is_a_noop(tmp_path: Path, monkeypatch) -> None:
@@ -92,3 +92,4 @@ def test_system_profiler_uses_mocked_local_capabilities_only(monkeypatch) -> Non
     assert all(command[0] != "sh" for command in commands)
     assert all("network" not in command for command in commands)
     assert profile.to_dict()["gpu_hints"] == ["Synthetic GPU"]
+

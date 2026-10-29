@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# One-time Ziv setup for Linux and macOS.
+﻿#!/usr/bin/env bash
+# One-time Hooky setup for Linux and macOS.
 set -euo pipefail
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
@@ -21,7 +21,7 @@ install_system_tools() {
                 return
             fi
             command -v brew >/dev/null 2>&1 || {
-                printf '%s\n' '[ziv] Install Homebrew first: https://brew.sh' >&2
+                printf '%s\n' '[hooky] Install Homebrew first: https://brew.sh' >&2
                 exit 1
             }
             brew install ffmpeg
@@ -39,12 +39,12 @@ install_system_tools() {
             elif command -v pacman >/dev/null 2>&1; then
                 as_root pacman -Sy --needed --noconfirm ffmpeg curl
             else
-                printf '%s\n' '[ziv] Install FFmpeg and FFprobe with your package manager, then rerun setup.sh.' >&2
+                printf '%s\n' '[hooky] Install FFmpeg and FFprobe with your package manager, then rerun setup.sh.' >&2
                 exit 1
             fi
             ;;
         *)
-            printf '%s\n' '[ziv] Unsupported OS. Install FFmpeg and FFprobe, then run the uv steps from README.md.' >&2
+            printf '%s\n' '[hooky] Unsupported OS. Install FFmpeg and FFprobe, then run the uv steps from README.md.' >&2
             exit 1
             ;;
     esac
@@ -57,7 +57,7 @@ install_uv() {
     fi
 
     command -v curl >/dev/null 2>&1 || {
-        printf '%s\n' '[ziv] curl is required to install uv.' >&2
+        printf '%s\n' '[hooky] curl is required to install uv.' >&2
         exit 1
     }
     mkdir -p "$ROOT/.tools"
@@ -72,4 +72,5 @@ install_uv
 # supports Python 3.10 and newer; do not force a particular minor release.
 "$UV" sync --locked --extra all
 
-exec "$ROOT/.venv/bin/python" -m ziv setup "$@"
+exec "$ROOT/.venv/bin/python" -m hooky setup "$@"
+

@@ -1,8 +1,8 @@
-"""Disposable-media cleanup must preserve durable history and source sidecars."""
+﻿"""Disposable-media cleanup must preserve durable history and source sidecars."""
 import json
 from pathlib import Path
 
-from ziv.core.cleanup import delete_clip_artifacts, delete_source_artifacts
+from hooky.core.cleanup import delete_clip_artifacts, delete_source_artifacts
 
 
 def test_posted_clip_cleanup_removes_only_generated_sidecars(tmp_path: Path) -> None:
@@ -45,3 +45,4 @@ def test_source_cleanup_removes_download_cache_but_keeps_local_caption_sidecar(t
 
     assert set(removed) == {master, analysis, metadata, captions}
     assert not any(path.exists() for path in (master, analysis, metadata, captions))
+

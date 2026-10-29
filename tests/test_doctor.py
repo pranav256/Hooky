@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from ziv import cli
-from ziv import doctor
-from ziv.core import downloader
+from hooky import cli
+from hooky import doctor
+from hooky.core import downloader
 
 
 def test_doctor_without_url_reports_local_auth_status_only(monkeypatch, capsys) -> None:
@@ -92,7 +92,7 @@ def test_auth_status_validates_metadata_without_reading_cookie_contents(
 def test_doctor_help_is_local_and_does_not_probe(capsys) -> None:
     assert cli._doctor(["--help"]) == 0
     output = capsys.readouterr().out
-    assert "Usage: ziv doctor [dependencies|youtube [URL]]" in output
+    assert "Usage: hooky doctor [dependencies|youtube [URL]]" in output
 
 
 def test_dependency_doctor_renders_mocked_local_checks(monkeypatch, capsys) -> None:
@@ -114,3 +114,4 @@ def test_dependency_doctor_renders_mocked_local_checks(monkeypatch, capsys) -> N
     assert "PASS synthetic-required" in output
     assert "WARN synthetic-optional" in output
     assert "install hint shown only" in output
+
