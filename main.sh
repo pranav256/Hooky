@@ -79,15 +79,44 @@ if [ ! -f "$ROOT/.venv/bin/python" ]; then
     "$UV" sync --extra all
 fi
 
-# 2. Ensure .env exists from template
-if [ ! -f "$ROOT/.env" ] && [ -f "$ROOT/.env.example" ]; then
-    cp "$ROOT/.env.example" "$ROOT/.env"
-    printf '%s\n' '[hooky] Created .env configuration from template.'
+# 2. Check .env and prompt for environment configuration choices if interactive
+IS_INTERACTIVE=0
+if [ -t 0 ]; then
+    IS_INTERACTIVE=1
 fi
 
-# 3. Determine command: default to Web Studio (opens browser)
+SKIP_SETUP="${SKIP_SETUP:-0}"
+
+if [ "${1:-}" = "--setup" ] || [ "${1:-}" = "setup" ]; then
+    exec "$ROOT/.venv/bin/python" -m hooky setup --redo
+fi
+
+if [ ! -f "$ROOT/.env" ]; then
+    if [ -f "$ROOT/.env.example" ]; then
+        cp "$ROOT/.env.example" "$ROOT/.env"
+        printf '%s\n' '[hooky] Created .env configuration from template.'
+    fi
+    if [ "$IS_INTERACTIVE" -eq 1 ] && [ "$SKIP_SETUP" -eq 0 ]; then
+        printf '\n%s\n' '[hooky] First-run configuration needed.'
+        read -r -p "[hooky] Would you like to configure your API keys and environment settings now? (Y/n) " answer
+        if [ "$answer" != "n" ] && [ "$answer" != "N" ]; then
+            "$ROOT/.venv/bin/python" -m hooky setup
+        fi
+    fi
+elif [ "$IS_INTERACTIVE" -eq 1 ] && [ "$SKIP_SETUP" -eq 0 ]; then
+    if [ $# -eq 0 ] || [ "${1:-}" = "web" ] || [ "${1:-}" = "make" ] || [ "${1:-}" = "parts" ] || [ "${1:-}" = "post" ]; then
+        read -r -p "[hooky] Would you like to review or update your .env settings before launch? (y/N) " answer
+        if [ "$answer" = "y" ] || [ "$answer" = "Y" ] || [ "$answer" = "yes" ]; then
+            "$ROOT/.venv/bin/python" -m hooky setup --redo
+        fi
+    fi
+fi
+
+export HOOKY_LAUNCHER_PROMPTED="1"
+
+# 3. Determine command: default to Web Studio
 if [ $# -eq 0 ]; then
-    printf '\n%s\n\n' '[hooky] 🚀 Launching Hooky Web Studio at http://127.0.0.1:8000...'
+    printf '\n%s\n\n' '[hooky] Launching Hooky Web Studio at http://127.0.0.1:8000...'
     exec "$ROOT/.venv/bin/python" -m hooky web
 else
     exec "$ROOT/.venv/bin/python" -m hooky "$@"

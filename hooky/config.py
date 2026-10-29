@@ -49,7 +49,7 @@ _load_dotenv()
 # midnight Pacific time. What IS stable: limits are PER MODEL, so rotation
 # below gives each model its own fresh bucket.
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "").strip() or "gemini-3.8-flash"
 
 # Runtime model rotation: free-tier limits are PER MODEL, so when the primary
 # model hits 429/quota (or 503 overload) mid-run, gemini.py switches to the
@@ -93,11 +93,18 @@ IG_PASSWORD = os.environ.get("IG_PASSWORD", "")
 IG_2FA_CODE = os.environ.get("IG_2FA_CODE", "")
 
 # --- Output ---------------------------------------------------------------
-OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", PROJECT_ROOT / "output"))
-SESSION_FILE = Path(
-    os.environ.get("IG_SESSION_FILE", PROJECT_ROOT / ".ig_session"))
-LINKS_FILE = Path(os.environ.get("LINKS_FILE", PROJECT_ROOT / "links.txt"))
-CHANNELS_FILE = Path(os.environ.get("CHANNELS_FILE", PROJECT_ROOT / "channels.txt"))
+def _resolve_path(raw: str, default: Path) -> Path:
+    val = raw.strip()
+    if not val:
+        return default
+    p = Path(val)
+    return p if p.is_absolute() else (PROJECT_ROOT / p)
+
+OUTPUT_DIR = _resolve_path(os.environ.get("OUTPUT_DIR", ""), PROJECT_ROOT / "output")
+SESSION_FILE = _resolve_path(
+    os.environ.get("IG_SESSION_FILE", ""), PROJECT_ROOT / ".ig_session")
+LINKS_FILE = _resolve_path(os.environ.get("LINKS_FILE", ""), PROJECT_ROOT / "links.txt")
+CHANNELS_FILE = _resolve_path(os.environ.get("CHANNELS_FILE", ""), PROJECT_ROOT / "channels.txt")
 CHANNEL_BACKLOG_MAX = int(os.environ.get("CHANNEL_BACKLOG_MAX", "20"))
 CHANNEL_SCAN_MAX = int(os.environ.get("CHANNEL_SCAN_MAX", "0"))
 

@@ -620,11 +620,32 @@ def run_server(args: list[str] | None = None) -> int:
     import uvicorn
     import webbrowser
 
+    arg_list = args or []
+    if "--setup" in arg_list:
+        from ..setup.cli import main as setup_main
+        setup_main(["--redo"])
+    elif (
+        os.environ.get("HOOKY_LAUNCHER_PROMPTED") != "1"
+        and sys.stdin
+        and sys.stdin.isatty()
+        and not any(a in arg_list for a in ("--no-prompt", "--skip-setup", "--headless", "-y"))
+    ):
+        try:
+            ans = input("[hooky] Would you like to review or update .env choices before launching? [y/N]: ").strip().lower()
+            if ans in ("y", "yes"):
+                from ..setup.cli import main as setup_main
+                setup_main(["--redo"])
+        except (EOFError, KeyboardInterrupt):
+            pass
+
     port = 8000
     host = "127.0.0.1"
     url = f"http://{host}:{port}"
     portal_url = f"{url}/?token={_WEB_TOKEN}"
-    print(f"\n[hooky] 🚀 Launching Hooky Web Portal at {portal_url}")
+    try:
+        print(f"\n[hooky] Launching Hooky Web Portal at {portal_url}")
+    except Exception:
+        pass
 
     try:
         webbrowser.open(portal_url)

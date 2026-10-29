@@ -1,4 +1,4 @@
-﻿"""Configuration keys, safe defaults, and adaptive recommendations."""
+"""Configuration keys, safe defaults, and adaptive recommendations."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -136,7 +136,7 @@ def default_settings(project_root: Path, profile: SystemProfile) -> dict[str, st
         "HOOKY_SETUP_VERSION": "1",
         "GEMINI_API_KEY": "",
         "GEMINI_MODEL": "gemini-3.8-flash",
-        "GEMINI_MODEL_FALLBACKS": "gemini-2.5-flash,gemini-3.1-flash-lite,gemini-flash-latest",
+        "GEMINI_MODEL_FALLBACKS": "gemini-3.1-flash-lite,gemini-flash-latest",
         "GEMINI_MIN_INTERVAL_SECONDS": "20",
         "GEMINI_SELECTION_CHUNK_CHARS": "18000",
         "YTDLP_COOKIES_FROM_BROWSER": "",
