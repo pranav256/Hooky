@@ -30,7 +30,10 @@ from hooky.web.analyzer import (
     get_video_metadata,
 )
 
-_WEB_TOKEN = os.environ.get("HOOKY_WEB_TOKEN") or secrets.token_urlsafe(32)
+_WEB_TOKEN = os.environ.get("HOOKY_WEB_TOKEN")
+if not _WEB_TOKEN:
+    _WEB_TOKEN = secrets.token_urlsafe(32)
+    os.environ["HOOKY_WEB_TOKEN"] = _WEB_TOKEN
 
 
 def get_web_token() -> str:
@@ -64,7 +67,11 @@ async def security_middleware(request: Request, call_next):
 
     # 2. Token authentication for /api/* routes (exempt CORS OPTIONS preflight)
     if request.url.path.startswith("/api/") and request.method != "OPTIONS":
-        token = request.headers.get("x-hooky-token") or request.query_params.get("token")
+        token = (
+            request.headers.get("x-hooky-token")
+            or request.cookies.get("hooky_token")
+            or request.query_params.get("token")
+        )
         if not token or not hmac.compare_digest(token, _WEB_TOKEN):
             return JSONResponse(
                 status_code=401,
@@ -596,7 +603,15 @@ async def serve_index():
     if INDEX_HTML.exists():
         content = INDEX_HTML.read_text(encoding="utf-8")
         content = content.replace("HOOKY_AUTH_TOKEN_PLACEHOLDER", _WEB_TOKEN)
-        return HTMLResponse(content)
+        response = HTMLResponse(content)
+        response.set_cookie(
+            key="hooky_token",
+            value=_WEB_TOKEN,
+            httponly=False,
+            samesite="lax",
+            path="/",
+        )
+        return response
     return HTMLResponse("<h1>Hooky Portal Static File Missing</h1>")
 
 
@@ -616,5 +631,5 @@ def run_server(args: list[str] | None = None) -> int:
     except Exception:
         pass
 
-    uvicorn.run("hooky.web.server:app", host=host, port=port, log_level="info")
+    uvicorn.run(app, host=host, port=port, log_level="info")
     return 0

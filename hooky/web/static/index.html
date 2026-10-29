@@ -172,8 +172,8 @@
             <input
               id="source-url"
               type="text"
-              placeholder="https://www.youtube.com/watch?v=EDCwQe7P8T0"
-              value="https://www.youtube.com/watch?v=EDCwQe7P8T0"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value=""
               class="w-full bg-[#121316] border border-white/[0.08] rounded-md pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20 font-mono transition-colors"
             />
           </div>
@@ -217,7 +217,7 @@
             <span class="font-mono text-slate-400 text-[11px]">Recommendation:</span>
             <div id="smart-recommendation-pill" class="flex items-center gap-1.5 px-2.5 py-1 bg-[#21232a] border border-white/[0.08] rounded-md text-slate-300 font-mono text-xs">
               <i data-lucide="cpu" class="w-3.5 h-3.5 text-[#34d399]"></i>
-              <span id="smart-recommendation-text">Auto-tuned: Canvas fit + Warm titanium</span>
+              <span id="smart-recommendation-text">Auto-tuned: Ready</span>
             </div>
           </div>
 
@@ -268,7 +268,7 @@
               <i data-lucide="terminal" class="w-3.5 h-3.5 text-slate-400"></i>
               <span id="terminal-toggle-label">Hide console logs</span>
             </button>
-            <span>Task id: <code id="active-task-id" class="text-slate-300">init_001</code></span>
+            <span>Task id: <code id="active-task-id" class="text-slate-300">idle</code></span>
           </div>
 
           <!-- Live Console Output Box -->
@@ -290,7 +290,7 @@
               <span>High-retention hook moments</span>
             </h3>
             <span id="hook-count" class="text-xs font-mono text-slate-300 bg-white/5 px-2.5 py-0.5 border border-white/10 rounded">
-              4 hooks detected
+              0 hooks detected
             </span>
           </div>
 
@@ -335,10 +335,14 @@
 
             <!-- Sub-View A: Embedded YouTube Player -->
             <div id="preview-player-container" class="aspect-[16/9] w-full bg-black border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center">
+              <div id="player-placeholder" class="text-center p-8 space-y-2">
+                <i data-lucide="play-circle" class="w-10 h-10 text-slate-600 mx-auto"></i>
+                <p class="text-xs text-slate-400 font-mono">No video loaded. Enter a YouTube URL and click "Detect hooks".</p>
+              </div>
               <iframe
                 id="youtube-embed-frame"
-                src="https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=37&end=51&autoplay=0&enablejsapi=1"
-                class="w-full h-full border-0"
+                src=""
+                class="w-full h-full border-0 hidden"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowfullscreen
               ></iframe>
@@ -378,7 +382,7 @@
               <div id="crop-box" class="absolute inset-y-0 w-[42%] border border-[#34d399]/70 pointer-events-none z-10 flex flex-col justify-end p-4">
                 <div class="bg-black/75 backdrop-blur-sm p-2 border border-white/10 rounded text-center mb-8">
                   <span id="canvas-subtitle-preview" class="text-xs font-medium tracking-tight text-white leading-snug">
-                    I'm going for the <span class="text-[#34d399]">unhinged crazy</span> tonight
+                    <span class="text-slate-500">Subtitle preview will appear here</span>
                   </span>
                 </div>
                 <div class="text-[10px] font-mono text-center text-slate-300 bg-black/85 py-0.5 border border-white/10 rounded font-medium">
@@ -391,7 +395,7 @@
             <div class="p-3.5 bg-[#121316] border border-white/[0.08] rounded-lg space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <span class="font-medium text-slate-300 font-mono text-[11px]">Hook dialogue transcript:</span>
-                <span id="transcript-time-badge" class="font-mono text-slate-400 text-[11px] tabular">00:37.36 - 00:50.79</span>
+                <span id="transcript-time-badge" class="font-mono text-slate-400 text-[11px] tabular">--:-- - --:--</span>
               </div>
               <div id="dialogue-lines-box" class="max-h-24 overflow-y-auto space-y-1 font-mono text-xs text-slate-300 pr-1">
                 <!-- Dialogue cues populated here -->
@@ -662,7 +666,7 @@
     } else {
       try {
         const _saved = sessionStorage.getItem("hooky_token");
-        if (_saved && window.__HOOKY_TOKEN__ === "HOOKY_AUTH_TOKEN_PLACEHOLDER") {
+        if (_saved && (!window.__HOOKY_TOKEN__ || window.__HOOKY_TOKEN__.includes("PLACEHOLDER"))) {
           window.__HOOKY_TOKEN__ = _saved;
         }
       } catch(e) {}
@@ -672,9 +676,10 @@
     const _nativeFetch = window.fetch;
     window.fetch = function(input, init) {
       init = init || {};
+      init.credentials = init.credentials || 'same-origin';
       init.headers = init.headers || {};
       const token = window.__HOOKY_TOKEN__;
-      if (token && token !== "HOOKY_AUTH_TOKEN_PLACEHOLDER") {
+      if (token && !token.includes("PLACEHOLDER")) {
         if (init.headers instanceof Headers) {
           init.headers.set("X-Hooky-Token", token);
         } else if (Array.isArray(init.headers)) {
@@ -686,98 +691,9 @@
       return _nativeFetch(input, init);
     };
 
-    // State management
-    let CURRENT_HOOKS = [
-      {
-        id: "hook_1",
-        title: "Unhinged Crazy Tonight!",
-        hook_quote: "I'm going for the unhinged crazy tonight!",
-        category: "Comedic Banter",
-        retention_score: 98,
-        start: 37.36,
-        end: 50.79,
-        start_fmt: "0:37",
-        end_fmt: "0:51",
-        duration: "13.4s",
-        reason: "Unexpected declaration of an unhinged strategy sets an unpredictable tone.",
-        boundary: "Natural speech pause aligned",
-        words: ["GOOD", "GAME", "PROFESSIONAL", "NEGOTIATOR", "UNHINGED", "CRAZY", "TONIGHT"],
-        dialogue: [
-          { time: "0:37", text: ">> Are you guys good at this game?" },
-          { time: "0:38", text: ">> She's a former professional pro." },
-          { time: "0:41", text: ">> You're a high-stakes deal negotiator." },
-          { time: "0:44", text: ">> I'm going for the unhinged crazy [laughter]" },
-          { time: "0:50", text: ">> Actually, there's like some pretty good players here." }
-        ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=37&end=51&autoplay=0&enablejsapi=1"
-      },
-      {
-        id: "hook_2",
-        title: "Mafia Rules: Second Amendment?",
-        hook_quote: "Mike, this seems kind of discriminatory against second amendment rights enthusiasts.",
-        category: "Shock Humor",
-        retention_score: 97,
-        start: 254.40,
-        end: 278.10,
-        start_fmt: "4:14",
-        end_fmt: "4:38",
-        duration: "23.7s",
-        reason: "Outlandish comparison between game rules and constitutional rights stops viewers immediately.",
-        boundary: "Natural sentence climax",
-        words: ["MIKE", "DISCRIMINATORY", "SECOND", "AMENDMENT", "RIGHTS", "ENTHUSIASTS"],
-        dialogue: [
-          { time: "4:14", text: ">> Mike, this seems kind of discriminatory..." },
-          { time: "4:17", text: ">> Against second amendment rights enthusiasts." },
-          { time: "4:21", text: ">> There are no guns allowed in this town!" },
-          { time: "4:25", text: ">> Then how are we killing people every night?" }
-        ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=254&end=278&autoplay=0&enablejsapi=1"
-      },
-      {
-        id: "hook_3",
-        title: "Founders vs The Electric Chair",
-        hook_quote: "They put an electric chair in the basement. It's totally fine.",
-        category: "Dramatic Twist",
-        retention_score: 95,
-        start: 512.20,
-        end: 541.00,
-        start_fmt: "8:32",
-        end_fmt: "9:01",
-        duration: "28.8s",
-        reason: "Absurdist deadpan delivery creates strong curiosity loop.",
-        boundary: "Comedic timing pause",
-        words: ["ELECTRIC", "CHAIR", "BASEMENT", "TOTALLY", "FINE", "SIGNAL", "FOUNDER"],
-        dialogue: [
-          { time: "8:32", text: ">> They put an electric chair in the basement." },
-          { time: "8:36", text: ">> It's totally fine, nobody worry about it." },
-          { time: "8:42", text: ">> Is this an official Signal Foundation policy?" }
-        ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=512&end=541&autoplay=0&enablejsapi=1"
-      },
-      {
-        id: "hook_4",
-        title: "Who Is The Angel?",
-        hook_quote: "I'm literally the angel saving your lives every single round!",
-        category: "Climactic Confrontation",
-        retention_score: 92,
-        start: 780.00,
-        end: 809.50,
-        start_fmt: "13:00",
-        end_fmt: "13:30",
-        duration: "29.5s",
-        reason: "High-stakes debate with rising vocal energy and urgent accusations.",
-        boundary: "Natural conflict resolution",
-        words: ["LITERALLY", "ANGEL", "SAVING", "LIVES", "EVERY", "ROUND"],
-        dialogue: [
-          { time: "13:00", text: ">> I'm literally the angel saving your lives!" },
-          { time: "13:04", text: ">> That is exactly what a mafia member would say." },
-          { time: "13:08", text: ">> Vote him out right now before night falls." }
-        ],
-        youtube_embed_url: "https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=780&end=810&autoplay=0&enablejsapi=1"
-      }
-    ];
-
-    let selectedHookId = "hook_1";
+    // State management (starts clean with no preloaded video or fake hooks)
+    let CURRENT_HOOKS = [];
+    let selectedHookId = null;
     let activeFramingMode = "auto";
     let activeSubtitleMode = "auto";
     let autoDetectedFraming = "fit";
@@ -785,9 +701,9 @@
     let currentPreviewMode = "canvas";
     let cachedChannels = [];
     let cachedEnvConfig = { raw: "", values: {} };
-    let isPlaying = true;
+    let isPlaying = false;
     let wordIdx = 0;
-    const SCRIPT_WORDS = ["I'M", "GOING", "FOR", "THE", "UNHINGED", "CRAZY", "TONIGHT"];
+    let SCRIPT_WORDS = [];
 
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
@@ -799,8 +715,8 @@
       loadEnvConfig();
 
       setInterval(() => {
-        if (!isPlaying || currentPreviewMode !== 'canvas') return;
-        wordIdx = (wordIdx + 1) % SCRIPT_WORDS.length;
+        if (!isPlaying || currentPreviewMode !== 'canvas' || CURRENT_HOOKS.length === 0) return;
+        wordIdx = (wordIdx + 1);
         renderSubtitles();
       }, 380);
     });
@@ -889,6 +805,12 @@
       }
     }
 
+    function extractYouTubeId(url) {
+      if (!url) return null;
+      const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/i);
+      return m ? m[1] : null;
+    }
+
     function selectHook(hookId) {
       selectedHookId = hookId;
       renderHooksList();
@@ -896,20 +818,33 @@
     }
 
     function updateSelectedHookDetails() {
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || CURRENT_HOOKS[0];
-      if (!hook) return;
-
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || (CURRENT_HOOKS.length > 0 ? CURRENT_HOOKS[0] : null);
       const iframe = document.getElementById('youtube-embed-frame');
-      if (iframe && hook.youtube_embed_url) {
-        iframe.src = hook.youtube_embed_url;
+      const placeholder = document.getElementById('player-placeholder');
+      const timeBadge = document.getElementById('transcript-time-badge');
+      const dialogueBox = document.getElementById('dialogue-lines-box');
+      const previewElem = document.getElementById('canvas-subtitle-preview');
+
+      if (!hook) {
+        if (iframe) {
+          iframe.src = "";
+          iframe.classList.add('hidden');
+        }
+        if (placeholder) placeholder.classList.remove('hidden');
+        if (timeBadge) timeBadge.innerText = "--:-- - --:--";
+        if (dialogueBox) dialogueBox.innerHTML = '<p class="text-slate-500 text-xs italic">Select or detect a hook to view transcript cues.</p>';
+        if (previewElem) previewElem.innerHTML = '<span class="text-slate-500">Subtitle preview will appear here</span>';
+        return;
       }
 
-      const timeBadge = document.getElementById('transcript-time-badge');
+      if (iframe && hook.youtube_embed_url) {
+        iframe.src = hook.youtube_embed_url;
+        iframe.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+      }
       if (timeBadge) {
         timeBadge.innerText = `${hook.start_fmt} - ${hook.end_fmt} (${hook.duration})`;
       }
-
-      const dialogueBox = document.getElementById('dialogue-lines-box');
       if (dialogueBox && hook.dialogue) {
         dialogueBox.innerHTML = hook.dialogue.map(d => `
           <div class="flex items-start gap-2 hover:bg-white/[0.04] p-1 rounded transition-colors">
@@ -923,29 +858,31 @@
     }
 
     function renderSubtitles() {
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || CURRENT_HOOKS[0];
-      if (!hook) return;
-
-      const style = activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode;
-      const words = (hook.words && hook.words.length > 0) ? hook.words : SCRIPT_WORDS;
-      const activeWord = words[wordIdx % words.length];
-
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || (CURRENT_HOOKS.length > 0 ? CURRENT_HOOKS[0] : null);
       const previewElem = document.getElementById('canvas-subtitle-preview');
       if (!previewElem) return;
+      if (!hook) {
+        previewElem.innerHTML = '<span class="text-slate-500">Subtitle preview will appear here</span>';
+        return;
+      }
+
+      const style = activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode;
+      const words = (hook.words && hook.words.length > 0) ? hook.words : (hook.title ? hook.title.toUpperCase().split(/\s+/) : ["HOOKY", "CLIP"]);
+      const activeWord = words[wordIdx % words.length];
 
       let styledHTML = "";
       if (style === 'gold') {
-        styledHTML = `I'M GOING FOR THE <span class="text-[#ffd166] font-medium text-sm">${activeWord}</span> TONIGHT`;
+        styledHTML = `<span class="text-white">${hook.title || ''}</span> <span class="text-[#ffd166] font-medium text-sm">${activeWord}</span>`;
       } else if (style === 'hormozi') {
         styledHTML = `<span class="bg-[#ffff00] text-black px-1.5 py-0.5 font-bold uppercase text-sm">${activeWord}</span>`;
       } else if (style === 'emerald') {
-        styledHTML = `UNHINGED <span class="text-[#34d399] font-medium underline decoration-1">${activeWord}</span> STRATEGY`;
+        styledHTML = `<span class="text-white">${hook.title || ''}</span> <span class="text-[#34d399] font-medium underline decoration-1">${activeWord}</span>`;
       } else if (style === 'crimson') {
-        styledHTML = `<span class="text-[#ef4444] font-medium">${activeWord}</span>`;
+        styledHTML = `<span class="text-[#ef4444] font-medium text-sm">${activeWord}</span>`;
       } else if (style === 'minimal') {
         styledHTML = `<span class="text-slate-100 border-b border-white">${activeWord}</span>`;
       } else {
-        styledHTML = `UNHINGED <span class="text-white bg-black/80 px-2 py-0.5 border border-white/20">${activeWord}</span> TONIGHT`;
+        styledHTML = `<span class="text-white bg-black/80 px-2 py-0.5 border border-white/20">${activeWord}</span>`;
       }
       previewElem.innerHTML = styledHTML;
     }
@@ -955,6 +892,20 @@
       if (!container) return;
 
       document.getElementById('hook-count').innerText = `${CURRENT_HOOKS.length} hooks detected`;
+
+      if (CURRENT_HOOKS.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 border border-white/[0.08] bg-[#18191e] rounded-lg text-center space-y-3">
+            <i data-lucide="video" class="w-8 h-8 text-slate-500 mx-auto"></i>
+            <div>
+              <p class="text-sm font-medium text-slate-300">No hooks analyzed yet</p>
+              <p class="text-xs text-slate-500 mt-1 font-mono">Paste a video URL above and click "Detect hooks" to scan narrative moments.</p>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
 
       container.innerHTML = CURRENT_HOOKS.map((h, idx) => {
         const isSelected = h.id === selectedHookId;
@@ -1016,7 +967,10 @@
         hook.end_fmt = formatSecondsToMMSS(hook.end);
       }
       hook.duration = `${(hook.end - hook.start).toFixed(1)}s`;
-      hook.youtube_embed_url = `https://www.youtube-nocookie.com/embed/EDCwQe7P8T0?start=${Math.floor(hook.start)}&end=${Math.floor(hook.end)}&autoplay=1&enablejsapi=1`;
+      const vidId = extractYouTubeId(document.getElementById('source-url').value.trim());
+      if (vidId) {
+        hook.youtube_embed_url = `https://www.youtube-nocookie.com/embed/${vidId}?start=${Math.floor(hook.start)}&end=${Math.floor(hook.end)}&autoplay=1&enablejsapi=1`;
+      }
       
       updateSelectedHookDetails();
       renderHooksList();
@@ -1050,7 +1004,10 @@
     async function triggerAnalyze() {
       const urlInput = document.getElementById('source-url');
       const url = urlInput.value.trim();
-      if (!url) return;
+      if (!url) {
+        appendConsoleLog("[error] Please paste a YouTube or video URL first.");
+        return;
+      }
 
       const analyzeBtn = document.getElementById('analyze-btn');
       analyzeBtn.disabled = true;
@@ -1067,14 +1024,30 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url })
         });
+        
+        if (!startRes.ok) {
+          const errData = await startRes.json().catch(() => ({ detail: `HTTP ${startRes.status}` }));
+          throw new Error(errData.detail || `Server returned HTTP ${startRes.status}`);
+        }
+
         const startData = await startRes.json();
         const job_id = startData.job_id;
+        if (!job_id) {
+          throw new Error("Server did not return a valid job ID");
+        }
         document.getElementById('active-task-id').innerText = job_id;
 
         const pollInterval = setInterval(async () => {
           try {
             const sRes = await fetch(`/api/analyze/status/${job_id}`);
+            if (!sRes.ok) {
+              const err = await sRes.json().catch(() => ({ detail: `HTTP ${sRes.status}` }));
+              throw new Error(err.detail || `Polling failed (HTTP ${sRes.status})`);
+            }
             const job = await sRes.json();
+            if (!job || job.detail) {
+              throw new Error(job?.detail || "Invalid job response");
+            }
 
             document.getElementById('stepper-status-text').innerText = job.step || 'Running AI hook detection...';
             document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
@@ -1090,8 +1063,15 @@
               analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
               lucide.createIcons();
 
+              if (job.status === 'failed') {
+                appendConsoleLog(`[pipeline error] Hook detection failed: ${job.error || 'Unknown error'}`);
+                return;
+              }
+
               if (job.result && job.result.hooks && job.result.hooks.length > 0) {
                 CURRENT_HOOKS = job.result.hooks;
+                selectedHookId = CURRENT_HOOKS[0].id;
+                isPlaying = true;
                 autoDetectedFraming = job.result.recommended_framing || 'fit';
                 autoDetectedStyle = job.result.recommended_style || 'gold';
 
@@ -1103,15 +1083,22 @@
                 renderHooksList();
                 updateSelectedHookDetails();
                 appendConsoleLog(`[pipeline] Hook analysis completed successfully. ${CURRENT_HOOKS.length} moments ready.`);
+              } else {
+                appendConsoleLog(`[pipeline] No hooks found in video transcript.`);
               }
             }
           } catch (pollErr) {
-            console.error(pollErr);
+            clearInterval(pollInterval);
+            appendConsoleLog(`[pipeline error] ${pollErr.message}`);
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
+            lucide.createIcons();
           }
-        }, 800);
+        }, 1000);
 
       } catch (e) {
         console.error(e);
+        appendConsoleLog(`[analyzer error] ${e.message}`);
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
         lucide.createIcons();
@@ -1119,14 +1106,30 @@
     }
 
     async function renderSelectedHook() {
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId);
-      if (!hook) return;
+      if (!CURRENT_HOOKS || CURRENT_HOOKS.length === 0) {
+        appendConsoleLog("[error] No hooks available. Please enter a video URL and detect hooks first.");
+        return;
+      }
+      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || CURRENT_HOOKS[0];
+      if (!hook) {
+        appendConsoleLog("[error] Please select a hook to export.");
+        return;
+      }
       await renderSingleHookById(hook.id);
     }
 
     async function renderSingleHookById(hookId) {
       const hook = CURRENT_HOOKS.find(h => h.id === hookId);
-      if (!hook) return;
+      if (!hook) {
+        appendConsoleLog("[error] Selected hook was not found.");
+        return;
+      }
+
+      const urlVal = document.getElementById('source-url').value.trim();
+      if (!urlVal) {
+        appendConsoleLog("[error] Missing source video URL.");
+        return;
+      }
 
       const btn = document.getElementById('top-render-btn');
       btn.disabled = true;
@@ -1145,7 +1148,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            url: document.getElementById('source-url').value.trim(),
+            url: urlVal,
             start: hook.start,
             end: hook.end,
             style: style,
@@ -1153,34 +1156,67 @@
             title: hook.title
           })
         });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          throw new Error(errData.detail || `Server returned HTTP ${res.status}`);
+        }
+
         const data = await res.json();
         const job_id = data.job_id;
+        if (!job_id) {
+          throw new Error("Server did not return a valid job ID");
+        }
         document.getElementById('active-task-id').innerText = job_id;
 
         const pollRender = setInterval(async () => {
-          const sRes = await fetch(`/api/jobs/${job_id}`);
-          const job = await sRes.json();
+          try {
+            const sRes = await fetch(`/api/jobs/${job_id}`);
+            if (!sRes.ok) {
+              const err = await sRes.json().catch(() => ({ detail: `HTTP ${sRes.status}` }));
+              throw new Error(err.detail || `Render status check failed (HTTP ${sRes.status})`);
+            }
+            const job = await sRes.json();
+            if (!job || job.detail) {
+              throw new Error(job?.detail || "Invalid render job response");
+            }
 
-          document.getElementById('stepper-status-text').innerText = job.step || 'Encoding vertical 1080x1920 reel...';
-          document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
-          document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
+            document.getElementById('stepper-status-text').innerText = job.step || 'Encoding vertical 1080x1920 reel...';
+            document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
+            document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
-          if (job.status === 'completed' || job.status === 'failed') {
+            if (job.logs && job.logs.length > 0) {
+              job.logs.forEach(l => appendConsoleLog(l));
+            }
+
+            if (job.status === 'completed' || job.status === 'failed') {
+              clearInterval(pollRender);
+              btn.disabled = false;
+              btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
+              lucide.createIcons();
+
+              if (job.status === 'failed') {
+                appendConsoleLog(`[render error] ${job.error || 'Video export failed'}`);
+                return;
+              }
+
+              if (job.status === 'completed') {
+                appendConsoleLog(`[renderer] Reel rendered successfully: ${job.output_file}`);
+                await loadOutputs();
+                switchTab('gallery');
+                if (job.output_file) {
+                  playOutputVideo(job.output_file, hook.title);
+                }
+              }
+            }
+          } catch (pollErr) {
             clearInterval(pollRender);
+            appendConsoleLog(`[render error] ${pollErr.message}`);
             btn.disabled = false;
             btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
             lucide.createIcons();
-
-            if (job.status === 'completed') {
-              appendConsoleLog(`[renderer] Reel rendered successfully: ${job.output_file}`);
-              await loadOutputs();
-              switchTab('gallery');
-              if (job.output_file) {
-                playOutputVideo(job.output_file, hook.title);
-              }
-            }
           }
-        }, 700);
+        }, 1000);
 
       } catch (e) {
         console.error(e);
@@ -1192,6 +1228,12 @@
     }
 
     async function triggerMakePipeline() {
+      const target = document.getElementById('source-url').value.trim();
+      if (!target) {
+        appendConsoleLog("[error] Please enter a URL or target to run pipeline.");
+        return;
+      }
+
       const btn = document.getElementById('execute-make-btn');
       btn.disabled = true;
       btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Running...</span>`;
@@ -1201,7 +1243,6 @@
       stepper.classList.remove('hidden');
 
       try {
-        const target = document.getElementById('source-url').value.trim();
         const res = await fetch('/api/jobs/make', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1211,29 +1252,63 @@
             style: activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode
           })
         });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          throw new Error(errData.detail || `Server returned HTTP ${res.status}`);
+        }
+
         const data = await res.json();
         const job_id = data.job_id;
+        if (!job_id) {
+          throw new Error("Server did not return a valid job ID");
+        }
         document.getElementById('active-task-id').innerText = job_id;
 
         const pollMake = setInterval(async () => {
-          const sRes = await fetch(`/api/jobs/${job_id}`);
-          const job = await sRes.json();
+          try {
+            const sRes = await fetch(`/api/jobs/${job_id}`);
+            if (!sRes.ok) {
+              const err = await sRes.json().catch(() => ({ detail: `HTTP ${sRes.status}` }));
+              throw new Error(err.detail || `Pipeline check failed (HTTP ${sRes.status})`);
+            }
+            const job = await sRes.json();
+            if (!job || job.detail) {
+              throw new Error(job?.detail || "Invalid pipeline response");
+            }
 
-          document.getElementById('stepper-status-text').innerText = job.step || 'Autonomous pipeline active...';
-          document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
-          document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
+            document.getElementById('stepper-status-text').innerText = job.step || 'Autonomous pipeline active...';
+            document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
+            document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
-          if (job.status === 'completed' || job.status === 'failed') {
+            if (job.logs && job.logs.length > 0) {
+              job.logs.forEach(l => appendConsoleLog(l));
+            }
+
+            if (job.status === 'completed' || job.status === 'failed') {
+              clearInterval(pollMake);
+              btn.disabled = false;
+              btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
+              lucide.createIcons();
+              if (job.status === 'failed') {
+                appendConsoleLog(`[pipeline error] Job failed: ${job.error || 'Unknown error'}`);
+              }
+              loadOutputs();
+            }
+          } catch (pollErr) {
             clearInterval(pollMake);
+            appendConsoleLog(`[pipeline error] ${pollErr.message}`);
             btn.disabled = false;
             btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
             lucide.createIcons();
-            loadOutputs();
           }
-        }, 800);
+        }, 1000);
       } catch (e) {
         console.error(e);
         appendConsoleLog(`[pipeline error] ${e.message}`);
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
+        lucide.createIcons();
       }
     }
 

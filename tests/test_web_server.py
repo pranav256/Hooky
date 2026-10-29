@@ -14,6 +14,8 @@ def test_index_endpoint():
     assert "Hooky Studio" in response.text
     # Verify auth token was injected into HTML
     assert TOKEN in response.text
+    # Verify auth cookie is set
+    assert response.cookies.get("hooky_token") == TOKEN
     # Verify key controls are present
     assert 'id="smart-recommendation-pill"' in response.text
     assert 'id="frame-mode-auto"' in response.text
@@ -24,22 +26,28 @@ def test_index_endpoint():
 
 
 def test_token_auth_enforcement():
+    fresh_client = TestClient(app)
     # Without token -> 401
-    res = unauthed_client.get("/api/doctor")
+    res = fresh_client.get("/api/doctor")
     assert res.status_code == 401
     assert "Unauthorized" in res.json().get("detail", "")
 
     # With invalid token -> 401
-    bad_res = unauthed_client.get("/api/doctor", headers={"X-Hooky-Token": "invalid_bad_token"})
+    bad_res = fresh_client.get("/api/doctor", headers={"X-Hooky-Token": "invalid_bad_token"})
     assert bad_res.status_code == 401
 
     # With valid token query param -> 200
-    query_res = unauthed_client.get(f"/api/doctor?token={TOKEN}")
+    query_res = fresh_client.get(f"/api/doctor?token={TOKEN}")
     assert query_res.status_code == 200
 
     # With valid token header -> 200
     good_res = client.get("/api/doctor")
     assert good_res.status_code == 200
+
+    # With valid token cookie -> 200
+    cookie_client = TestClient(app, cookies={"hooky_token": TOKEN})
+    cookie_res = cookie_client.get("/api/doctor")
+    assert cookie_res.status_code == 200
 
 
 def test_host_header_validation():

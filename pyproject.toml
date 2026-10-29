@@ -45,7 +45,7 @@ hooky-parts = "hooky.parts_cli:main"
 
 [tool.setuptools.packages.find]
 include = ["hooky*"]
-exclude = ["tests", "tests.*", "hooky.tests", "hooky.tests.*"]
+exclude = ["tests", "tests.*", "hooky.tests", "hooky.tests.*", "hooky.web.static*"]
 namespaces = false
 
 [tool.setuptools.package-data]
