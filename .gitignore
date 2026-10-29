@@ -18,6 +18,7 @@ skills-lock.json
 links.txt
 channels.txt
 output/
+node_modules/
 
 # Partial downloads and Python build artifacts
 *.part
