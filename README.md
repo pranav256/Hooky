@@ -132,7 +132,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ | clips=auto | style=hormozi
 ./hooky.sh post
 ```
 
-*(On Windows, replace `./hooky.sh` with `.\hooky.ps1`. Legacy `./ziv.sh` / `.\ziv.ps1` commands are also supported.)*
+*(On Windows, replace `./hooky.sh` with `.\hooky.ps1`)*
 
 ---
 
