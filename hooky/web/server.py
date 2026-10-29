@@ -30,10 +30,34 @@ from hooky.web.analyzer import (
     get_video_metadata,
 )
 
-_WEB_TOKEN = os.environ.get("HOOKY_WEB_TOKEN")
-if not _WEB_TOKEN:
-    _WEB_TOKEN = secrets.token_urlsafe(32)
-    os.environ["HOOKY_WEB_TOKEN"] = _WEB_TOKEN
+def _load_or_create_web_token() -> str:
+    env_token = os.environ.get("HOOKY_WEB_TOKEN", "").strip()
+    if env_token:
+        return env_token
+    state_dir = Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / ".hooky-state")
+    token_file = state_dir / ".web_token"
+    try:
+        if token_file.exists():
+            saved = token_file.read_text(encoding="utf-8").strip()
+            if len(saved) >= 16:
+                os.environ["HOOKY_WEB_TOKEN"] = saved
+                return saved
+        state_dir.mkdir(parents=True, exist_ok=True)
+        new_token = secrets.token_urlsafe(32)
+        token_file.write_text(new_token, encoding="utf-8")
+        try:
+            token_file.chmod(0o600)
+        except OSError:
+            pass
+        os.environ["HOOKY_WEB_TOKEN"] = new_token
+        return new_token
+    except Exception:
+        new_token = secrets.token_urlsafe(32)
+        os.environ["HOOKY_WEB_TOKEN"] = new_token
+        return new_token
+
+
+_WEB_TOKEN = _load_or_create_web_token()
 
 
 def get_web_token() -> str:

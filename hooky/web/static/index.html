@@ -658,15 +658,24 @@
   <script>
     // Security & Auth Token Integration
     window.__HOOKY_TOKEN__ = "HOOKY_AUTH_TOKEN_PLACEHOLDER";
+    const _injectedToken = (!window.__HOOKY_TOKEN__.includes("PLACEHOLDER") && window.__HOOKY_TOKEN__.length > 10) ? window.__HOOKY_TOKEN__ : null;
     const _urlParams = new URLSearchParams(window.location.search);
     const _queryToken = _urlParams.get("token");
-    if (_queryToken) {
+
+    if (_injectedToken) {
+      window.__HOOKY_TOKEN__ = _injectedToken;
+      try { sessionStorage.setItem("hooky_token", _injectedToken); } catch(e) {}
+      if (_queryToken && _queryToken !== _injectedToken) {
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        try { window.history.replaceState({}, document.title, cleanUrl); } catch(e) {}
+      }
+    } else if (_queryToken) {
       window.__HOOKY_TOKEN__ = _queryToken;
       try { sessionStorage.setItem("hooky_token", _queryToken); } catch(e) {}
     } else {
       try {
         const _saved = sessionStorage.getItem("hooky_token");
-        if (_saved && (!window.__HOOKY_TOKEN__ || window.__HOOKY_TOKEN__.includes("PLACEHOLDER"))) {
+        if (_saved) {
           window.__HOOKY_TOKEN__ = _saved;
         }
       } catch(e) {}
