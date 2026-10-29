@@ -1,0 +1,11 @@
+{
+  "name": "hooky",
+  "private": true,
+  "version": "2.4.0",
+  "scripts": {
+    "install": "cd website/web-app && npm install",
+    "build": "cd website/web-app && npm install && npm run build",
+    "dev": "cd website/web-app && npm run dev",
+    "preview": "cd website/web-app && npm run preview"
+  }
+}
