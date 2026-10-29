@@ -3,9 +3,9 @@ requires = ["setuptools==80.9.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ziv"
+name = "hooky"
 version = "1.0.0"
-description = "Ziv: terminal-first video clipping and Instagram Reel workflows"
+description = "Hooky: Autonomous AI video clipping and Instagram Reel workflows"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -32,6 +32,8 @@ dev = [
 ]
 
 [project.scripts]
+hooky = "ziv.cli:main"
+hooky-parts = "ziv.parts_cli:main"
 ziv = "ziv.cli:main"
 ziv-parts = "ziv.parts_cli:main"
 

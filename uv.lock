@@ -3,12 +3,12 @@ revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'android'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
-    "python_full_version == '3.11.*' and sys_platform == 'android'",
-    "python_full_version < '3.11' and sys_platform == 'android'",
     "python_full_version >= '3.14' and sys_platform != 'android'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'android'",
+    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version == '3.11.*' and sys_platform != 'android'",
+    "python_full_version < '3.11' and sys_platform == 'android'",
     "python_full_version < '3.11' and sys_platform != 'android'",
 ]
 
@@ -121,8 +121,8 @@ version = "19.0.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'android'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.14' and sys_platform != 'android'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'android'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/90/bc/a2a40e503250fe5d4174471911828f31658864eb69a8a7cb960c715e17b7/av-19.0.1.tar.gz", hash = "sha256:08674930eaf1af78a3ed8f93d3ba49383323b3a867e84349d9c399e36f7497da", size = 4274648, upload-time = "2026-10-03T01:48:28.575Z" }
@@ -715,10 +715,10 @@ version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'android'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
-    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version >= '3.14' and sys_platform != 'android'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'android'",
+    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version == '3.11.*' and sys_platform != 'android'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f4/a9/1af41b37c3279712b22cdc63aac78a52432202b6fe1f9666a2a3d2831fb4/filelock-4.2.0.tar.gz", hash = "sha256:7a60906c75227cf04d0c273afadc8219400f11aeb13cc69591d4f6cdc6c8036e", size = 569667, upload-time = "2026-10-14T20:57:13.11Z" }
@@ -814,6 +814,52 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/59/b35106dfa71b6eef605dc88bd038fe99c7f86fb132a15b60d0bf2f235b2c/hf_xet-1.7.0-cp38-abi3-win_amd64.whl", hash = "sha256:2b7bb5727889b0f2436dbaaad8fc4c3e66b8240d992716989e0c086b4278b1bc", size = 3822644, upload-time = "2026-10-06T20:18:40.052Z" },
     { url = "https://files.pythonhosted.org/packages/48/cd/072313585f74fe9d441e2eb5e0a4703c30586cd709810ea369675f61b74e/hf_xet-1.7.0-cp38-abi3-win_arm64.whl", hash = "sha256:acc3851cf2576a8fb2ae926da863f4efabe21303cf292e9a44332802ab0dcc6a", size = 3662436, upload-time = "2026-10-06T20:18:42.205Z" },
 ]
+
+[[package]]
+name = "hooky"
+version = "1.0.0"
+source = { editable = "." }
+
+[package.optional-dependencies]
+all = [
+    { name = "faster-whisper" },
+    { name = "google-genai" },
+    { name = "instagrapi" },
+    { name = "yt-dlp" },
+]
+core = [
+    { name = "faster-whisper" },
+    { name = "google-genai" },
+]
+dev = [
+    { name = "build" },
+    { name = "check-wheel-contents" },
+    { name = "pytest" },
+    { name = "twine" },
+]
+download = [
+    { name = "yt-dlp" },
+]
+instagram = [
+    { name = "instagrapi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "build", marker = "extra == 'dev'", specifier = ">=1.2.2" },
+    { name = "check-wheel-contents", marker = "extra == 'dev'", specifier = ">=0.6.0" },
+    { name = "faster-whisper", marker = "extra == 'all'", specifier = ">=1.0.0" },
+    { name = "faster-whisper", marker = "extra == 'core'", specifier = ">=1.0.0" },
+    { name = "google-genai", marker = "extra == 'all'", specifier = ">=1.0.0" },
+    { name = "google-genai", marker = "extra == 'core'", specifier = ">=1.0.0" },
+    { name = "instagrapi", marker = "extra == 'all'", specifier = ">=2.1.0" },
+    { name = "instagrapi", marker = "extra == 'instagram'", specifier = ">=2.1.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "twine", marker = "extra == 'dev'", specifier = ">=5.1.1" },
+    { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.10.22" },
+    { name = "yt-dlp", marker = "extra == 'download'", specifier = ">=2024.10.22" },
+]
+provides-extras = ["core", "download", "instagram", "all", "dev"]
 
 [[package]]
 name = "httpcore"
@@ -1080,10 +1126,10 @@ version = "11.2.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'android'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
-    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version >= '3.14' and sys_platform != 'android'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'android'",
+    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version == '3.11.*' and sys_platform != 'android'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/52/b8/c63995bebbb9ac9c059350e0fb8c82c2420c85aeca7d34e40aecf3df9281/more_itertools-11.2.1.tar.gz", hash = "sha256:cbf08fd0af284dc69718b9b76a8e6203df624d70209ea511e4219d350c856f63", size = 154133, upload-time = "2026-10-14T18:50:30.407Z" }
@@ -1289,8 +1335,8 @@ version = "2.5.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'android'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.14' and sys_platform != 'android'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'android'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/95/b0/c7453d0b6e2073c3264468b106ee1563750cecc910965e67357e3698c83e/numpy-2.5.4.tar.gz", hash = "sha256:9a94cf751c9ad8ebaa835bcd3d40dacf8534ad086b88c38029b65123c7999d2a", size = 20866315, upload-time = "2026-10-10T20:05:31.422Z" }
@@ -1409,10 +1455,10 @@ version = "1.31.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'android'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
-    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version >= '3.14' and sys_platform != 'android'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'android'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'android'",
+    "python_full_version == '3.11.*' and sys_platform == 'android'",
     "python_full_version == '3.11.*' and sys_platform != 'android'",
 ]
 dependencies = [
@@ -2334,49 +2380,3 @@ sdist = { url = "https://files.pythonhosted.org/packages/dc/23/655a1802fe8041302
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b5/98/df615823cd9419131ce19fba00de53a663794369e198aade064a244b385d/zipp-4.1.1-py3-none-any.whl", hash = "sha256:8979f52d874162f485ff2981e3891f3a3317b7a3dd43ff1e1775b9304f307a9c", size = 10582, upload-time = "2026-10-03T17:03:02.506Z" },
 ]
-
-[[package]]
-name = "ziv"
-version = "1.0.0"
-source = { editable = "." }
-
-[package.optional-dependencies]
-all = [
-    { name = "faster-whisper" },
-    { name = "google-genai" },
-    { name = "instagrapi" },
-    { name = "yt-dlp" },
-]
-core = [
-    { name = "faster-whisper" },
-    { name = "google-genai" },
-]
-dev = [
-    { name = "build" },
-    { name = "check-wheel-contents" },
-    { name = "pytest" },
-    { name = "twine" },
-]
-download = [
-    { name = "yt-dlp" },
-]
-instagram = [
-    { name = "instagrapi" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "build", marker = "extra == 'dev'", specifier = ">=1.2.2" },
-    { name = "check-wheel-contents", marker = "extra == 'dev'", specifier = ">=0.6.0" },
-    { name = "faster-whisper", marker = "extra == 'all'", specifier = ">=1.0.0" },
-    { name = "faster-whisper", marker = "extra == 'core'", specifier = ">=1.0.0" },
-    { name = "google-genai", marker = "extra == 'all'", specifier = ">=1.0.0" },
-    { name = "google-genai", marker = "extra == 'core'", specifier = ">=1.0.0" },
-    { name = "instagrapi", marker = "extra == 'all'", specifier = ">=2.1.0" },
-    { name = "instagrapi", marker = "extra == 'instagram'", specifier = ">=2.1.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=5.1.1" },
-    { name = "yt-dlp", marker = "extra == 'all'", specifier = ">=2024.10.22" },
-    { name = "yt-dlp", marker = "extra == 'download'", specifier = ">=2024.10.22" },
-]
-provides-extras = ["core", "download", "instagram", "all", "dev"]
