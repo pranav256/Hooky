@@ -646,10 +646,61 @@ async def launch_make_job(request: Request):
                 cues = parse_caption_file(vtt_path)
                 log(f"[captions] Parsed {len(cues)} timed dialogue cues from {vtt_path.name}")
             else:
-                log("[captions] Warning: YouTube caption track not available.")
+                log("[captions] Notice: Video has no pre-existing YouTube caption tracks.")
 
             if not cues:
-                log("[pipeline] Captions unavailable; falling back to full audio transcribe pipeline...")
+                # Fast Audio-Only Whisper Fallback:
+                # Download ONLY the lightweight audio track (~20 MB instead of a 5 GB video!)
+                _JOBS[job_id]["progress"] = 15
+                _JOBS[job_id]["step"] = "Downloading lightweight audio stream for faster-whisper transcription..."
+                log(f"[pipeline] Downloading audio-only stream (~20-30 MB, no heavy video download)...")
+
+                audio_path = cache_dir / f"audio_{vid_id}.m4a"
+                if not (audio_path.exists() and audio_path.stat().st_size > 10000):
+                    dl_cmd = [
+                        sys.executable, "-m", "yt_dlp",
+                        "-f", "ba/bestaudio",
+                        "-o", str(audio_path),
+                        "--",
+                        url,
+                    ]
+                    dl_proc = await asyncio.create_subprocess_exec(
+                        *dl_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE
+                    )
+                    await dl_proc.communicate()
+
+                if audio_path.exists() and audio_path.stat().st_size > 10000:
+                    _JOBS[job_id]["progress"] = 20
+                    _JOBS[job_id]["step"] = "Transcribing audio with faster-whisper..."
+                    log(f"[whisper] Running faster-whisper word-level audio alignment...")
+                    from hooky.core.subtitles import transcribe
+                    words = await asyncio.to_thread(transcribe, audio_path)
+
+                    # Group words into speech cue blocks
+                    cues = []
+                    curr = []
+                    for w in words:
+                        curr.append(w)
+                        t = str(w.get("word", "")).strip()
+                        if (t and t[-1] in ".!?") or len(curr) >= 8:
+                            cues.append({
+                                "start": curr[0]["start"],
+                                "end": curr[-1]["end"],
+                                "text": " ".join(x["word"] for x in curr)
+                            })
+                            curr = []
+                    if curr:
+                        cues.append({
+                            "start": curr[0]["start"],
+                            "end": curr[-1]["end"],
+                            "text": " ".join(x["word"] for x in curr)
+                        })
+                    log(f"[whisper] Transcribed {len(words)} words into {len(cues)} dialogue cues.")
+
+            if not cues:
+                log("[pipeline] Dialogue transcription unavailable; falling back to standard pipeline...")
                 await _run_process()
                 return
 

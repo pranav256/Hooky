@@ -441,7 +441,47 @@ async def run_analysis_pipeline(url: str, job_id: str) -> dict[str, Any]:
             cues = parse_caption_file(vtt_path)
             log(f"[captions] Parsed {len(cues)} timed dialogue cues from {vtt_path.name}")
         else:
-            log("[captions] Warning: Subtitles track not found; proceeding with heuristic analysis")
+            log("[captions] Notice: Video has no YouTube captions track. Initiating fast audio transcription...")
+            audio_path = cache_dir / f"audio_{video_id}.m4a"
+            if not (audio_path.exists() and audio_path.stat().st_size > 10000):
+                dl_cmd = [
+                    sys_executable(), "-m", "yt_dlp",
+                    "-f", "ba/bestaudio",
+                    "-o", str(audio_path),
+                    "--",
+                    url,
+                ]
+                dl_proc = await asyncio.create_subprocess_exec(
+                    *dl_cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                await dl_proc.communicate()
+
+            if audio_path.exists() and audio_path.stat().st_size > 10000:
+                log("[whisper] Transcribing audio with faster-whisper (model: base)...")
+                from hooky.core.subtitles import transcribe
+                words = await asyncio.to_thread(transcribe, audio_path)
+                curr = []
+                for w in words:
+                    curr.append(w)
+                    t = str(w.get("word", "")).strip()
+                    if (t and t[-1] in ".!?") or len(curr) >= 8:
+                        cues.append({
+                            "start": curr[0]["start"],
+                            "end": curr[-1]["end"],
+                            "text": " ".join(x["word"] for x in curr)
+                        })
+                        curr = []
+                if curr:
+                    cues.append({
+                        "start": curr[0]["start"],
+                        "end": curr[-1]["end"],
+                        "text": " ".join(x["word"] for x in curr)
+                    })
+                log(f"[whisper] Generated {len(cues)} speech cues from faster-whisper.")
+            else:
+                log("[captions] Warning: Audio stream probe failed; proceeding with heuristic analysis")
 
         # Step 3: Emotional tension & pacing scoring
         ANALYSIS_JOBS[job_id]["step"] = "Analyzing conversational pacing & emotional tension spikes..."
