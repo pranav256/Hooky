@@ -293,32 +293,124 @@ async def save_env_config(request: Request):
     return {"status": "saved", "message": ".env configuration saved successfully"}
 
 
+def sanitize_folder_name(name: str, fallback: str = "video_reels") -> str:
+    """Sanitize video title to create clean, human-readable directory name."""
+    if not name:
+        return fallback
+    # Remove invalid Windows/POSIX filename characters: \ / : * ? " < > |
+    cleaned = re.sub(r'[\\/*?:"<>|]', '', str(name)).strip()
+    # Normalize whitespaces
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip('. ')
+    if not cleaned:
+        return fallback
+    return cleaned[:60].rstrip('. ')
+
+
 @app.get("/api/outputs")
 async def list_outputs():
-    """List rendered MP4 video files in output directory."""
+    """List rendered MP4 video files grouped by source video folder, strictly excluding internal caches/downloads."""
     if not OUTPUT_DIR.exists():
-        return {"files": []}
-    files = []
-    # Scan root output dir and immediate subdirs
+        return {"folders": [], "files": [], "count": 0}
+
+    manifest_cache = {}
+
+    def resolve_folder_title(folder_dir: Path) -> str:
+        if folder_dir in manifest_cache:
+            return manifest_cache[folder_dir]
+        manifest_p = folder_dir / "manifest.json"
+        if manifest_p.exists():
+            try:
+                import json
+                m_data = json.loads(manifest_p.read_text(encoding="utf-8"))
+                source = m_data.get("source", "")
+                if source:
+                    src_json = Path(source).with_suffix(".json")
+                    if src_json.exists():
+                        j_data = json.loads(src_json.read_text(encoding="utf-8"))
+                        if j_data.get("title"):
+                            title_val = str(j_data["title"]).strip()
+                            manifest_cache[folder_dir] = title_val
+                            return title_val
+            except Exception:
+                pass
+        manifest_cache[folder_dir] = folder_dir.name
+        return folder_dir.name
+
+    folders_dict: dict[str, dict] = {}
+    all_files = []
+
     for p in sorted(OUTPUT_DIR.glob("**/*.mp4"), key=lambda x: x.stat().st_mtime, reverse=True):
+        # Exclude temporary, cache, raw downloads, checkpoints, and hidden files
+        rel_parts = p.relative_to(OUTPUT_DIR).parts
+        if any(part in ("web_cache", "downloads", ".checkpoints", ".cache") or part.startswith(".") for part in rel_parts):
+            continue
+        if p.name.startswith(".") or p.name.startswith("snippet_") or p.name.endswith(".tmp.mp4") or p.name.endswith(".part"):
+            continue
+
         stat = p.stat()
-        if stat.st_size > 1000:
-            files.append({
-                "name": p.name,
-                "rel_path": str(p.relative_to(OUTPUT_DIR)),
-                "size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "mtime": stat.st_mtime,
-                "url": f"/api/outputs/{p.name}",
-            })
-    return {"files": files, "count": len(files)}
+        if stat.st_size <= 1000:
+            continue
+
+        rel_path = str(p.relative_to(OUTPUT_DIR)).replace("\\", "/")
+
+        if len(rel_parts) > 1:
+            raw_folder_dir = OUTPUT_DIR / rel_parts[0]
+            display_folder = resolve_folder_title(raw_folder_dir)
+            folder_key = rel_parts[0]
+        else:
+            display_folder = "Standalone Reels"
+            folder_key = "standalone"
+
+        item = {
+            "name": p.name,
+            "folder": display_folder,
+            "folder_key": folder_key,
+            "rel_path": rel_path,
+            "size_mb": round(stat.st_size / (1024 * 1024), 2),
+            "mtime": stat.st_mtime,
+            "url": f"/api/outputs/{rel_path}",
+        }
+        all_files.append(item)
+        if display_folder not in folders_dict:
+            folders_dict[display_folder] = {
+                "name": display_folder,
+                "folder_key": folder_key,
+                "files": [],
+                "latest_mtime": stat.st_mtime,
+            }
+        folders_dict[display_folder]["files"].append(item)
+        if stat.st_mtime > folders_dict[display_folder]["latest_mtime"]:
+            folders_dict[display_folder]["latest_mtime"] = stat.st_mtime
+
+    folders_list = sorted(folders_dict.values(), key=lambda f: f["latest_mtime"], reverse=True)
+    for f in folders_list:
+        f["count"] = len(f["files"])
+
+    return {
+        "folders": folders_list,
+        "files": all_files,
+        "count": len(all_files),
+    }
 
 
-@app.get("/api/outputs/{filename}")
-async def serve_output_file(filename: str):
-    """Stream an output video file."""
-    for p in OUTPUT_DIR.glob(f"**/{filename}"):
-        if p.is_file():
+@app.get("/api/outputs/{filepath:path}")
+async def serve_output_file(filepath: str):
+    """Stream an output video file from output directory or subfolder."""
+    # 1. Direct path lookup relative to OUTPUT_DIR
+    try:
+        clean = Path(filepath).as_posix().lstrip("/")
+        candidate = (OUTPUT_DIR / clean).resolve()
+        if candidate.is_relative_to(OUTPUT_DIR.resolve()) and candidate.is_file():
+            return FileResponse(candidate, media_type="video/mp4")
+    except Exception:
+        pass
+
+    # 2. Recursive basename search as fallback
+    name = Path(filepath).name
+    for p in OUTPUT_DIR.glob(f"**/{name}"):
+        if p.is_file() and p.resolve().is_relative_to(OUTPUT_DIR.resolve()):
             return FileResponse(p, media_type="video/mp4")
+
     raise HTTPException(status_code=404, detail="File not found")
 
 
@@ -400,6 +492,13 @@ async def render_single_clip(request: Request):
     style = data.get("style", "gold").strip().lower()
     framing = data.get("framing", "center").strip().lower()
     title = data.get("title", "Hooky Reel").strip()
+    video_title = (data.get("video_title") or data.get("source_title") or "").strip()
+    if not video_title:
+        try:
+            meta = get_video_metadata(url)
+            video_title = meta.get("title", "").strip()
+        except Exception:
+            pass
 
     job_id = f"render_{int(time.time())}"
     _JOBS[job_id] = {
@@ -491,13 +590,18 @@ async def render_single_clip(request: Request):
             else:
                 log("[subtitles] No timed captions found for segment; rendering clean video without subtitles")
 
-            # 3. Cut & Encode 1080x1920 Vertical Video
+            # 3. Cut & Encode 1080x1920 Vertical Video into dedicated folder named after video title
             _JOBS[job_id]["progress"] = 75
             _JOBS[job_id]["step"] = "FFmpeg hardware encoding 1080x1920 vertical Reel..."
             log(f"[ffmpeg] Executing vertical filter: framing='{framing}', style='{style}'...")
 
+            clean_folder = sanitize_folder_name(video_title, fallback=clean_name or f"video_{vid_id or 'reels'}")
+            target_folder = OUTPUT_DIR / clean_folder
+            target_folder.mkdir(parents=True, exist_ok=True)
+
             out_filename = f"reel_{clean_name}_{int(time.time())}.mp4"
-            final_out_path = OUTPUT_DIR / out_filename
+            final_out_path = target_folder / out_filename
+            rel_out_path = f"{clean_folder}/{out_filename}"
 
             # Run cut_clip in thread
             await asyncio.to_thread(
@@ -510,12 +614,21 @@ async def render_single_clip(request: Request):
                 framing=framing,
             )
 
-            _JOBS[job_id]["progress"] = 100
-            _JOBS[job_id]["step"] = "Render completed successfully! Ready in Output Gallery."
-            _JOBS[job_id]["status"] = "completed"
-            _JOBS[job_id]["output_file"] = out_filename
-            _JOBS[job_id]["output_url"] = f"/api/outputs/{out_filename}?token={_WEB_TOKEN}"
-            log(f"[pipeline] Successfully rendered 9:16 Reel: {out_filename} ({final_out_path.stat().st_size / (1024*1024):.2f} MB)")
+            if final_out_path.exists() and final_out_path.stat().st_size > 1000:
+                _JOBS[job_id]["progress"] = 100
+                _JOBS[job_id]["step"] = "Render completed successfully! Ready in Output Gallery."
+                _JOBS[job_id]["status"] = "completed"
+                _JOBS[job_id]["output_file"] = rel_out_path
+                _JOBS[job_id]["output_url"] = f"/api/outputs/{rel_out_path}?token={_WEB_TOKEN}"
+                log(f"[pipeline] Successfully rendered 9:16 Reel into '{clean_folder}': {out_filename} ({final_out_path.stat().st_size / (1024*1024):.2f} MB)")
+                # Remove intermediate landscape snippet to prevent duplicate footage on disk
+                try:
+                    if snippet_path.exists():
+                        snippet_path.unlink()
+                except OSError:
+                    pass
+            else:
+                raise RuntimeError("FFmpeg render failed: output file not created.")
 
         except Exception as exc:
             log(f"[renderer] Error during render: {exc}")
@@ -780,10 +893,16 @@ async def launch_make_job(request: Request):
                         ass_path = cache_dir / f"subs_rank{rank:02d}_{clean_name}_{style_name}.ass"
                         ass_path.write_text(ass_content, encoding="utf-8")
 
+                # Video title folder
+                clean_folder = sanitize_folder_name(title, fallback=f"video_{vid_id}" if vid_id else "video_reels")
+                target_folder = OUTPUT_DIR / clean_folder
+                target_folder.mkdir(parents=True, exist_ok=True)
+
                 # Cut and encode 1080x1920 vertical Reel
                 out_filename = f"reel_rank{rank:02d}_{score}pts_{clean_name}_{int(time.time())}.mp4"
-                final_out_path = OUTPUT_DIR / out_filename
-                log(f"[ffmpeg] Encoding vertical 1080x1920 reel for Rank #{rank} (style: {style_name}, framing: {framing_mode})...")
+                final_out_path = target_folder / out_filename
+                rel_out_path = f"{clean_folder}/{out_filename}"
+                log(f"[ffmpeg] Encoding vertical 1080x1920 reel for Rank #{rank} (style: {style_name}, framing: {framing_mode}) in folder '{clean_folder}'...")
 
                 await asyncio.to_thread(
                     cut_clip,
@@ -796,13 +915,20 @@ async def launch_make_job(request: Request):
                 )
 
                 if final_out_path.exists() and final_out_path.stat().st_size > 1000:
-                    rendered_files.append(out_filename)
+                    rendered_files.append(rel_out_path)
                     log(f"[pipeline] Successfully rendered Rank #{rank}: {out_filename} ({final_out_path.stat().st_size / (1024*1024):.2f} MB)")
+                    # Clean up intermediate snippet to prevent duplicate video storage
+                    try:
+                        if snippet_path.exists():
+                            snippet_path.unlink()
+                    except OSError:
+                        pass
 
             # 4. Final summary
             _JOBS[job_id]["progress"] = 100
             _JOBS[job_id]["status"] = "completed"
             _JOBS[job_id]["output_file"] = rendered_files[0] if rendered_files else ""
+            _JOBS[job_id]["output_url"] = f"/api/outputs/{rendered_files[0]}?token={_WEB_TOKEN}" if rendered_files else ""
             _JOBS[job_id]["step"] = f"Pipeline complete! Rendered {len(rendered_files)} ranked reels in Output Gallery."
             log(f"[pipeline] Autonomous selective pipeline finished: {len(rendered_files)} ranked reels ready in Gallery.")
 

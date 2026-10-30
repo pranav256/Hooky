@@ -630,8 +630,10 @@
           </div>
         </div>
 
-        <div id="outputs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Dynamically populated output cards -->
+        <div id="outputs-container" class="space-y-6">
+          <div id="outputs-grid" class="space-y-6">
+            <!-- Dynamically populated foldered collections -->
+          </div>
         </div>
       </div>
     </section>
@@ -702,6 +704,7 @@
 
     // State management (starts clean with no preloaded video or fake hooks)
     let CURRENT_HOOKS = [];
+    let currentSourceVideoTitle = "";
     let selectedHookId = null;
     let activeFramingMode = "auto";
     let activeSubtitleMode = "auto";
@@ -1079,6 +1082,7 @@
 
               if (job.result && job.result.hooks && job.result.hooks.length > 0) {
                 CURRENT_HOOKS = job.result.hooks;
+                currentSourceVideoTitle = job.result.video_title || "";
                 selectedHookId = CURRENT_HOOKS[0].id;
                 isPlaying = true;
                 autoDetectedFraming = job.result.recommended_framing || 'fit';
@@ -1162,7 +1166,8 @@
             end: hook.end,
             style: style,
             framing: framing,
-            title: hook.title
+            title: hook.title,
+            video_title: currentSourceVideoTitle || ""
           })
         });
 
@@ -1488,57 +1493,148 @@
         const res = await fetch('/api/outputs');
         const data = await res.json();
         const files = data.files || [];
+        const folders = data.folders || [];
         document.getElementById('gallery-count').innerText = files.length;
 
-        const grid = document.getElementById('outputs-grid');
+        const container = document.getElementById('outputs-grid') || document.getElementById('outputs-container');
+        if (!container) return;
+
         if (files.length === 0) {
-          grid.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-500 font-mono text-xs">No rendered video clips in output/ yet. Use "Export 9:16" to create clips.</div>';
+          container.innerHTML = `
+            <div class="p-12 border border-white/[0.08] bg-[#18191e] rounded-xl text-center space-y-3">
+              <div class="w-10 h-10 rounded-full bg-[#21232a] border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+                <i data-lucide="video" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-slate-300">No rendered video clips in output/ yet</p>
+                <p class="text-xs text-slate-500 mt-1 font-mono">Use "Export 9:16" or "Run pipeline" to generate high-retention vertical reels.</p>
+              </div>
+            </div>
+          `;
+          lucide.createIcons();
           return;
         }
 
-        grid.innerHTML = files.map(f => `
-          <div class="p-4 bg-[#18191e] border border-white/[0.08] hover:border-white/20 rounded-lg transition-all space-y-3 font-mono">
-            <div class="flex items-center justify-between">
-              <span class="text-xs px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded font-medium">1080×1920 MP4</span>
-              <span class="text-xs text-slate-400 tabular">${f.size_mb} MB</span>
-            </div>
-            <div>
-              <h4 class="font-medium text-white text-xs truncate max-w-full font-sans" title="${f.name}">${f.name}</h4>
-              <p class="text-[11px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
-            </div>
-            <div class="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
-              <button
-                onclick="playOutputVideo('${f.name}', '${f.name}')"
-                class="flex-1 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
-              >
-                <i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i>
-                <span>Watch</span>
-              </button>
-              <a
-                href="${f.url}${window.__HOOKY_TOKEN__ ? '?token=' + encodeURIComponent(window.__HOOKY_TOKEN__) : ''}"
-                download
-                class="px-3 py-1.5 bg-[#121316] text-slate-300 hover:text-white border border-white/[0.08] rounded text-xs transition-all"
-              >
-                <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
-              </a>
-            </div>
-          </div>
-        `).join('');
+        const tokenParam = window.__HOOKY_TOKEN__ ? `?token=${encodeURIComponent(window.__HOOKY_TOKEN__)}` : '';
+
+        // Render foldered collections grouped by source video title
+        if (folders.length > 0) {
+          container.innerHTML = folders.map(folder => {
+            const folderFiles = folder.files || [];
+            return `
+              <div class="border border-white/[0.08] bg-[#141519] rounded-xl overflow-hidden transition-all">
+                <div class="px-5 py-3.5 bg-[#18191e] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-[#21232a] border border-white/10 flex items-center justify-center text-[#ffd166] shrink-0">
+                      <i data-lucide="folder-video" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-medium text-white tracking-tight leading-snug">${folder.name}</h3>
+                      <p class="text-[11px] text-slate-400 font-mono">Source collection • ${folderFiles.length} ${folderFiles.length === 1 ? 'reel' : 'reels'}</p>
+                    </div>
+                  </div>
+                  <span class="self-start sm:self-auto text-[11px] font-mono px-2.5 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded-full tabular">
+                    ${folderFiles.length} ${folderFiles.length === 1 ? 'clip' : 'clips'}
+                  </span>
+                </div>
+
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  ${folderFiles.map(f => {
+                    const rankMatch = f.name.match(/reel_rank(\d+)_(\d+)pts/i);
+                    const badgeHTML = rankMatch 
+                      ? `<span class="text-[10px] font-mono px-2 py-0.5 bg-[#ffd166]/10 text-[#ffd166] border border-[#ffd166]/20 rounded font-semibold">Rank #${parseInt(rankMatch[1])} • ${rankMatch[2]}pts</span>`
+                      : `<span class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded font-medium">1080×1920 MP4</span>`;
+                    
+                    const cleanDisplayName = f.name.replace(/^reel_rank\d+_\d+pts_/, '').replace(/^reel_/, '').replace(/_\d+\.mp4$/, '').replace(/_/g, ' ') || f.name;
+                    const encodedUrl = `/api/outputs/${String(f.rel_path).replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}${tokenParam}`;
+
+                    return `
+                      <div class="p-4 bg-[#18191e] border border-white/[0.08] hover:border-white/20 rounded-lg transition-all space-y-3 font-mono flex flex-col justify-between">
+                        <div class="space-y-2">
+                          <div class="flex items-center justify-between gap-2">
+                            ${badgeHTML}
+                            <span class="text-[11px] text-slate-400 tabular">${f.size_mb} MB</span>
+                          </div>
+                          <div>
+                            <h4 class="font-medium text-white text-xs truncate max-w-full font-sans capitalize" title="${f.name}">${cleanDisplayName}</h4>
+                            <p class="text-[10px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
+                          <button
+                            onclick="playOutputVideo('${String(f.rel_path).replace(/\\/g, '/').replace(/'/g, "\\'")}', '${cleanDisplayName.replace(/'/g, "\\'")}')"
+                            class="flex-1 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i>
+                            <span>Watch</span>
+                          </button>
+                          <a
+                            href="${encodedUrl}"
+                            download
+                            class="px-3 py-1.5 bg-[#121316] text-slate-300 hover:text-white border border-white/[0.08] rounded text-xs transition-all"
+                            title="Download MP4"
+                          >
+                            <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
+                          </a>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = files.map(f => {
+            const cleanDisplayName = f.name.replace(/^reel_/, '').replace(/_\d+\.mp4$/, '').replace(/_/g, ' ') || f.name;
+            const encodedUrl = `/api/outputs/${String(f.rel_path).replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}${tokenParam}`;
+            return `
+              <div class="p-4 bg-[#18191e] border border-white/[0.08] hover:border-white/20 rounded-lg transition-all space-y-3 font-mono">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded font-medium">1080×1920 MP4</span>
+                  <span class="text-xs text-slate-400 tabular">${f.size_mb} MB</span>
+                </div>
+                <div>
+                  <h4 class="font-medium text-white text-xs truncate max-w-full font-sans capitalize" title="${f.name}">${cleanDisplayName}</h4>
+                  <p class="text-[11px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
+                  <button
+                    onclick="playOutputVideo('${String(f.rel_path).replace(/\\/g, '/').replace(/'/g, "\\'")}', '${cleanDisplayName.replace(/'/g, "\\'")}')"
+                    class="flex-1 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i>
+                    <span>Watch</span>
+                  </button>
+                  <a
+                    href="${encodedUrl}"
+                    download
+                    class="px-3 py-1.5 bg-[#121316] text-slate-300 hover:text-white border border-white/[0.08] rounded text-xs transition-all"
+                  >
+                    <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
         lucide.createIcons();
       } catch (e) {
         console.error(e);
       }
     }
 
-    function playOutputVideo(filename, title) {
+    function playOutputVideo(filepath, title) {
       const box = document.getElementById('active-video-player-box');
       box.classList.remove('hidden');
-      document.getElementById('active-playing-title').innerText = title || filename;
+      document.getElementById('active-playing-title').innerText = title || filepath;
 
       const player = document.getElementById('html5-video-player');
       const srcElem = document.getElementById('video-source-elem');
       const tokenParam = window.__HOOKY_TOKEN__ ? `?token=${encodeURIComponent(window.__HOOKY_TOKEN__)}` : '';
-      srcElem.src = `/api/outputs/${filename}${tokenParam}`;
+      const cleanPath = String(filepath).replace(/\\/g, '/');
+      const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+      srcElem.src = `/api/outputs/${encodedPath}${tokenParam}`;
       player.load();
       player.play().catch(() => {});
       box.scrollIntoView({ behavior: 'smooth' });

@@ -158,3 +158,23 @@ def test_cors_and_password_masking():
         assert values["IG_PASSWORD"] == "••••••••"
     if "GEMINI_API_KEY" in values and values["GEMINI_API_KEY"]:
         assert values["GEMINI_API_KEY"] == "••••••••"
+
+
+def test_outputs_foldering_and_security():
+    res = client.get("/api/outputs")
+    assert res.status_code == 200
+    data = res.json()
+    assert "folders" in data
+    assert "files" in data
+    assert "count" in data
+
+    # Ensure no internal snippets or downloads leaked into outputs
+    for f in data["files"]:
+        assert not f["name"].startswith("snippet_"), f"Snippet leaked into outputs: {f['name']}"
+        assert not f["name"].endswith(".tmp.mp4"), f"Temp file leaked into outputs: {f['name']}"
+        assert "web_cache" not in f["rel_path"], f"web_cache file leaked into outputs: {f['rel_path']}"
+        assert "downloads" not in f["rel_path"], f"downloads file leaked into outputs: {f['rel_path']}"
+
+    # Path traversal attack on serve_output_file must be rejected or 404
+    bad_traversal = client.get("/api/outputs/../../pyproject.toml")
+    assert bad_traversal.status_code in (403, 404)
