@@ -65,6 +65,7 @@ def get_video_metadata(url: str) -> dict[str, Any]:
             "-m", "yt_dlp",
             "--dump-json",
             "--no-playlist",
+            "--",
             url,
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
@@ -102,6 +103,7 @@ async def download_captions(url: str, out_prefix: Path, progress_cb: Callable[[s
         "--sub-lang", "en",
         "--sub-format", "vtt",
         "-o", str(out_prefix),
+        "--",
         url,
     ]
     process = await asyncio.create_subprocess_exec(
