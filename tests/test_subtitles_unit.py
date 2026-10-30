@@ -1,4 +1,4 @@
-﻿"""Fast regression tests for subtitle timeline normalization."""
+"""Fast regression tests for subtitle timeline normalization."""
 from hooky.core.subtitles import build_ass
 
 
@@ -34,4 +34,13 @@ def test_karaoke_uses_next_word_onset_without_accumulated_rounding_drift() -> No
     assert r"{\k50}ONE" in lines[0]
     assert r"{\k60}TWO" in lines[0]
     assert r"{\k40}THREE" in lines[0]
+
+
+def test_all_subtitle_styles_build_valid_ass() -> None:
+    from hooky.core.subtitles import STYLES
+    words = [{"start": 1.0, "end": 1.5, "word": "Hello"}, {"start": 1.5, "end": 2.0, "word": "World"}]
+    for style_name in STYLES:
+        ass = build_ass(words, 0.0, 3.0, style_name)
+        assert "Style: Sub" in ass
+        assert "Dialogue:" in ass
 
