@@ -3,8 +3,8 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hooky — Autonomous AI Video Clipper & Shorts/Reels Generator | Open-Source Opus Clip Alternative",
-  description: "100% Free and Open-Source (MIT) autonomous AI video clipper. Turn long YouTube videos, podcasts, and interviews into high-retention vertical 9:16 Shorts, Reels, and TikToks with Google Gemini 2.0 Flash, faster-whisper animated captions, and local FFmpeg GPU encoding.",
+  title: "Hooky — Autonomous AI Video Clipper | Free & Open-Source Opus Clip Alternative",
+  description: "100% Free and Open-Source (MIT) autonomous AI video clipper. Turn long YouTube videos, podcasts, and interviews into high-retention vertical 9:16 Shorts, Reels, and TikToks with Google Gemini 2.0 Flash semantic narrative detection, faster-whisper animated captions, and local GPU FFmpeg encoding.",
   keywords: ["Hooky", "AI video clipper", "open source opus clip alternative", "klap alternative", "vertical video generator", "youtube shorts generator", "instagram reels generator", "faster-whisper", "gemini 2.0", "ffmpeg 9:16", "hormozi captions", "free video clipper"],
   authors: [{ name: "Pranav / Hooky Contributors" }],
   openGraph: {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     url: "https://github.com/pranav256/Hooky",
     siteName: "Hooky",
     title: "Hooky — Autonomous AI Video Clipper & Shorts/Reels Generator",
-    description: "Open-source Opus Clip alternative. Turn long videos into high-retention 9:16 vertical shorts locally with Gemini 2.0 Flash, faster-whisper animated captions, and local GPU acceleration.",
+    description: "Open-source Opus Clip alternative. Turn long videos into high-retention 9:16 vertical shorts locally with Gemini 2.0 Flash semantic detection, faster-whisper animated captions, and local GPU acceleration.",
   },
   twitter: {
     card: "summary_large_image",
@@ -56,7 +56,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased bg-[#0B0F19] text-[#F3F4F6] selection:bg-[#3B82F6]/30 selection:text-white">
+      <body className="antialiased bg-[#080A0F] text-[#F1F5F9] selection:bg-[#E5C07B]/30 selection:text-white">
         {children}
         <Analytics />
       </body>

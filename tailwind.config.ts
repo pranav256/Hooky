@@ -9,9 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0B0F19",
-        surface: "#131926",
-        primary: "#3B82F6",
+        background: "#080A0F",
+        surface: "#10141E",
+        elevated: "#171D2B",
+        gold: {
+          300: "#F3DFA2",
+          400: "#E5C07B",
+          500: "#D4AF37",
+          600: "#B89428",
+        },
+        titanium: "#94A3B8",
       },
     },
   },
