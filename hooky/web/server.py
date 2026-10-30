@@ -539,14 +539,13 @@ async def launch_make_job(request: Request):
     framing = data.get("framing", "center")
 
     job_id = f"make_{int(time.time())}"
-    cmd_args = [sys.executable, "-m", "hooky", "make"]
-    if target and target.startswith("http"):
-        links_content = LINKS_FILE.read_text(encoding="utf-8") if LINKS_FILE.exists() else ""
-        if target not in links_content:
-            LINKS_FILE.write_text((links_content.rstrip() + f"\n{target}\n").lstrip(), encoding="utf-8")
-        cmd_args.append("--links")
-    elif target:
-        cmd_args.append(target)
+    cmd_args = [sys.executable, "-u", "-m", "hooky", "make"]
+    if target:
+        state_dir = Path(os.environ.get("STATE_DIR") or PROJECT_ROOT / ".hooky-state")
+        state_dir.mkdir(parents=True, exist_ok=True)
+        job_links_file = state_dir / f"job_{job_id}_links.txt"
+        job_links_file.write_text(f"{target}\n", encoding="utf-8")
+        cmd_args.extend(["--links", str(job_links_file)])
     else:
         cmd_args.append("--links")
 
@@ -570,11 +569,13 @@ async def launch_make_job(request: Request):
 
     async def _run_process():
         try:
+            sub_env = {**os.environ, "PYTHONUNBUFFERED": "1"}
             process = await asyncio.create_subprocess_exec(
                 *cmd_args,
                 cwd=str(PROJECT_ROOT),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
+                env=sub_env,
             )
 
             while True:
@@ -605,6 +606,10 @@ async def launch_make_job(request: Request):
             _JOBS[job_id]["exit_code"] = exit_code
             _JOBS[job_id]["status"] = "completed" if exit_code == 0 else "failed"
             _JOBS[job_id]["progress"] = 100 if exit_code == 0 else _JOBS[job_id]["progress"]
+            if exit_code == 0:
+                _JOBS[job_id]["step"] = "Pipeline completed successfully!"
+            else:
+                _JOBS[job_id]["step"] = f"Pipeline finished with exit code {exit_code}"
         except Exception as exc:
             _JOBS[job_id]["status"] = "failed"
             _JOBS[job_id]["error"] = str(exc)
