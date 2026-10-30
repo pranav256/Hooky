@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # One-time Hooky setup for Linux and macOS.
 set -euo pipefail
 
@@ -72,5 +72,15 @@ install_uv
 # supports Python 3.10 and newer; do not force a particular minor release.
 "$UV" sync --locked --extra all
 
-exec "$ROOT/.venv/bin/python" -m hooky setup "$@"
+if [ ! -f "$ROOT/.env" ] && [ -f "$ROOT/.env.example" ]; then
+    cp "$ROOT/.env.example" "$ROOT/.env"
+    printf '%s\n' '[hooky] Created .env configuration from template.'
+fi
+
+if [ $# -eq 0 ]; then
+    printf '\n%s\n\n' '[hooky] ✨ Setup complete! Launching Web Studio at http://127.0.0.1:8000...'
+    exec "$ROOT/.venv/bin/python" -m hooky web
+else
+    exec "$ROOT/.venv/bin/python" -m hooky setup "$@"
+fi
 
