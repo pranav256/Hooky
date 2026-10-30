@@ -1,4 +1,4 @@
-﻿"""Shared Gemini helpers: one client, free-tier-friendly retries + model rotation.
+"""Shared Gemini helpers: one client, free-tier-friendly retries + model rotation.
 
 Free-tier rate limits are per MODEL, so when the primary model is exhausted
 (429 RESOURCE_EXHAUSTED) or unavailable (503 overloaded) the next model in
@@ -364,7 +364,7 @@ def check_gemini() -> int:
     print()
     if not any_ok:
         print("  No model in the chain works right now. Fix in .env:")
-        print("    GEMINI_MODEL=gemini-2.5-flash          # known-good fallback")
+        print("    GEMINI_MODEL=gemini-3.8-flash          # primary active model")
         print("    GEMINI_MODEL_FALLBACKS=gemini-3.1-flash-lite,gemini-flash-latest")
         return 1
     if any(s == "RETIRED" for _, s, _ in results):

@@ -1,4 +1,4 @@
-﻿"""Small media helpers shared by highlight selection, subtitles, and cutting."""
+"""Small media helpers shared by highlight selection, subtitles, and cutting."""
 from __future__ import annotations
 
 import json
@@ -38,6 +38,21 @@ def format_timestamp(seconds: float) -> str:
     if hours:
         return f"{hours}:{minutes:02d}:{secs:02d}"
     return f"{minutes}:{secs:02d}"
+
+
+def validate_video_url(url: str) -> bool:
+    """Validate that a URL has an http(s) scheme, a host, and no leading option flags."""
+    if not isinstance(url, str):
+        return False
+    trimmed = url.strip()
+    if not trimmed or trimmed.startswith("-"):
+        return False
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(trimmed)
+        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+    except Exception:
+        return False
 
 
 def clamp(value: float, low: float, high: float) -> float:
