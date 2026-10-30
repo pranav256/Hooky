@@ -1178,6 +1178,7 @@
         }
         document.getElementById('active-task-id').innerText = job_id;
 
+        let lastRenderLogIndex = 0;
         const pollRender = setInterval(async () => {
           try {
             const sRes = await fetch(`/api/jobs/${job_id}`);
@@ -1194,8 +1195,10 @@
             document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
             document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
-            if (job.logs && job.logs.length > 0) {
-              job.logs.forEach(l => appendConsoleLog(l));
+            if (job.logs && job.logs.length > lastRenderLogIndex) {
+              const newLogs = job.logs.slice(lastRenderLogIndex);
+              newLogs.forEach(l => appendConsoleLog(l));
+              lastRenderLogIndex = job.logs.length;
             }
 
             if (job.status === 'completed' || job.status === 'failed') {
@@ -1274,6 +1277,7 @@
         }
         document.getElementById('active-task-id').innerText = job_id;
 
+        let lastMakeLogIndex = 0;
         const pollMake = setInterval(async () => {
           try {
             const sRes = await fetch(`/api/jobs/${job_id}`);
@@ -1290,8 +1294,10 @@
             document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
             document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
 
-            if (job.logs && job.logs.length > 0) {
-              job.logs.forEach(l => appendConsoleLog(l));
+            if (job.logs && job.logs.length > lastMakeLogIndex) {
+              const newLogs = job.logs.slice(lastMakeLogIndex);
+              newLogs.forEach(l => appendConsoleLog(l));
+              lastMakeLogIndex = job.logs.length;
             }
 
             if (job.status === 'completed' || job.status === 'failed') {

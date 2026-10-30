@@ -82,8 +82,10 @@ def current_model() -> str:
     """The model the next call will use (primary, or a sticky fallback)."""
     global _fallback_idx
     if 0 <= _fallback_idx < len(GEMINI_FALLBACK_MODELS):
-        return GEMINI_FALLBACK_MODELS[_fallback_idx]
-    return GEMINI_MODEL
+        m = (GEMINI_FALLBACK_MODELS[_fallback_idx] or "").strip()
+        if m:
+            return m
+    return (GEMINI_MODEL or "").strip() or "gemini-3.8-flash"
 
 
 def _skip_dead() -> None:
@@ -261,6 +263,13 @@ def generate(prompt: str, *, parts: list | None = None,
                 raise RuntimeError(
                     f"Gemini rejected the API key / permissions ({exc}) — "
                     f"check GEMINI_API_KEY in .env") from exc
+            if "model is required" in text:
+                if _advance_model():
+                    print(f"[gemini] empty or invalid model -> switching to {current_model()}",
+                          file=sys.stderr)
+                    _reset_pacing_clock()
+                    continue
+                model = "gemini-3.8-flash"
             if _is_rate_limit_error(exc):
                 # count EVERY 429 (even ones rotation absorbs): several in a
                 # row across the run means every bucket is empty — stop.
