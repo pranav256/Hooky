@@ -198,6 +198,114 @@ def calculate_hook_density(cues: list[dict]) -> list[dict]:
     return sorted(scored_blocks, key=lambda x: x["score"], reverse=True)
 
 
+def extract_ranked_scenes(
+    cues: list[dict],
+    video_title: str,
+    video_id: str,
+    duration: float,
+    max_clips: int = 10,
+) -> list[dict]:
+    """Extract and rank the highest-scoring non-overlapping scenes across the video.
+    
+    Scenes are returned strictly sorted from best to worst (Rank #1, #2, etc.),
+    each with a retention score, punchy title, dialogue cues, and precise start/end boundaries.
+    """
+    if not cues:
+        return []
+
+    # 1. Score every candidate dialogue window across the entire transcript
+    top_blocks = calculate_hook_density(cues)
+    selected_blocks = []
+
+    # 2. Greedily select non-overlapping high-scoring blocks
+    for b in top_blocks:
+        dur = b["end"] - b["start"]
+        if dur < 14.0:
+            b["end"] = b["start"] + 28.0
+        elif dur > 65.0:
+            b["end"] = b["start"] + 60.0
+
+        if all(b["end"] + 2.5 <= s["start"] or b["start"] >= s["end"] + 2.5 for s in selected_blocks):
+            selected_blocks.append(b)
+        if len(selected_blocks) >= max_clips * 2:
+            break
+
+    # 3. If density scan gave fewer than desired clips, sample interesting dialogue evenly across the runtime
+    if len(selected_blocks) < max_clips and len(cues) > 12:
+        step_idx = max(1, len(cues) // (max_clips + 2))
+        for idx in range(0, len(cues) - 8, step_idx):
+            sub = cues[idx:idx + 14]
+            if sub:
+                cand_s = sub[0]["start"]
+                cand_e = min(duration if duration > 0 else cand_s + 45.0, sub[-1]["end"])
+                if cand_e <= cand_s + 10.0:
+                    cand_e = cand_s + 30.0
+                if all(cand_e + 2.0 <= s["start"] or cand_s >= s["end"] + 2.0 for s in selected_blocks):
+                    selected_blocks.append({
+                        "start": cand_s,
+                        "end": cand_e,
+                        "score": 30,
+                        "keywords": ["dialogue"],
+                        "text": " ".join(c.get("text", "") for c in sub),
+                        "chunk": sub,
+                    })
+            if len(selected_blocks) >= max_clips:
+                break
+
+    # 4. Sort blocks by retention / engagement score in descending order
+    selected_blocks.sort(key=lambda x: x.get("score", 0), reverse=True)
+    candidates = selected_blocks[:max_clips]
+
+    ranked = []
+    categories = [
+        "High-Impact Insight", "Conversational Clash", "Mindset Shift",
+        "Viral Revelation", "Core Breakthrough", "Intense Debate",
+        "Engaging Banter", "Surprising Fact"
+    ]
+
+    for idx, b in enumerate(candidates, 1):
+        s = round(float(b["start"]), 2)
+        e = round(float(b["end"]), 2)
+        if e <= s + 8.0:
+            e = s + 32.0
+        dur = round(e - s, 1)
+
+        raw_text = b.get("text", "").strip()
+        first_sentence = raw_text.split(".")[0].split("?")[0].strip()
+        if len(first_sentence) < 12 and len(raw_text) > 25:
+            first_sentence = raw_text[:70]
+
+        words_in_quote = [w for w in re.sub(r"[^\w\s]", "", first_sentence).split() if len(w) > 2]
+        title = " ".join(words_in_quote[:5]).title() if words_in_quote else f"Viral Scene #{idx}"
+
+        retention_score = max(70, min(99, 99 - (idx - 1) * 2))
+
+        chunk_cues = b.get("chunk", [])
+        dialogue = [
+            {"time": format_timestamp(c["start"]), "text": c.get("text", "").strip()}
+            for c in chunk_cues
+        ]
+
+        ranked.append({
+            "rank": idx,
+            "id": f"rank_{idx:02d}",
+            "start": s,
+            "end": e,
+            "start_fmt": format_timestamp(s),
+            "end_fmt": format_timestamp(e),
+            "duration": dur,
+            "duration_seconds": dur,
+            "title": title,
+            "hook_quote": first_sentence,
+            "category": categories[(idx - 1) % len(categories)],
+            "retention_score": retention_score,
+            "dialogue": dialogue,
+            "chunk": chunk_cues,
+        })
+
+    return ranked
+
+
 def build_dynamic_hooks_from_cues(cues: list[dict], video_title: str, video_id: str, duration: float) -> list[dict]:
     """Dynamically derive 4 high-retention moments directly from timestamped transcript cues."""
     if not cues:

@@ -28,6 +28,8 @@ from hooky.web.analyzer import (
     run_analysis_pipeline,
     extract_youtube_id,
     get_video_metadata,
+    download_captions,
+    extract_ranked_scenes,
 )
 
 def _load_or_create_web_token() -> str:
@@ -614,7 +616,155 @@ async def launch_make_job(request: Request):
             _JOBS[job_id]["status"] = "failed"
             _JOBS[job_id]["error"] = str(exc)
 
-    asyncio.create_task(_run_process())
+    async def _run_selective_make_pipeline(url: str, style_name: str, framing_mode: str):
+        cache_dir = OUTPUT_DIR / "web_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        def log(msg: str):
+            print(msg)
+            _JOBS[job_id]["logs"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
+
+        try:
+            # 1. Fetch metadata and VTT captions without downloading the video
+            _JOBS[job_id]["progress"] = 10
+            _JOBS[job_id]["step"] = "Connecting to stream & fetching timed captions (no video download)..."
+            log(f"[pipeline] Fast Selective Pipeline initiated for URL: {url}")
+            log(f"[pipeline] Step 1: Fetching video metadata and caption track...")
+
+            meta = get_video_metadata(url)
+            title = meta.get("title", "Video")
+            duration = float(meta.get("duration", 0.0))
+            vid_id = meta.get("id") or extract_youtube_id(url)
+            dur_label = format_timestamp(duration) if duration > 0 else "Unknown"
+            log(f"[meta] Title: '{title}' | Duration: {dur_label} | ID: {vid_id or 'none'}")
+
+            sub_prefix = cache_dir / (f"yt_{vid_id}" if vid_id else f"sub_{int(time.time())}")
+            vtt_path = await download_captions(url, sub_prefix, log)
+
+            cues = []
+            if vtt_path and vtt_path.exists():
+                cues = parse_caption_file(vtt_path)
+                log(f"[captions] Parsed {len(cues)} timed dialogue cues from {vtt_path.name}")
+            else:
+                log("[captions] Warning: YouTube caption track not available.")
+
+            if not cues:
+                log("[pipeline] Captions unavailable; falling back to full audio transcribe pipeline...")
+                await _run_process()
+                return
+
+            # 2. Extract and rank the best scenes across the entire video
+            _JOBS[job_id]["progress"] = 25
+            _JOBS[job_id]["step"] = "Analyzing entire transcript to extract & rank best scenes..."
+            log(f"[analyzer] Step 2: Scoring dialogue pacing, emotional tension, and engagement...")
+
+            # Extract as many non-overlapping scenes as runtime justifies (4-10 scenes)
+            target_clips = min(10, max(4, int(duration // 240) + 1)) if duration > 0 else 6
+            ranked_scenes = extract_ranked_scenes(cues, title, vid_id, duration, max_clips=target_clips)
+
+            if not ranked_scenes:
+                log("[analyzer] No scenes met threshold; falling back to standard pipeline...")
+                await _run_process()
+                return
+
+            total_scenes = len(ranked_scenes)
+            log(f"[analyzer] Extracted {total_scenes} top viral scenes, ranked in best-first order:")
+            for sc in ranked_scenes:
+                log(f"  - Rank #{sc['rank']} ({sc['retention_score']} pts): \"{sc['title']}\" [{format_timestamp(sc['start'])} - {format_timestamp(sc['end'])}] ({sc['duration']}s)")
+
+            # 3. Selectively download and encode each ranked scene (Rank 1 -> Rank N)
+            rendered_files = []
+            for sc in ranked_scenes:
+                rank = sc["rank"]
+                sc_title = sc["title"]
+                score = sc["retention_score"]
+                start = sc["start"]
+                end = sc["end"]
+                dur = sc["duration"]
+
+                prog = 25 + int(((rank - 1) / total_scenes) * 70)
+                _JOBS[job_id]["progress"] = prog
+                _JOBS[job_id]["step"] = f"[{rank}/{total_scenes}] Processing Rank #{rank} ({score} pts): {sc_title}..."
+                log(f"[pipeline] >>> [{rank}/{total_scenes}] Downloading section for Rank #{rank}: '{sc_title}' [{format_timestamp(start)} - {format_timestamp(end)}]...")
+
+                clean_name = re.sub(r"[^\w\-]", "_", sc_title.lower())[:24].strip("_")
+                snippet_path = cache_dir / f"snippet_{vid_id}_{int(start)}_{int(end)}.mp4"
+
+                # Download ONLY this short slice (typically ~5-15 MB instead of several GB!)
+                if not (snippet_path.exists() and snippet_path.stat().st_size > 10000):
+                    cmd = [
+                        sys.executable, "-m", "yt_dlp",
+                        "--download-sections", f"*{int(start)}-{int(end + 1.5)}",
+                        "-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
+                        "--merge-output-format", "mp4",
+                        "-o", str(snippet_path),
+                        "--",
+                        url,
+                    ]
+                    proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+                    s_out, s_err = await proc.communicate()
+                    if proc.returncode != 0:
+                        err_msg = s_err.decode("utf-8", errors="replace").strip()
+                        log(f"[downloader] Section download warning for Rank #{rank}: {err_msg[:120]}")
+                        continue
+                    log(f"[downloader] Section download complete ({snippet_path.stat().st_size / (1024*1024):.1f} MB)")
+                else:
+                    log(f"[downloader] Reusing cached section: {snippet_path.name}")
+
+                # Build ASS subtitles
+                hook_cues = [c for c in cues if c["start"] >= start - 1.0 and c["end"] <= end + 1.5]
+                rel_cues = []
+                for c in hook_cues:
+                    rel_cues.append({
+                        "start": max(0.0, c["start"] - start),
+                        "end": max(0.1, c["end"] - start),
+                        "text": c["text"]
+                    })
+
+                ass_path = None
+                if rel_cues:
+                    words = caption_words(rel_cues)
+                    if words:
+                        ass_content = build_ass(words, clip_start=0.0, clip_end=dur, style_name=style_name)
+                        ass_path = cache_dir / f"subs_rank{rank:02d}_{clean_name}_{style_name}.ass"
+                        ass_path.write_text(ass_content, encoding="utf-8")
+
+                # Cut and encode 1080x1920 vertical Reel
+                out_filename = f"reel_rank{rank:02d}_{score}pts_{clean_name}_{int(time.time())}.mp4"
+                final_out_path = OUTPUT_DIR / out_filename
+                log(f"[ffmpeg] Encoding vertical 1080x1920 reel for Rank #{rank} (style: {style_name}, framing: {framing_mode})...")
+
+                await asyncio.to_thread(
+                    cut_clip,
+                    video_path=snippet_path,
+                    start=0.0,
+                    end=dur,
+                    out_path=final_out_path,
+                    ass_path=ass_path,
+                    framing=framing_mode,
+                )
+
+                if final_out_path.exists() and final_out_path.stat().st_size > 1000:
+                    rendered_files.append(out_filename)
+                    log(f"[pipeline] Successfully rendered Rank #{rank}: {out_filename} ({final_out_path.stat().st_size / (1024*1024):.2f} MB)")
+
+            # 4. Final summary
+            _JOBS[job_id]["progress"] = 100
+            _JOBS[job_id]["status"] = "completed"
+            _JOBS[job_id]["output_file"] = rendered_files[0] if rendered_files else ""
+            _JOBS[job_id]["step"] = f"Pipeline complete! Rendered {len(rendered_files)} ranked reels in Output Gallery."
+            log(f"[pipeline] Autonomous selective pipeline finished: {len(rendered_files)} ranked reels ready in Gallery.")
+
+        except Exception as exc:
+            log(f"[pipeline error] {exc}")
+            _JOBS[job_id]["status"] = "failed"
+            _JOBS[job_id]["error"] = str(exc)
+
+    if target and (target.startswith("http://") or target.startswith("https://")):
+        asyncio.create_task(_run_selective_make_pipeline(target, style, framing))
+    else:
+        asyncio.create_task(_run_process())
+
     return {"job_id": job_id, "status": "started"}
 
 
