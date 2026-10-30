@@ -12,7 +12,7 @@ export function Faq() {
     },
     {
       q: "How does the automated YouTube channel discovery work?",
-      a: "Drop YouTube channel handles or URLs into channels.txt (e.g. @hubermanlab | limit=3 min_views=250000). When you run ./hooky.sh make, Hooky queries the channel's uploads with yt-dlp, calculates view velocity spikes, and queues winning high-retention candidates automatically.",
+      a: "Drop YouTube channel handles or URLs into channels.txt (e.g. @hubermanlab | limit=3 min_views=250000). When you run ./hooky.sh make, Hooky queries the channel's uploads with yt-dlp, calculates view velocity spikes, and queues winning candidates automatically.",
     },
     {
       q: "How does the anti-ban Instagram queue keep accounts safe?",

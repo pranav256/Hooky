@@ -1,4 +1,3 @@
-import { Analytics } from "@vercel/analytics/react";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { Stats } from "@/components/Stats";
@@ -8,7 +7,7 @@ import { Benchmarks } from "@/components/Benchmarks";
 import { Faq } from "@/components/Faq";
 import { Footer } from "@/components/Footer";
 
-export function App() {
+export default function Home() {
   return (
     <div className="min-h-screen bg-[#0B0F19] text-[#F3F4F6] font-sans selection:bg-[#3B82F6]/30 selection:text-white relative overflow-x-hidden">
       <Navbar />
@@ -21,9 +20,6 @@ export function App() {
         <Faq />
       </main>
       <Footer />
-      <Analytics />
     </div>
   );
 }
-
-export default App;

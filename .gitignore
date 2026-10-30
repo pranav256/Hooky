@@ -19,6 +19,8 @@ links.txt
 channels.txt
 output/
 node_modules/
+.next/
+.vercel/
 
 # Partial downloads and Python build artifacts
 *.part
