@@ -1,4 +1,4 @@
-﻿"""Resumable source-text selection -> styled subtitles -> render -> queue."""
+"""Resumable source-text selection -> styled subtitles -> render -> queue."""
 from __future__ import annotations
 
 import json
@@ -296,6 +296,9 @@ class Pipeline:
                     raise ValueError("Invalid caption count")
                 save_checkpoint(cache_dir / "captions.json", caption_signature, meta)
         with profile.stage("render"):
+            if getattr(o, "framing", "auto") != "auto":
+                for c in batch:
+                    c["framing"] = o.framing
             results = (self.state["cut_all_clips"](
                 video, batch, output_dir=out_dir, words=words, sub_style=o.sub_style,
                 make_covers=o.make_covers) if batch else [])

@@ -1,4 +1,4 @@
-﻿"""Command line entry point for Hooky's Instagram Reel workflow."""
+"""Command line entry point for Hooky's Instagram Reel workflow."""
 from __future__ import annotations
 
 import argparse
@@ -93,8 +93,10 @@ def build_parser(prog: str = "hooky") -> argparse.ArgumentParser:
                         help="Skip Gemini captions")
     parser.add_argument("--no-subs", action="store_true",
                         help="Skip burned-in subtitles and subtitle transcription")
-    parser.add_argument("--sub-style", default=SUB_STYLE,
+    parser.add_argument("--sub-style", "--style", dest="sub_style", default=SUB_STYLE,
                         help=f"Subtitle style: {', '.join(STYLES)}")
+    parser.add_argument("--framing", choices=("auto", "center", "fit"), default="auto",
+                        help="Smart vertical framing mode: auto, center (portrait crop), or fit (ambient blur)")
     parser.add_argument("--sub-lang", default=SUB_LANG,
                         help="Force Whisper language, for example 'en'")
     parser.add_argument("--subtitle-source", choices=("auto", "source", "whisper"),

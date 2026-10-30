@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Subtitles-Faster--Whisper-orange" alt="Faster Whisper">
   <img src="https://img.shields.io/badge/Engine-FFmpeg%209%3A16-red?logo=ffmpeg&logoColor=white" alt="FFmpeg">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-251%20passing-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-260%20passing-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
 </p>
 
@@ -113,7 +113,15 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ | clips=auto | style=hormozi
 /path/to/podcast.mp4 | clips=5 | min=20 max=50 | style=yellow
 ```
 
-### 2. Run the Pipeline
+### 2. Run the Pipeline or Web Studio
+
+```bash
+# Launch the visual Web Studio & Control Portal in your browser (http://127.0.0.1:8000)
+./hooky.sh web
+
+# Or run terminal automation:
+./hooky.sh make
+```
 
 ```bash
 # Verify your installation & dependencies
@@ -142,9 +150,13 @@ Hooky includes high-converting subtitle templates inspired by top creators:
 
 | Style | Description | Preview / Font |
 |---|---|---|
+| `titanium` / `gold` | **Quiet Luxury**: Warm titanium metallic glow, elegant editorial typography | Archivo / Inter Bold |
 | `hormozi` | **Viral Hook Style**: Bold font, uppercase, dynamic bright color highlights on spoken words | Impact / Montserrat Bold |
 | `clean` | **Modern Minimalist**: Subtle background box, legible, professional podcast aesthetic | Roboto / Arial |
 | `yellow` | **High-Contrast Attention**: Vibrant yellow word highlights for maximum retention | Helvetica Bold |
+| `minimal` | **Cinematic Italic**: Clean underline without background boxes | Playfair / Serif Italic |
+| `emerald` | **Code & Tech**: High-tech matrix emerald green glow | JetBrains Mono Bold |
+| `crimson` | **Bold Shock**: Punchy crimson neon drop-shadow | Syne / Impact Bold |
 
 List all available styles:
 ```bash
@@ -157,6 +169,7 @@ List all available styles:
 
 | Command | Action |
 |---|---|
+| `./hooky.sh web` | Launch visual Web Studio and Control Portal in your browser (`http://127.0.0.1:8000`) |
 | `./hooky.sh` | Process pending items in `links.txt` |
 | `./hooky.sh make` | Scan channels, add winners to `links.txt`, and render all clips |
 | `./hooky.sh preview` | Dry-run: view pending jobs and highlights without touching files |

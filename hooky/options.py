@@ -1,4 +1,4 @@
-﻿"""Options dataclass — every knob of the pipeline in one plain object.
+"""Options dataclass — every knob of the pipeline in one plain object.
 
 Both the CLI and library users build this; `PipelineOptions.from_args(args)`
 bridges from the argparse namespace.
@@ -29,6 +29,7 @@ class PipelineOptions:
     no_captions: bool = False
     no_subs: bool = False
     sub_style: str = SUB_STYLE
+    framing: str = "auto"
     sub_lang: str | None = SUB_LANG
     subtitle_source: str = SUBTITLE_SOURCE
     make_covers: bool = MAKE_COVERS
@@ -40,6 +41,8 @@ class PipelineOptions:
         if self.sub_style not in STYLES:
             raise ValueError(
                 f"Unknown sub_style '{self.sub_style}'. Options: {', '.join(STYLES)}")
+        if self.framing not in {"auto", "center", "fit"}:
+            raise ValueError("framing must be auto, center, or fit")
         if self.subtitle_source not in {"auto", "source", "whisper"}:
             raise ValueError("subtitle_source must be auto, source, or whisper")
 
@@ -57,6 +60,7 @@ class PipelineOptions:
             no_captions=getattr(args, "no_captions", False),
             no_subs=getattr(args, "no_subs", False),
             sub_style=getattr(args, "sub_style", SUB_STYLE),
+            framing=getattr(args, "framing", "auto"),
             sub_lang=getattr(args, "sub_lang", SUB_LANG) or SUB_LANG,
             subtitle_source=(getattr(args, "subtitle_source", None) or SUBTITLE_SOURCE),
             make_covers=(MAKE_COVERS if getattr(args, "make_covers", None) is None
