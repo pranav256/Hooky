@@ -80,7 +80,7 @@ Most clipping tools are either expensive monthly subscriptions or clunky scripts
 ```bash
 git clone https://github.com/pranav256/Hooky.git
 cd Hooky
-chmod +x main.sh setup.sh hooky.sh
+chmod +x main.sh
 ./main.sh
 ```
 
@@ -93,7 +93,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\main.ps1
 ```
 
-> **⚡ Single-Command Magic:** Running `main.ps1` or `main.sh` (or `python main.py`) automatically verifies FFmpeg & `uv`, syncs locked dependencies, initializes `.env`, and launches the visual Web Studio, immediately opening your browser to `http://127.0.0.1:8000`! You can also run `.\setup.ps1` or `./setup.sh` at any time.
+> **⚡ Single-Command Magic:** Running `main.ps1` (or `./main.sh` / `python main.py`) automatically verifies FFmpeg & `uv`, syncs locked dependencies, initializes `.env`, and launches the visual Web Studio, immediately opening your browser to `http://127.0.0.1:8000`!
 
 ---
 
@@ -117,30 +117,30 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ | clips=auto | style=hormozi
 
 ```bash
 # Launch the visual Web Studio & Control Portal in your browser (http://127.0.0.1:8000)
-./hooky.sh web
+./main.sh web
 
 # Or run terminal automation:
-./hooky.sh make
+./main.sh make
 ```
 
 ```bash
 # Verify your installation & dependencies
-./hooky.sh doctor
+./main.sh doctor
 
 # Preview what will be processed without downloading or rendering
-./hooky.sh preview
+./main.sh preview
 
 # Fetch winning channel videos, extract highlights, and render clips
-./hooky.sh make
+./main.sh make
 
 # Inspect generated clips in your file explorer
-./hooky.sh open
+./main.sh open
 
 # Post queued clips safely to Instagram (optional)
-./hooky.sh post
+./main.sh post
 ```
 
-*(On Windows, replace `./hooky.sh` with `.\hooky.ps1`)*
+*(On Windows, replace `./main.sh` with `.\main.ps1`)*
 
 ---
 
@@ -160,7 +160,7 @@ Hooky includes high-converting subtitle templates inspired by top creators:
 
 List all available styles:
 ```bash
-./hooky.sh styles
+./main.sh styles
 ```
 
 ---
@@ -169,17 +169,17 @@ List all available styles:
 
 | Command | Action |
 |---|---|
-| `./hooky.sh web` | Launch visual Web Studio and Control Portal in your browser (`http://127.0.0.1:8000`) |
-| `./hooky.sh` | Process pending items in `links.txt` |
-| `./hooky.sh make` | Scan channels, add winners to `links.txt`, and render all clips |
-| `./hooky.sh preview` | Dry-run: view pending jobs and highlights without touching files |
-| `./hooky.sh post` | Drain the Instagram queue with safety cooldown intervals |
-| `./hooky.sh status` | Show current queue state, render progress, and recent errors |
-| `./hooky.sh retry` | Re-attempt failed links or rendering tasks |
-| `./hooky.sh cleanup` | Preview and safely remove raw source files after posting |
-| `./hooky.sh parts <file>` | Split long videos into sequential episodes/parts |
-| `./hooky.sh doctor` | Diagnostic health check (FFmpeg, Gemini key, yt-dlp, cookies) |
-| `./hooky.sh doctor youtube` | Verify YouTube cookies and test bypass on age-gated videos |
+| `./main.sh web` (or `./main.sh`) | Launch visual Web Studio and Control Portal in your browser (`http://127.0.0.1:8000`) |
+| `./main.sh` | Process pending items in `links.txt` |
+| `./main.sh make` | Scan channels, add winners to `links.txt`, and render all clips |
+| `./main.sh preview` | Dry-run: view pending jobs and highlights without touching files |
+| `./main.sh post` | Drain the Instagram queue with safety cooldown intervals |
+| `./main.sh status` | Show current queue state, render progress, and recent errors |
+| `./main.sh retry` | Re-attempt failed links or rendering tasks |
+| `./main.sh cleanup` | Preview and safely remove raw source files after posting |
+| `./main.sh parts <file>` | Split long videos into sequential episodes/parts |
+| `./main.sh doctor` | Diagnostic health check (FFmpeg, Gemini key, yt-dlp, cookies) |
+| `./main.sh doctor youtube` | Verify YouTube cookies and test bypass on age-gated videos |
 
 ---
 

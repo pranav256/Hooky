@@ -49,15 +49,16 @@ def _preflight(*, needs_download: bool = False,
     """Fail early with one actionable message before expensive work starts."""
     failures: list[str] = []
     warnings: list[str] = []
+    launcher = ".\\main.ps1" if sys.platform == "win32" else "./main.sh"
     for executable in ("ffmpeg", "ffprobe"):
         if shutil.which(executable) is None:
-            failures.append(f"{executable} is missing; run ./setup.sh")
+            failures.append(f"{executable} is missing; run {launcher}")
     if importlib.util.find_spec("google.genai") is None:
-        failures.append("google-genai is missing; run ./setup.sh")
+        failures.append(f"google-genai is missing; run {launcher}")
     if not os.environ.get("GEMINI_API_KEY", GEMINI_API_KEY).strip():
         failures.append("GEMINI_API_KEY is missing; set it in .env")
     if needs_download and importlib.util.find_spec("yt_dlp") is None:
-        failures.append("yt-dlp is missing for URL downloads; run ./setup.sh")
+        failures.append(f"yt-dlp is missing for URL downloads; run {launcher}")
     output_parent = OUTPUT_DIR if OUTPUT_DIR.exists() else OUTPUT_DIR.parent
     if not output_parent.exists() or not os.access(output_parent, os.W_OK):
         failures.append(f"output directory is not writable: {OUTPUT_DIR}")

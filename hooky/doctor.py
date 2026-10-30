@@ -1,4 +1,4 @@
-﻿"""Offline dependency diagnostics and platform-specific install guidance."""
+"""Offline dependency diagnostics and platform-specific install guidance."""
 from __future__ import annotations
 
 import importlib.metadata
@@ -221,7 +221,7 @@ def run_doctor() -> int:
             state = "WARN"
         print(f"  {state:<4} {check.name}: {check.detail}")
 
-    setup = ".\\setup.ps1" if os.name == "nt" else "./setup.sh"
+    setup = ".\\main.ps1" if os.name == "nt" else "./main.sh"
     print("Fixes:")
     print(f"  Missing runtime tools or packages: run {setup}")
     print("  Missing Gemini key: set GEMINI_API_KEY in .env")
