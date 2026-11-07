@@ -50,7 +50,7 @@ namespaces = false
 
 [tool.setuptools.package-data]
 "hooky.parts" = ["README.md"]
-"hooky.web" = ["static/*"]
+"hooky.web" = ["static/*", "static/fonts/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

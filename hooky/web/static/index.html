@@ -1,1680 +1,926 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hooky Studio — Autonomous 9:16 Video Clipper</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' fill='%23121316'/%3E%3Crect x='20' y='20' width='88' height='88' rx='16' fill='%2334D399'/%3E%3Ctext x='64' y='80' font-family='sans-serif' font-size='60' font-weight='700' fill='%230C0D10' text-anchor='middle'%3EH%3C/text%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            paper: '#121316',
-            panel: '#18191e',
-            cream: '#21232a',
-            ink: '#f0f1f4',
-            acid: '#34d399',
-            red: '#ef4444',
-            muted: '#858997',
-            line: 'rgba(255, 255, 255, 0.08)',
-          },
-          fontFamily: {
-            sans: ['Manrope', 'sans-serif'],
-            mono: ['DM Mono', 'monospace'],
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    :root {
-      --paper: #121316;
-      --panel: #18191e;
-      --cream: #21232a;
-      --ink: #f0f1f4;
-      --acid: #34d399;
-      --red: #ef4444;
-      --muted: #858997;
-      --line: rgba(255, 255, 255, 0.08);
-    }
-    body {
-      background-color: var(--paper);
-      color: var(--ink);
-      font-family: 'Manrope', sans-serif;
-      min-height: 100vh;
-    }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #121316; }
-    ::-webkit-scrollbar-thumb { background: #262830; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #323540; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hooky Studio — The good parts.</title>
 
-    .brutal-card {
-      background: #18191e;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-      transition: border-color 0.15s ease;
-    }
-    .brutal-card:hover {
-      border-color: rgba(255, 255, 255, 0.14);
-    }
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/brand.css" />
+    <link rel="stylesheet" href="/static/studio-tailwind.css" />
+    <link rel="stylesheet" href="/static/studio.css" />
+    <script defer src="/static/lucide.min.js"></script>
+    <script defer src="/static/studio.js"></script>
 
-    .brutal-btn-acid {
-      background: var(--acid);
-      color: #0c0d10;
-      font-weight: 500;
-      border-radius: 8px;
-      transition: opacity 0.15s ease, transform 0.1s ease;
-    }
-    .brutal-btn-acid:hover {
-      opacity: 0.92;
-    }
-    .brutal-btn-acid:active {
-      transform: scale(0.98);
-    }
+    <script>
+      window.__HOOKY_TOKEN__ = "HOOKY_AUTH_TOKEN_PLACEHOLDER";
+    </script>
+  </head>
+  <body class="studio-app">
+    <a class="studio-skip" href="#studio-content">Skip to workspace</a>
 
-    .brutal-btn-red {
-      background: var(--red);
-      color: #ffffff;
-      font-weight: 500;
-      border-radius: 8px;
-      transition: opacity 0.15s ease, transform 0.1s ease;
-    }
-    .brutal-btn-red:hover {
-      opacity: 0.92;
-    }
-    .brutal-btn-red:active {
-      transform: scale(0.98);
-    }
-
-    .pulse-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--acid);
-    }
-
-    .tabular {
-      font-variant-numeric: tabular-nums;
-    }
-  </style>
-</head>
-<body class="flex flex-col selection:bg-[#34d399]/20 selection:text-white">
-
-  <!-- ==================== TOP NAVIGATION BAR ==================== -->
-  <header class="sticky top-0 z-50 bg-[#0c0d10]/95 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-8 py-3">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-      
-      <!-- Brand & Version -->
-      <div class="flex items-center gap-3">
-        <div class="w-7 h-7 rounded-md grid place-items-center bg-white text-[#0c0d10] font-mono font-bold text-sm">
-          <span>H</span>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-semibold text-base text-white tracking-tight">Hooky Studio</span>
-            <span class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-[#34d399] border border-white/10 rounded font-medium">
-              Local engine
-            </span>
-          </div>
-          <span class="text-[11px] text-slate-400 font-mono">Autonomous 9:16 video clipper</span>
-        </div>
+    <!-- ==================== TOP NAVIGATION BAR ==================== -->
+    <header class="studio-header">
+      <a class="studio-brand" href="/" aria-label="Hooky Studio home"
+        ><svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <path d="M5 5h7v9h8V5h7v22h-7v-9h-8v9H5V5Z" fill="currentColor" />
+          <path d="m14 3 4 0-2 26h-4L14 3Z" fill="var(--hooky-bg)" /></svg
+        ><span>hooky<span class="brand-dot">.</span></span
+        ><span class="studio-brand-label">studio</span></a
+      >
+      <div class="studio-breadcrumb">
+        <span>Workspace</span><span>/</span
+        ><strong id="workspace-label">Clip studio</strong>
       </div>
-
-      <!-- Navigation Tabs -->
-      <nav class="hidden md:flex items-center gap-1 p-1 bg-[#121316] border border-white/[0.08] rounded-lg text-xs font-mono">
-        <button onclick="switchTab('studio')" id="tab-studio" class="tab-btn px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all">
-          <i data-lucide="film" class="w-3.5 h-3.5 inline mr-1.5"></i>Studio
+      <div id="gpu-badge" class="studio-engine">
+        <span class="pulse-dot"></span
+        ><span id="gpu-text">Checking engine…</span
+        ><span class="local-badge">LOCAL</span>
+      </div>
+    </header>
+    <aside class="studio-sidebar" aria-label="Workspace navigation">
+      <span class="sidebar-label">YOUR WORKSPACE</span>
+      <nav aria-label="Studio views">
+        <button
+          onclick="switchTab('studio')"
+          id="tab-studio"
+          class="tab-btn"
+          aria-current="page"
+        >
+          <i data-lucide="film"></i><span>Clip studio</span
+          ><span class="sidebar-shortcut">01</span>
         </button>
-        <button onclick="switchTab('radar')" id="tab-radar" class="tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
-          <i data-lucide="radio" class="w-3.5 h-3.5 inline mr-1.5"></i>Radar
+        <button onclick="switchTab('radar')" id="tab-radar" class="tab-btn">
+          <i data-lucide="radio"></i><span>Channel radar</span
+          ><span class="sidebar-shortcut">02</span>
         </button>
-        <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
-          <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1.5"></i>Gallery (<span id="gallery-count" class="tabular">0</span>)
+        <button onclick="switchTab('gallery')" id="tab-gallery" class="tab-btn">
+          <i data-lucide="folder"></i><span>Your clips</span
+          ><span id="gallery-count" class="sidebar-count">0</span>
         </button>
-        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
-          <i data-lucide="sliders" class="w-3.5 h-3.5 inline mr-1.5"></i>Settings (.env)
+        <button
+          onclick="switchTab('settings')"
+          id="tab-settings"
+          class="tab-btn"
+        >
+          <i data-lucide="sliders-horizontal"></i><span>Settings</span>
         </button>
-        <button onclick="switchTab('doctor')" id="tab-doctor" class="tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
-          <i data-lucide="activity" class="w-3.5 h-3.5 inline mr-1.5"></i>Doctor
+        <button onclick="switchTab('doctor')" id="tab-doctor" class="tab-btn">
+          <i data-lucide="activity"></i><span>System health</span>
         </button>
       </nav>
-
-      <!-- Engine Hardware Indicator -->
-      <div class="flex items-center gap-2">
-        <div id="gpu-badge" class="flex items-center gap-2 px-3 py-1 bg-[#18191e] border border-white/[0.08] rounded-md text-xs font-mono text-slate-300">
-          <span class="pulse-dot"></span>
-          <span id="gpu-text">Engine online</span>
+      <div class="sidebar-bottom">
+        <div class="sidebar-manifesto">
+          Your footage.<br />Your machine.<br /><span>Your rules.</span>
         </div>
+        <a
+          href="https://hoooky.vercel.app/docs"
+          target="_blank"
+          rel="noreferrer"
+          ><i data-lucide="book-open"></i>Documentation<i
+            data-lucide="arrow-up-right"
+          ></i></a
+        ><a
+          href="https://github.com/pranav256/Hooky"
+          target="_blank"
+          rel="noreferrer"
+          ><i data-lucide="code-2"></i>Source code<i
+            data-lucide="arrow-up-right"
+          ></i></a
+        ><span class="sidebar-version">HOOKY · MIT LICENSE</span>
       </div>
-    </div>
-  </header>
+    </aside>
 
-  <!-- ==================== MAIN CONTENT ==================== -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-
-    <!-- ==================== VIEW 1: CLIPPER STUDIO ==================== -->
-    <section id="view-studio" class="space-y-6">
-
-      <!-- ==================== TOP COMMAND & CONTROLS TOOLBAR ==================== -->
-      <div class="brutal-card p-5 space-y-4">
-        
-        <!-- Row 1: Target Video URL + Actions -->
-        <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
-          <div class="flex-1 relative">
-            <i data-lucide="link" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
-            <input
-              id="source-url"
-              type="text"
-              placeholder="https://www.youtube.com/watch?v=..."
-              value=""
-              class="w-full bg-[#121316] border border-white/[0.08] rounded-md pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20 font-mono transition-colors"
-            />
-          </div>
-
-          <!-- Primary Actions -->
-          <div class="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-            <button
-              id="analyze-btn"
-              onclick="triggerAnalyze()"
-              class="brutal-btn-acid px-4 py-2 text-xs flex items-center justify-center gap-1.5"
-            >
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-              <span>Detect hooks</span>
-            </button>
-
-            <button
-              id="top-render-btn"
-              onclick="renderSelectedHook()"
-              class="brutal-btn-red px-4 py-2 text-xs flex items-center justify-center gap-1.5"
-            >
-              <i data-lucide="video" class="w-3.5 h-3.5"></i>
-              <span>Export 9:16</span>
-            </button>
-
-            <button
-              id="execute-make-btn"
-              onclick="triggerMakePipeline()"
-              class="px-3.5 py-2 bg-[#21232a] hover:bg-[#2b2e38] border border-white/[0.08] text-white font-mono text-xs rounded-md flex items-center justify-center gap-1.5 transition-all"
-            >
-              <i data-lucide="play" class="w-3 h-3 text-[#34d399]"></i>
-              <span>Run pipeline</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Row 2: Intelligent Auto-Recommendation & Override Controls -->
-        <div class="pt-3 border-t border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-          
-          <!-- Auto-Tuned Recommendation Pill -->
-          <div class="flex items-center gap-2">
-            <span class="font-mono text-slate-400 text-[11px]">Recommendation:</span>
-            <div id="smart-recommendation-pill" class="flex items-center gap-1.5 px-2.5 py-1 bg-[#21232a] border border-white/[0.08] rounded-md text-slate-300 font-mono text-xs">
-              <i data-lucide="cpu" class="w-3.5 h-3.5 text-[#34d399]"></i>
-              <span id="smart-recommendation-text">Auto-tuned: Ready</span>
-            </div>
-          </div>
-
-          <!-- Manual Framing & Subtitle Style Override Controls -->
-          <div class="flex flex-wrap items-center gap-2.5">
-            
-            <!-- Framing Mode Selector -->
-            <div class="flex items-center gap-1 bg-[#121316] p-0.5 border border-white/[0.08] rounded-md font-mono text-[11px]">
-              <span class="px-2 text-slate-500">Frame:</span>
-              <button onclick="setFramingMode('auto')" id="frame-mode-auto" class="px-2.5 py-0.5 bg-[#21232a] text-white font-medium rounded transition-all">Auto</button>
-              <button onclick="setFramingMode('fit')" id="frame-mode-fit" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Canvas fit</button>
-              <button onclick="setFramingMode('center')" id="frame-mode-center" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Center crop</button>
-            </div>
-
-            <!-- Subtitle Style Preset Selector -->
-            <div class="flex items-center gap-1 bg-[#121316] p-0.5 border border-white/[0.08] rounded-md font-mono text-[11px]">
-              <span class="px-2 text-slate-500">Subs:</span>
-              <button onclick="setSubtitleMode('auto')" id="sub-mode-auto" class="px-2.5 py-0.5 bg-[#21232a] text-white font-medium rounded transition-all">Auto</button>
-              <button onclick="setSubtitleMode('gold')" id="sub-mode-gold" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Titanium</button>
-              <button onclick="setSubtitleMode('hormozi')" id="sub-mode-hormozi" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Hormozi</button>
-              <button onclick="setSubtitleMode('clean')" id="sub-mode-clean" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Clean</button>
-              <button onclick="setSubtitleMode('minimal')" id="sub-mode-minimal" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Minimal</button>
-              <button onclick="setSubtitleMode('emerald')" id="sub-mode-emerald" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Emerald</button>
-              <button onclick="setSubtitleMode('crimson')" id="sub-mode-crimson" class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all">Crimson</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Progress Stepper & Terminal Log Toggle -->
-        <div id="pipeline-stepper" class="hidden p-4 bg-[#121316] border border-white/[0.08] rounded-lg space-y-3">
-          <div class="flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center gap-2 text-slate-200">
-              <i data-lucide="loader" class="w-4 h-4 animate-spin text-[#34d399]"></i>
-              <span id="stepper-status-text">Processing engine task...</span>
-            </div>
-            <span id="stepper-percent" class="font-medium text-[#34d399] tabular">15%</span>
-          </div>
-          
-          <!-- Stepper Progress Bar -->
-          <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <div id="stepper-progress-fill" class="h-full bg-[#34d399] transition-all duration-300" style="width: 15%;"></div>
-          </div>
-
-          <!-- Console Terminal Toggle -->
-          <div class="flex items-center justify-between text-[11px] font-mono pt-1 text-slate-400">
-            <button onclick="toggleTerminalLogs()" class="hover:text-white flex items-center gap-1.5">
-              <i data-lucide="terminal" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span id="terminal-toggle-label">Hide console logs</span>
-            </button>
-            <span>Task id: <code id="active-task-id" class="text-slate-300">idle</code></span>
-          </div>
-
-          <!-- Live Console Output Box -->
-          <div id="live-engine-console" class="p-3 bg-[#0c0d10] border border-white/[0.06] rounded-md font-mono text-[11px] text-slate-300 h-32 overflow-y-auto space-y-1">
-            <p class="text-slate-500">[system] Hooky engine pipeline monitoring active</p>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ==================== SPLIT WORKBENCH ==================== -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        <!-- LEFT COLUMN: Hook Candidates List (5 Cols) -->
-        <div class="lg:col-span-5 space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="font-medium text-sm text-white flex items-center gap-2">
-              <i data-lucide="sparkles" class="w-4 h-4 text-[#34d399]"></i>
-              <span>High-retention hook moments</span>
-            </h3>
-            <span id="hook-count" class="text-xs font-mono text-slate-300 bg-white/5 px-2.5 py-0.5 border border-white/10 rounded">
-              0 hooks detected
-            </span>
-          </div>
-
-          <!-- Hook Cards Scrollable List -->
-          <div id="hooks-container" class="space-y-3">
-            <!-- Dynamically populated hook cards -->
-          </div>
-        </div>
-
-        <!-- RIGHT COLUMN: Dual-Mode Interactive Visual Studio (7 Cols) -->
-        <div class="lg:col-span-7 space-y-4">
-          
-          <div class="brutal-card p-5 space-y-4">
-            
-            <!-- Preview Controls Header -->
-            <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
-              <div class="flex items-center gap-2">
-                <span class="font-medium text-sm text-white">Visual studio preview</span>
-                <span id="preview-mode-tag" class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded">
-                  9:16 simulator
-                </span>
-              </div>
-
-              <!-- Switcher: YouTube Source vs Vertical Canvas -->
-              <div class="flex items-center gap-1 bg-[#121316] p-1 border border-white/[0.08] rounded-md text-xs font-mono">
-                <button
-                  id="preview-tab-player"
-                  onclick="switchPreviewMode('player')"
-                  class="px-3 py-1 text-slate-400 hover:text-white rounded transition-all"
-                >
-                  Source video
-                </button>
-                <button
-                  id="preview-tab-canvas"
-                  onclick="switchPreviewMode('canvas')"
-                  class="px-3 py-1 bg-[#21232a] text-white font-medium rounded border border-white/10 transition-all"
-                >
-                  9:16 canvas
-                </button>
-              </div>
-            </div>
-
-            <!-- Sub-View A: Embedded YouTube Player -->
-            <div id="preview-player-container" class="aspect-[16/9] w-full bg-black border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center">
-              <div id="player-placeholder" class="text-center p-8 space-y-2">
-                <i data-lucide="play-circle" class="w-10 h-10 text-slate-600 mx-auto"></i>
-                <p class="text-xs text-slate-400 font-mono">No video loaded. Enter a YouTube URL and click "Detect hooks".</p>
-              </div>
-              <iframe
-                id="youtube-embed-frame"
-                src=""
-                class="w-full h-full border-0 hidden"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-              ></iframe>
-            </div>
-
-            <!-- Sub-View B: Interactive 9:16 Vertical Video Canvas Simulator -->
-            <div id="preview-canvas-container" class="hidden aspect-[16/9] w-full bg-[#0e0f12] border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center">
-              
-              <!-- Ambient Blurred Backdrop for Canvas Fit Mode -->
-              <div id="ambient-blur-backdrop" class="absolute inset-0 bg-cover bg-center filter blur-xl opacity-30 scale-110"></div>
-
-              <!-- Simulated Multi-Speaker Table Avatars -->
-              <div id="avatar-host" class="absolute left-[16%] top-[26%] flex flex-col items-center opacity-40 transition-opacity duration-300">
-                <div class="w-14 h-14 rounded-full bg-[#1e2026] border border-white/20 flex items-center justify-center text-slate-400 font-medium text-xs">
-                  Speaker A
-                </div>
-                <span class="text-[10px] font-mono text-slate-400 mt-1">Host</span>
-              </div>
-
-              <div id="avatar-speaker1" class="absolute left-[44%] top-[22%] flex flex-col items-center opacity-100 transition-opacity duration-300">
-                <div class="w-16 h-16 rounded-full bg-[#34d399]/10 border border-[#34d399] flex items-center justify-center text-[#34d399] font-medium text-sm">
-                  Speaker B
-                </div>
-                <span class="text-[10px] font-mono text-[#34d399] mt-1 flex items-center gap-1 font-medium">
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#34d399] pulse-dot"></span> Active voice
-                </span>
-              </div>
-
-              <div id="avatar-speaker2" class="absolute right-[16%] top-[26%] flex flex-col items-center opacity-40 transition-opacity duration-300">
-                <div class="w-14 h-14 rounded-full bg-[#1e2026] border border-white/20 flex items-center justify-center text-slate-400 font-medium text-xs">
-                  Speaker C
-                </div>
-                <span class="text-[10px] font-mono text-slate-400 mt-1">Guest</span>
-              </div>
-
-              <!-- 9:16 Vertical Cut Wireframe Indicator -->
-              <div id="crop-box" class="absolute inset-y-0 w-[42%] border border-[#34d399]/70 pointer-events-none z-10 flex flex-col justify-end p-4">
-                <div class="bg-black/75 backdrop-blur-sm p-2 border border-white/10 rounded text-center mb-8">
-                  <span id="canvas-subtitle-preview" class="text-xs font-medium tracking-tight text-white leading-snug">
-                    <span class="text-slate-500">Subtitle preview will appear here</span>
-                  </span>
-                </div>
-                <div class="text-[10px] font-mono text-center text-slate-300 bg-black/85 py-0.5 border border-white/10 rounded font-medium">
-                  1080 × 1920 (9:16 reel)
-                </div>
-              </div>
-            </div>
-
-            <!-- Dialogue Transcript Inspector -->
-            <div class="p-3.5 bg-[#121316] border border-white/[0.08] rounded-lg space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <span class="font-medium text-slate-300 font-mono text-[11px]">Hook dialogue transcript:</span>
-                <span id="transcript-time-badge" class="font-mono text-slate-400 text-[11px] tabular">--:-- - --:--</span>
-              </div>
-              <div id="dialogue-lines-box" class="max-h-24 overflow-y-auto space-y-1 font-mono text-xs text-slate-300 pr-1">
-                <!-- Dialogue cues populated here -->
-              </div>
-            </div>
-
-            <!-- Fine-Tune Timing Nudge Bar -->
-            <div class="p-2.5 bg-[#121316] border border-white/[0.08] rounded-lg flex items-center justify-between text-xs">
-              <span class="font-medium text-slate-400 font-mono text-[11px]">Boundary nudge:</span>
-              <div class="flex items-center gap-1.5 font-mono text-[11px]">
-                <button onclick="nudgeTime('start', -0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">-0.5s start</button>
-                <button onclick="nudgeTime('start', +0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">+0.5s start</button>
-                <span class="text-slate-600">|</span>
-                <button onclick="nudgeTime('end', -0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">-0.5s end</button>
-                <button onclick="nudgeTime('end', +0.5)" class="px-2.5 py-0.5 bg-[#18191e] hover:bg-[#21232a] text-slate-300 border border-white/10 rounded transition-all">+0.5s end</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 2: SETTINGS (.ENV EDITOR) ==================== -->
-    <section id="view-settings" class="hidden space-y-6">
-      <div class="brutal-card p-6 space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main id="studio-content" class="studio-main">
+      <!-- ==================== VIEW 1: CLIPPER STUDIO ==================== -->
+      <section id="view-studio" class="space-y-6" aria-label="Clip studio">
+        <div class="workspace-heading">
           <div>
-            <h2 class="text-base font-semibold text-white flex items-center gap-2">
-              <i data-lucide="sliders" class="w-4 h-4 text-[#34d399]"></i>
-              <span>Environment configuration (.env)</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">Manage API keys, model fallbacks, output clip density, and FFmpeg threads.</p>
+            <span class="studio-overline">MAKE THE MOST OF WHAT YOU MAKE.</span>
+            <h1>The good parts<span>.</span></h1>
+            <p>Start with a video. Find a moment. Make it yours.</p>
           </div>
-          <button onclick="saveEnvForm()" class="brutal-btn-acid px-4 py-2 text-xs flex items-center gap-2">
-            <i data-lucide="save" class="w-3.5 h-3.5"></i>
-            <span>Save configuration</span>
-          </button>
+          <span class="workspace-format"
+            ><i data-lucide="scan-line"></i>9:16 / VERTICAL VIDEO</span
+          >
         </div>
+        <div id="studio-alert" role="status" class="studio-alert hidden"></div>
 
-        <!-- Settings Tabs: Visual Form vs Raw Editor -->
-        <div class="flex items-center gap-2 border-b border-white/[0.08] pb-3 text-xs font-mono">
-          <button onclick="switchEnvTab('form')" id="env-tab-form" class="px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all">
-            Visual form
-          </button>
-          <button onclick="switchEnvTab('raw')" id="env-tab-raw" class="px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all">
-            Raw .env editor
-          </button>
-        </div>
-
-        <!-- Sub-View 1: Visual Form -->
-        <div id="env-form-view" class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-mono">
-          
-          <!-- Gemini API Key -->
-          <div class="space-y-1.5 md:col-span-2">
-            <label class="text-slate-300 font-medium block">GEMINI_API_KEY:</label>
-            <div class="relative">
+        <!-- ==================== TOP COMMAND & CONTROLS TOOLBAR ==================== -->
+        <div class="brutal-card p-5 space-y-4 studio-command">
+          <!-- Row 1: Target Video URL + Actions -->
+          <div
+            class="flex flex-col lg:flex-row items-stretch lg:items-center gap-3"
+          >
+            <div class="flex-1 relative">
+              <i
+                data-lucide="link"
+                class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"
+              ></i>
               <input
-                id="env-gemini-key"
-                type="password"
-                placeholder="AQ.Ab8RN6KAg..."
-                class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
+                id="source-url"
+                aria-label="Source video URL"
+                type="text"
+                placeholder="Paste a YouTube or video URL to get started…"
+                value=""
+                class="w-full bg-[#101110] border border-white/[0.08] rounded-md pl-10 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20 font-mono transition-colors"
               />
+            </div>
+
+            <!-- Primary Actions -->
+            <div
+              class="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap"
+            >
               <button
-                type="button"
-                onclick="togglePasswordVisibility('env-gemini-key', this)"
-                class="absolute right-3 top-2 text-slate-400 hover:text-white"
+                id="analyze-btn"
+                onclick="triggerAnalyze()"
+                class="brutal-btn-acid px-4 py-2 text-xs flex items-center justify-center gap-1.5"
               >
-                <i data-lucide="eye" class="w-4 h-4"></i>
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>Detect hooks</span>
+              </button>
+
+              <button
+                id="top-render-btn"
+                onclick="renderSelectedHook()"
+                class="brutal-btn-export px-4 py-2 text-xs flex items-center justify-center gap-1.5"
+              >
+                <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                <span>Export clip</span>
+              </button>
+
+              <button
+                id="execute-make-btn"
+                onclick="triggerMakePipeline()"
+                class="px-3.5 py-2 bg-[#242721] hover:bg-[#2b2e38] border border-white/[0.08] text-white font-mono text-xs rounded-md flex items-center justify-center gap-1.5 transition-all"
+              >
+                <i data-lucide="play" class="w-3 h-3 text-[#d2fa69]"></i>
+                <span>Run pipeline</span>
               </button>
             </div>
-            <p class="text-[11px] text-slate-500">Free API key from Google AI Studio</p>
           </div>
 
-          <!-- Gemini Primary Model -->
-          <div class="space-y-1.5">
-            <label class="text-slate-300 font-medium block">GEMINI_MODEL (Primary):</label>
-            <select
-              id="env-gemini-model"
-              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-white/20"
-            >
-              <option value="gemini-3.8-flash">gemini-3.8-flash (Primary active flash)</option>
-              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra fast lite)</option>
-              <option value="gemini-flash-latest">gemini-flash-latest (Auto tracking)</option>
-            </select>
-          </div>
-
-          <!-- Default Subtitle Style -->
-          <div class="space-y-1.5">
-            <label class="text-slate-300 font-medium block">SUB_STYLE (Default preset):</label>
-            <select
-              id="env-sub-style"
-              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-white/20"
-            >
-              <option value="gold">Warm titanium (gold)</option>
-              <option value="hormozi">Hormozi classic</option>
-              <option value="clean">Clean studio</option>
-              <option value="minimal">Minimal editorial</option>
-              <option value="emerald">Cyber emerald</option>
-              <option value="crimson">Crimson impact</option>
-            </select>
-          </div>
-
-          <!-- Fallback Models Chain -->
-          <div class="space-y-1.5 md:col-span-2">
-            <label class="text-slate-300 font-medium block">GEMINI_MODEL_FALLBACKS (Order):</label>
-            <input
-              id="env-gemini-fallbacks"
-              type="text"
-              placeholder="gemini-3.1-flash-lite,gemini-flash-latest"
-              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
-            />
-            <p class="text-[11px] text-slate-500">Comma-separated models rotated automatically during rate limits</p>
-          </div>
-
-          <!-- Auto Clip Density -->
-          <div class="space-y-1.5">
-            <label class="text-slate-300 font-medium block">AUTO_CLIP_DENSITY_MINUTES:</label>
-            <input
-              id="env-density-minutes"
-              type="number"
-              min="2"
-              max="60"
-              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/20 tabular"
-            />
-            <p class="text-[11px] text-slate-500">Clips extracted per N minutes of source footage</p>
-          </div>
-
-          <!-- Hardware Threads -->
-          <div class="space-y-1.5">
-            <label class="text-slate-300 font-medium block">FFMPEG_THREADS:</label>
-            <input
-              id="env-ffmpeg-threads"
-              type="number"
-              min="1"
-              max="32"
-              class="w-full bg-[#121316] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/20 tabular"
-            />
-            <p class="text-[11px] text-slate-500">Worker threads allocated for FFmpeg encoding</p>
-          </div>
-        </div>
-
-        <!-- Sub-View 2: Raw .env Code Editor -->
-        <div id="env-raw-view" class="hidden space-y-3">
-          <textarea
-            id="env-raw-textarea"
-            rows="16"
-            class="w-full bg-[#121316] border border-white/[0.08] rounded-lg p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-white/20 leading-relaxed"
-          ></textarea>
-        </div>
-
-        <div id="env-status-alert" class="hidden p-3 bg-emerald-500/10 border border-emerald-500/20 text-[#34d399] text-xs font-mono rounded-md">
-          Environment configuration saved successfully and reloaded into engine.
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 3: CHANNEL RADAR ==================== -->
-    <section id="view-radar" class="hidden space-y-6">
-      <div class="brutal-card p-6 space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-base font-semibold text-white flex items-center gap-2">
-              <i data-lucide="radio" class="w-4 h-4 text-[#34d399]"></i>
-              <span>Channel radar monitor</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">Autonomous YouTube channel radar saved in <code class="text-slate-300 font-mono">channels.txt</code></p>
-          </div>
-          <button onclick="saveActiveChannels()" class="brutal-btn-acid px-4 py-2 text-xs flex items-center gap-2">
-            <i data-lucide="save" class="w-3.5 h-3.5"></i>
-            <span>Save channels.txt</span>
-          </button>
-        </div>
-
-        <div class="p-3.5 bg-[#121316] border border-white/[0.08] rounded-lg flex gap-2">
-          <input
-            id="new-channel-input"
-            type="text"
-            placeholder="@CreatorHandle | clips=2 | focus=high energy moments"
-            class="flex-1 bg-[#18191e] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-white/20"
-          />
-          <button onclick="addNewChannel()" class="px-4 py-2 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded-md text-xs font-mono font-medium transition-all">
-            Add channel
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse font-mono">
-            <thead>
-              <tr class="border-b border-white/[0.08] text-slate-400 text-[11px]">
-                <th class="p-3">Handle / URL</th>
-                <th class="p-3">Clips desired</th>
-                <th class="p-3">Editing focus</th>
-                <th class="p-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody id="channels-table-body" class="divide-y divide-white/[0.06]">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 4: OUTPUT GALLERY ==================== -->
-    <section id="view-gallery" class="hidden space-y-6">
-      <div class="brutal-card p-6 space-y-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-base font-semibold text-white flex items-center gap-2">
-              <i data-lucide="folder" class="w-4 h-4 text-[#34d399]"></i>
-              <span>Rendered 9:16 reels gallery</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-1">Rendered MP4 video clips saved in <code class="text-slate-300 font-mono">output/</code></p>
-          </div>
-          <button onclick="loadOutputs()" class="px-3 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-slate-300 hover:text-white border border-white/10 rounded-md text-xs font-mono flex items-center gap-1.5 transition-all">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-            <span>Refresh</span>
-          </button>
-        </div>
-
-        <!-- Video Player Modal / Active Video Card -->
-        <div id="active-video-player-box" class="hidden p-5 bg-[#121316] border border-white/10 rounded-xl space-y-3">
-          <div class="flex items-center justify-between">
-            <span id="active-playing-title" class="font-medium text-white text-sm font-mono">Now playing</span>
-            <button onclick="closeActivePlayer()" class="text-slate-400 hover:text-white text-xs font-mono">Close player ✕</button>
-          </div>
-          <div class="max-w-xs mx-auto aspect-[9/16] overflow-hidden bg-black border border-white/10 rounded-lg">
-            <video id="html5-video-player" controls class="w-full h-full object-cover">
-              <source id="video-source-elem" src="" type="video/mp4">
-            </video>
-          </div>
-        </div>
-
-        <div id="outputs-container" class="space-y-6">
-          <div id="outputs-grid" class="space-y-6">
-            <!-- Dynamically populated foldered collections -->
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== VIEW 5: SYSTEM DOCTOR ==================== -->
-    <section id="view-doctor" class="hidden space-y-6">
-      <div class="brutal-card p-6 space-y-6">
-        <div>
-          <h2 class="text-base font-semibold text-white flex items-center gap-2">
-            <i data-lucide="activity" class="w-4 h-4 text-[#34d399]"></i>
-            <span>System health and diagnostics</span>
-          </h2>
-          <p class="text-xs text-slate-400 mt-1">Diagnostic status across FFmpeg, Whisper, hardware acceleration, and Gemini API.</p>
-        </div>
-
-        <div id="doctor-checks-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono">
-          <!-- Dynamically loaded checks -->
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <script>
-    // Security & Auth Token Integration
-    window.__HOOKY_TOKEN__ = "HOOKY_AUTH_TOKEN_PLACEHOLDER";
-    const _injectedToken = (!window.__HOOKY_TOKEN__.includes("PLACEHOLDER") && window.__HOOKY_TOKEN__.length > 10) ? window.__HOOKY_TOKEN__ : null;
-    const _urlParams = new URLSearchParams(window.location.search);
-    const _queryToken = _urlParams.get("token");
-
-    if (_injectedToken) {
-      window.__HOOKY_TOKEN__ = _injectedToken;
-      try { sessionStorage.setItem("hooky_token", _injectedToken); } catch(e) {}
-      if (_queryToken && _queryToken !== _injectedToken) {
-        const cleanUrl = window.location.pathname + (window.location.hash || '');
-        try { window.history.replaceState({}, document.title, cleanUrl); } catch(e) {}
-      }
-    } else if (_queryToken) {
-      window.__HOOKY_TOKEN__ = _queryToken;
-      try { sessionStorage.setItem("hooky_token", _queryToken); } catch(e) {}
-    } else {
-      try {
-        const _saved = sessionStorage.getItem("hooky_token");
-        if (_saved) {
-          window.__HOOKY_TOKEN__ = _saved;
-        }
-      } catch(e) {}
-    }
-
-    // Intercept fetch to automatically include X-Hooky-Token header on all API calls
-    const _nativeFetch = window.fetch;
-    window.fetch = function(input, init) {
-      init = init || {};
-      init.credentials = init.credentials || 'same-origin';
-      init.headers = init.headers || {};
-      const token = window.__HOOKY_TOKEN__;
-      if (token && !token.includes("PLACEHOLDER")) {
-        if (init.headers instanceof Headers) {
-          init.headers.set("X-Hooky-Token", token);
-        } else if (Array.isArray(init.headers)) {
-          init.headers.push(["X-Hooky-Token", token]);
-        } else {
-          init.headers["X-Hooky-Token"] = token;
-        }
-      }
-      return _nativeFetch(input, init);
-    };
-
-    // State management (starts clean with no preloaded video or fake hooks)
-    let CURRENT_HOOKS = [];
-    let currentSourceVideoTitle = "";
-    let selectedHookId = null;
-    let activeFramingMode = "auto";
-    let activeSubtitleMode = "auto";
-    let autoDetectedFraming = "fit";
-    let autoDetectedStyle = "gold";
-    let currentPreviewMode = "canvas";
-    let cachedChannels = [];
-    let cachedEnvConfig = { raw: "", values: {} };
-    let isPlaying = false;
-    let wordIdx = 0;
-    let SCRIPT_WORDS = [];
-
-    document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      renderHooksList();
-      updateSelectedHookDetails();
-      loadDoctorReport();
-      loadChannels();
-      loadOutputs();
-      loadEnvConfig();
-
-      setInterval(() => {
-        if (!isPlaying || currentPreviewMode !== 'canvas' || CURRENT_HOOKS.length === 0) return;
-        wordIdx = (wordIdx + 1);
-        renderSubtitles();
-      }, 380);
-    });
-
-    function switchTab(tabId) {
-      ['studio', 'radar', 'gallery', 'settings', 'doctor'].forEach(t => {
-        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tabId);
-        const btn = document.getElementById(`tab-${t}`);
-        if (btn) {
-          if (t === tabId) {
-            btn.className = "tab-btn px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all";
-          } else {
-            btn.className = "tab-btn px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all";
-          }
-        }
-      });
-      lucide.createIcons();
-    }
-
-    function setFramingMode(mode) {
-      activeFramingMode = mode;
-      ['auto', 'fit', 'center'].forEach(m => {
-        const btn = document.getElementById(`frame-mode-${m}`);
-        if (m === mode) {
-          btn.className = "px-2.5 py-0.5 bg-[#21232a] text-white font-medium rounded transition-all";
-        } else {
-          btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all";
-        }
-      });
-      applyVisualFramingState();
-    }
-
-    function setSubtitleMode(style) {
-      activeSubtitleMode = style;
-      ['auto', 'gold', 'hormozi', 'clean', 'minimal', 'emerald', 'crimson'].forEach(s => {
-        const btn = document.getElementById(`sub-mode-${s}`);
-        if (btn) {
-          if (s === style) {
-            btn.className = "px-2.5 py-0.5 bg-[#21232a] text-white font-medium rounded transition-all";
-          } else {
-            btn.className = "px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all";
-          }
-        }
-      });
-      renderSubtitles();
-    }
-
-    function applyVisualFramingState() {
-      const effectiveMode = activeFramingMode === 'auto' ? autoDetectedFraming : activeFramingMode;
-      const cropBox = document.getElementById('crop-box');
-      const backdrop = document.getElementById('ambient-blur-backdrop');
-      const tag = document.getElementById('preview-mode-tag');
-
-      if (effectiveMode === 'fit') {
-        cropBox.style.width = "40%";
-        cropBox.style.left = "30%";
-        backdrop.style.opacity = "0.35";
-        tag.innerText = "Canvas fit (ambient blur)";
-        document.getElementById('avatar-host').style.opacity = "0.7";
-        document.getElementById('avatar-speaker2').style.opacity = "0.7";
-      } else {
-        cropBox.style.width = "46%";
-        cropBox.style.left = "27%";
-        backdrop.style.opacity = "0.08";
-        tag.innerText = "Center crop (solo speaker)";
-        document.getElementById('avatar-host').style.opacity = "0.2";
-        document.getElementById('avatar-speaker2').style.opacity = "0.2";
-      }
-    }
-
-    function switchPreviewMode(mode) {
-      currentPreviewMode = mode;
-      const isPlayer = mode === 'player';
-      document.getElementById('preview-player-container').classList.toggle('hidden', !isPlayer);
-      document.getElementById('preview-canvas-container').classList.toggle('hidden', isPlayer);
-      
-      const tabPlayer = document.getElementById('preview-tab-player');
-      const tabCanvas = document.getElementById('preview-tab-canvas');
-
-      if (isPlayer) {
-        tabPlayer.className = "px-3 py-1 bg-[#21232a] text-white font-medium rounded border border-white/10 transition-all";
-        tabCanvas.className = "px-3 py-1 text-slate-400 hover:text-white rounded transition-all";
-      } else {
-        tabCanvas.className = "px-3 py-1 bg-[#21232a] text-white font-medium rounded border border-white/10 transition-all";
-        tabPlayer.className = "px-3 py-1 text-slate-400 hover:text-white rounded transition-all";
-      }
-    }
-
-    function extractYouTubeId(url) {
-      if (!url) return null;
-      const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/i);
-      return m ? m[1] : null;
-    }
-
-    function selectHook(hookId) {
-      selectedHookId = hookId;
-      renderHooksList();
-      updateSelectedHookDetails();
-    }
-
-    function updateSelectedHookDetails() {
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || (CURRENT_HOOKS.length > 0 ? CURRENT_HOOKS[0] : null);
-      const iframe = document.getElementById('youtube-embed-frame');
-      const placeholder = document.getElementById('player-placeholder');
-      const timeBadge = document.getElementById('transcript-time-badge');
-      const dialogueBox = document.getElementById('dialogue-lines-box');
-      const previewElem = document.getElementById('canvas-subtitle-preview');
-
-      if (!hook) {
-        if (iframe) {
-          iframe.src = "";
-          iframe.classList.add('hidden');
-        }
-        if (placeholder) placeholder.classList.remove('hidden');
-        if (timeBadge) timeBadge.innerText = "--:-- - --:--";
-        if (dialogueBox) dialogueBox.innerHTML = '<p class="text-slate-500 text-xs italic">Select or detect a hook to view transcript cues.</p>';
-        if (previewElem) previewElem.innerHTML = '<span class="text-slate-500">Subtitle preview will appear here</span>';
-        return;
-      }
-
-      if (iframe && hook.youtube_embed_url) {
-        iframe.src = hook.youtube_embed_url;
-        iframe.classList.remove('hidden');
-        if (placeholder) placeholder.classList.add('hidden');
-      }
-      if (timeBadge) {
-        timeBadge.innerText = `${hook.start_fmt} - ${hook.end_fmt} (${hook.duration})`;
-      }
-      if (dialogueBox && hook.dialogue) {
-        dialogueBox.innerHTML = hook.dialogue.map(d => `
-          <div class="flex items-start gap-2 hover:bg-white/[0.04] p-1 rounded transition-colors">
-            <span class="text-[#34d399] select-none text-[10px] w-10 shrink-0 font-medium tabular">${d.time}</span>
-            <span class="leading-relaxed text-slate-200">${d.text}</span>
-          </div>
-        `).join('');
-      }
-
-      renderSubtitles();
-    }
-
-    function renderSubtitles() {
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || (CURRENT_HOOKS.length > 0 ? CURRENT_HOOKS[0] : null);
-      const previewElem = document.getElementById('canvas-subtitle-preview');
-      if (!previewElem) return;
-      if (!hook) {
-        previewElem.innerHTML = '<span class="text-slate-500">Subtitle preview will appear here</span>';
-        return;
-      }
-
-      const style = activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode;
-      const words = (hook.words && hook.words.length > 0) ? hook.words : (hook.title ? hook.title.toUpperCase().split(/\s+/) : ["HOOKY", "CLIP"]);
-      const activeWord = words[wordIdx % words.length];
-
-      let styledHTML = "";
-      if (style === 'gold') {
-        styledHTML = `<span class="text-white">${hook.title || ''}</span> <span class="text-[#ffd166] font-medium text-sm">${activeWord}</span>`;
-      } else if (style === 'hormozi') {
-        styledHTML = `<span class="bg-[#ffff00] text-black px-1.5 py-0.5 font-bold uppercase text-sm">${activeWord}</span>`;
-      } else if (style === 'emerald') {
-        styledHTML = `<span class="text-white">${hook.title || ''}</span> <span class="text-[#34d399] font-medium underline decoration-1">${activeWord}</span>`;
-      } else if (style === 'crimson') {
-        styledHTML = `<span class="text-[#ef4444] font-medium text-sm">${activeWord}</span>`;
-      } else if (style === 'minimal') {
-        styledHTML = `<span class="text-slate-100 border-b border-white">${activeWord}</span>`;
-      } else {
-        styledHTML = `<span class="text-white bg-black/80 px-2 py-0.5 border border-white/20">${activeWord}</span>`;
-      }
-      previewElem.innerHTML = styledHTML;
-    }
-
-    function renderHooksList() {
-      const container = document.getElementById('hooks-container');
-      if (!container) return;
-
-      document.getElementById('hook-count').innerText = `${CURRENT_HOOKS.length} hooks detected`;
-
-      if (CURRENT_HOOKS.length === 0) {
-        container.innerHTML = `
-          <div class="p-8 border border-white/[0.08] bg-[#18191e] rounded-lg text-center space-y-3">
-            <i data-lucide="video" class="w-8 h-8 text-slate-500 mx-auto"></i>
-            <div>
-              <p class="text-sm font-medium text-slate-300">No hooks analyzed yet</p>
-              <p class="text-xs text-slate-500 mt-1 font-mono">Paste a video URL above and click "Detect hooks" to scan narrative moments.</p>
-            </div>
-          </div>
-        `;
-        lucide.createIcons();
-        return;
-      }
-
-      container.innerHTML = CURRENT_HOOKS.map((h, idx) => {
-        const isSelected = h.id === selectedHookId;
-        const borderClass = isSelected ? "border-[#34d399] bg-[#21232a]" : "border-white/[0.08] bg-[#18191e] hover:border-white/20";
-        
-        return `
-          <div 
-            onclick="selectHook('${h.id}')"
-            class="p-4 border ${borderClass} rounded-lg transition-all cursor-pointer space-y-2.5 group"
+          <!-- Row 2: Intelligent Auto-Recommendation & Override Controls -->
+          <div
+            class="studio-overrides pt-3 border-t border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
           >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="w-5 h-5 grid place-items-center bg-[#121316] text-slate-400 font-mono text-[10px] rounded border border-white/10">0${idx + 1}</span>
-                <span class="text-[11px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded">
-                  ${h.category || 'High-retention'}
-                </span>
-              </div>
-              <div class="flex items-center gap-1 font-mono text-xs tabular">
-                <span class="text-[#34d399] font-medium">${h.retention_score}%</span>
-                <span class="text-slate-500 text-[10px]">retention</span>
+            <!-- Auto-Tuned Recommendation Pill -->
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-slate-400 text-[11px]"
+                >Framing & captions:</span
+              >
+              <div
+                id="smart-recommendation-pill"
+                class="flex items-center gap-1.5 px-2.5 py-1 bg-[#242721] border border-white/[0.08] rounded-md text-slate-300 font-mono text-xs"
+              >
+                <i data-lucide="cpu" class="w-3.5 h-3.5 text-[#d2fa69]"></i>
+                <span id="smart-recommendation-text">Auto-tuned: Ready</span>
               </div>
             </div>
 
+            <!-- Manual Framing & Subtitle Style Override Controls -->
+            <div class="flex flex-wrap items-center gap-2.5">
+              <!-- Framing Mode Selector -->
+              <div
+                class="flex items-center gap-1 bg-[#101110] p-0.5 border border-white/[0.08] rounded-md font-mono text-[11px]"
+              >
+                <span class="px-2 text-slate-500">Frame:</span>
+                <button
+                  onclick="setFramingMode('auto')"
+                  id="frame-mode-auto"
+                  class="px-2.5 py-0.5 bg-[#242721] text-white font-medium rounded transition-all"
+                >
+                  Auto
+                </button>
+                <button
+                  onclick="setFramingMode('fit')"
+                  id="frame-mode-fit"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Canvas fit
+                </button>
+                <button
+                  onclick="setFramingMode('center')"
+                  id="frame-mode-center"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Center crop
+                </button>
+              </div>
+
+              <!-- Subtitle Style Preset Selector -->
+              <div
+                class="flex items-center gap-1 bg-[#101110] p-0.5 border border-white/[0.08] rounded-md font-mono text-[11px]"
+              >
+                <span class="px-2 text-slate-500">Captions:</span>
+                <button
+                  onclick="setSubtitleMode('auto')"
+                  id="sub-mode-auto"
+                  class="px-2.5 py-0.5 bg-[#242721] text-white font-medium rounded transition-all"
+                >
+                  Auto
+                </button>
+                <button
+                  onclick="setSubtitleMode('gold')"
+                  id="sub-mode-gold"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Titanium
+                </button>
+                <button
+                  onclick="setSubtitleMode('hormozi')"
+                  id="sub-mode-hormozi"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Hormozi
+                </button>
+                <button
+                  onclick="setSubtitleMode('clean')"
+                  id="sub-mode-clean"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Clean
+                </button>
+                <button
+                  onclick="setSubtitleMode('minimal')"
+                  id="sub-mode-minimal"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Minimal
+                </button>
+                <button
+                  onclick="setSubtitleMode('emerald')"
+                  id="sub-mode-emerald"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Emerald
+                </button>
+                <button
+                  onclick="setSubtitleMode('crimson')"
+                  id="sub-mode-crimson"
+                  class="px-2.5 py-0.5 text-slate-400 hover:text-white rounded transition-all"
+                >
+                  Crimson
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Stepper & Terminal Log Toggle -->
+          <div
+            id="pipeline-stepper"
+            aria-label="Task progress"
+            class="hidden p-4 bg-[#101110] border border-white/[0.08] rounded-lg space-y-3"
+          >
+            <div class="flex items-center justify-between text-xs font-mono">
+              <div class="flex items-center gap-2 text-slate-200">
+                <i
+                  data-lucide="loader"
+                  class="w-4 h-4 animate-spin text-[#d2fa69]"
+                ></i>
+                <span id="stepper-status-text">Processing engine task...</span>
+              </div>
+              <span
+                id="stepper-percent"
+                class="font-medium text-[#d2fa69] tabular"
+                >15%</span
+              >
+            </div>
+
+            <!-- Stepper Progress Bar -->
+            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div
+                id="stepper-progress-fill"
+                class="h-full bg-[#d2fa69] transition-all duration-300"
+                style="width: 15%"
+              ></div>
+            </div>
+
+            <!-- Console Terminal Toggle -->
+            <div
+              class="flex items-center justify-between text-[11px] font-mono pt-1 text-slate-400"
+            >
+              <button
+                onclick="toggleTerminalLogs()"
+                class="hover:text-white flex items-center gap-1.5"
+              >
+                <i
+                  data-lucide="terminal"
+                  class="w-3.5 h-3.5 text-slate-400"
+                ></i>
+                <span id="terminal-toggle-label">Hide console logs</span>
+              </button>
+              <span
+                >Task id:
+                <code id="active-task-id" class="text-slate-300"
+                  >idle</code
+                ></span
+              >
+            </div>
+
+            <!-- Live Console Output Box -->
+            <div
+              id="live-engine-console"
+              role="log"
+              aria-label="Engine console"
+              class="p-3 bg-[#0a0b0a] border border-white/[0.06] rounded-md font-mono text-[11px] text-slate-300 h-32 overflow-y-auto space-y-1"
+            >
+              <p class="text-slate-500">
+                [system] Hooky engine pipeline monitoring active
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== SPLIT WORKBENCH ==================== -->
+        <div
+          class="studio-workbench grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+        >
+          <!-- LEFT COLUMN: Hook Candidates List (5 Cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3
+                class="font-medium text-sm text-white flex items-center gap-2"
+              >
+                <i data-lucide="sparkles" class="w-4 h-4 text-[#d2fa69]"></i>
+                <span>Your moments</span>
+              </h3>
+              <span
+                id="hook-count"
+                class="text-xs font-mono text-slate-300 bg-white/5 px-2.5 py-0.5 border border-white/10 rounded"
+              >
+                0 hooks detected
+              </span>
+            </div>
+
+            <!-- Hook Cards Scrollable List -->
+            <div id="hooks-container" class="space-y-3">
+              <!-- Dynamically populated hook cards -->
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Dual-Mode Interactive Visual Studio (7 Cols) -->
+          <div class="lg:col-span-7 space-y-4">
+            <div class="brutal-card p-5 space-y-4">
+              <!-- Preview Controls Header -->
+              <div
+                class="flex items-center justify-between border-b border-white/[0.08] pb-3"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="font-medium text-sm text-white"
+                    >The preview</span
+                  >
+                  <span
+                    id="preview-mode-tag"
+                    class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded"
+                  >
+                    9:16 simulator
+                  </span>
+                </div>
+
+                <!-- Switcher: YouTube Source vs Vertical Canvas -->
+                <div
+                  class="flex items-center gap-1 bg-[#101110] p-1 border border-white/[0.08] rounded-md text-xs font-mono"
+                >
+                  <button
+                    id="preview-tab-player"
+                    onclick="switchPreviewMode('player')"
+                    class="px-3 py-1 text-slate-400 hover:text-white rounded transition-all"
+                  >
+                    Source video
+                  </button>
+                  <button
+                    id="preview-tab-canvas"
+                    onclick="switchPreviewMode('canvas')"
+                    class="px-3 py-1 bg-[#242721] text-white font-medium rounded border border-white/10 transition-all"
+                  >
+                    9:16 canvas
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sub-View A: Embedded YouTube Player -->
+              <div
+                id="preview-player-container"
+                class="aspect-[16/9] w-full bg-black border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center"
+              >
+                <div id="player-placeholder" class="text-center p-8 space-y-2">
+                  <i
+                    data-lucide="play-circle"
+                    class="w-10 h-10 text-slate-600 mx-auto"
+                  ></i>
+                  <p class="text-xs text-slate-400 font-mono">
+                    No video loaded. Enter a YouTube URL and click "Detect
+                    hooks".
+                  </p>
+                </div>
+                <iframe
+                  id="youtube-embed-frame"
+                  title="Source video preview"
+                  src=""
+                  class="w-full h-full border-0 hidden"
+                  allow="
+                    accelerometer;
+                    autoplay;
+                    clipboard-write;
+                    encrypted-media;
+                    gyroscope;
+                    picture-in-picture;
+                  "
+                  allowfullscreen
+                ></iframe>
+              </div>
+
+              <!-- Sub-View B: Interactive 9:16 Vertical Video Canvas Simulator -->
+              <div
+                id="preview-canvas-container"
+                class="hidden aspect-[16/9] w-full bg-[#101110] border border-white/[0.08] rounded-lg relative overflow-hidden flex items-center justify-center"
+              >
+                <!-- Ambient Blurred Backdrop for Canvas Fit Mode -->
+                <div
+                  id="ambient-blur-backdrop"
+                  class="absolute inset-0 bg-cover bg-center filter blur-xl opacity-30 scale-110"
+                ></div>
+
+                <!-- Simulated Multi-Speaker Table Avatars -->
+                <div
+                  id="avatar-host"
+                  class="absolute left-[16%] top-[26%] flex flex-col items-center opacity-40 transition-opacity duration-300"
+                >
+                  <div
+                    class="w-14 h-14 rounded-full bg-[#242721] border border-white/20 flex items-center justify-center text-slate-400 font-medium text-xs"
+                  >
+                    Speaker A
+                  </div>
+                  <span class="text-[10px] font-mono text-slate-400 mt-1"
+                    >Host</span
+                  >
+                </div>
+
+                <div
+                  id="avatar-speaker1"
+                  class="absolute left-[44%] top-[22%] flex flex-col items-center opacity-100 transition-opacity duration-300"
+                >
+                  <div
+                    class="w-16 h-16 rounded-full bg-[#d2fa69]/10 border border-[#d2fa69] flex items-center justify-center text-[#d2fa69] font-medium text-sm"
+                  >
+                    Speaker B
+                  </div>
+                  <span
+                    class="text-[10px] font-mono text-[#d2fa69] mt-1 flex items-center gap-1 font-medium"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full bg-[#d2fa69] pulse-dot"
+                    ></span>
+                    Active voice
+                  </span>
+                </div>
+
+                <div
+                  id="avatar-speaker2"
+                  class="absolute right-[16%] top-[26%] flex flex-col items-center opacity-40 transition-opacity duration-300"
+                >
+                  <div
+                    class="w-14 h-14 rounded-full bg-[#242721] border border-white/20 flex items-center justify-center text-slate-400 font-medium text-xs"
+                  >
+                    Speaker C
+                  </div>
+                  <span class="text-[10px] font-mono text-slate-400 mt-1"
+                    >Guest</span
+                  >
+                </div>
+
+                <!-- 9:16 Vertical Cut Wireframe Indicator -->
+                <div
+                  id="crop-box"
+                  class="absolute inset-y-0 w-[42%] border border-[#d2fa69]/70 pointer-events-none z-10 flex flex-col justify-end p-4"
+                >
+                  <div
+                    class="bg-black/75 backdrop-blur-sm p-2 border border-white/10 rounded text-center mb-8"
+                  >
+                    <span
+                      id="canvas-subtitle-preview"
+                      class="text-xs font-medium tracking-tight text-white leading-snug"
+                    >
+                      <span class="text-slate-500"
+                        >Subtitle preview will appear here</span
+                      >
+                    </span>
+                  </div>
+                  <div
+                    class="text-[10px] font-mono text-center text-slate-300 bg-black/85 py-0.5 border border-white/10 rounded font-medium"
+                  >
+                    1080 × 1920 (9:16 reel)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dialogue Transcript Inspector -->
+              <div
+                class="p-3.5 bg-[#101110] border border-white/[0.08] rounded-lg space-y-2"
+              >
+                <div class="flex items-center justify-between text-xs">
+                  <span class="font-medium text-slate-300 font-mono text-[11px]"
+                    >The opening lines</span
+                  >
+                  <span
+                    id="transcript-time-badge"
+                    class="font-mono text-slate-400 text-[11px] tabular"
+                    >--:-- - --:--</span
+                  >
+                </div>
+                <div
+                  id="dialogue-lines-box"
+                  class="max-h-24 overflow-y-auto space-y-1 font-mono text-xs text-slate-300 pr-1"
+                >
+                  <!-- Dialogue cues populated here -->
+                </div>
+              </div>
+
+              <!-- Fine-Tune Timing Nudge Bar -->
+              <div
+                class="p-2.5 bg-[#101110] border border-white/[0.08] rounded-lg flex items-center justify-between text-xs"
+              >
+                <span class="font-medium text-slate-400 font-mono text-[11px]"
+                  >Fine-tune the cut</span
+                >
+                <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                  <button
+                    onclick="nudgeTime('start', -0.5)"
+                    class="px-2.5 py-0.5 bg-[#191b18] hover:bg-[#242721] text-slate-300 border border-white/10 rounded transition-all"
+                  >
+                    -0.5s start
+                  </button>
+                  <button
+                    onclick="nudgeTime('start', +0.5)"
+                    class="px-2.5 py-0.5 bg-[#191b18] hover:bg-[#242721] text-slate-300 border border-white/10 rounded transition-all"
+                  >
+                    +0.5s start
+                  </button>
+                  <span class="text-slate-600">|</span>
+                  <button
+                    onclick="nudgeTime('end', -0.5)"
+                    class="px-2.5 py-0.5 bg-[#191b18] hover:bg-[#242721] text-slate-300 border border-white/10 rounded transition-all"
+                  >
+                    -0.5s end
+                  </button>
+                  <button
+                    onclick="nudgeTime('end', +0.5)"
+                    class="px-2.5 py-0.5 bg-[#191b18] hover:bg-[#242721] text-slate-300 border border-white/10 rounded transition-all"
+                  >
+                    +0.5s end
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 2: SETTINGS (.ENV EDITOR) ==================== -->
+      <section id="view-settings" class="hidden space-y-6">
+        <div class="brutal-card p-6 space-y-6">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
             <div>
-              <h4 class="font-medium text-sm text-white group-hover:text-white transition-colors leading-snug">
-                "${h.title}"
-              </h4>
-              <p class="text-xs text-slate-400 mt-1 line-clamp-2 font-mono leading-relaxed">
-                "${h.hook_quote}"
+              <h2
+                class="text-base font-semibold text-white flex items-center gap-2"
+              >
+                <i data-lucide="sliders" class="w-4 h-4 text-[#d2fa69]"></i>
+                <span>Your creative defaults</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-1">
+                Manage API keys, model fallbacks, output clip density, and
+                FFmpeg threads.
+              </p>
+            </div>
+            <button
+              onclick="saveEnvForm()"
+              class="brutal-btn-acid px-4 py-2 text-xs flex items-center gap-2"
+            >
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>Save configuration</span>
+            </button>
+          </div>
+
+          <!-- Settings Tabs: Visual Form vs Raw Editor -->
+          <div
+            class="flex items-center gap-2 border-b border-white/[0.08] pb-3 text-xs font-mono"
+          >
+            <button
+              onclick="switchEnvTab('form')"
+              id="env-tab-form"
+              class="px-3 py-1.5 bg-[#242721] text-white font-medium rounded-md border border-white/10 transition-all"
+            >
+              Visual form
+            </button>
+            <button
+              onclick="switchEnvTab('raw')"
+              id="env-tab-raw"
+              class="px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all"
+            >
+              Raw .env editor
+            </button>
+          </div>
+
+          <!-- Sub-View 1: Visual Form -->
+          <div
+            id="env-form-view"
+            class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-mono"
+          >
+            <!-- Gemini API Key -->
+            <div class="space-y-1.5 md:col-span-2">
+              <label class="text-slate-300 font-medium block"
+                >Gemini API key</label
+              >
+              <div class="relative">
+                <input
+                  id="env-gemini-key"
+                  type="password"
+                  placeholder="Paste your Gemini API key"
+                  class="w-full bg-[#101110] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
+                />
+                <button
+                  type="button"
+                  onclick="togglePasswordVisibility('env-gemini-key', this)"
+                  aria-label="Show or hide Gemini API key"
+                  class="absolute right-3 top-2 text-slate-400 hover:text-white"
+                >
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-500">
+                Get a key from Google AI Studio. Google’s API quotas apply.
               </p>
             </div>
 
-            <div class="flex items-center justify-between pt-2 border-t border-white/[0.06] text-[11px] font-mono">
-              <span class="text-slate-400 tabular">
-                ${h.start_fmt} - ${h.end_fmt} (${h.duration})
-              </span>
-              <button
-                onclick="event.stopPropagation(); renderSingleHookById('${h.id}')"
-                class="px-2.5 py-1 bg-[#232325] hover:bg-white hover:text-black border border-white/10 text-white rounded transition-all"
+            <!-- Gemini Primary Model -->
+            <div class="space-y-1.5">
+              <label class="text-slate-300 font-medium block"
+                >AI model</label
               >
-                Export reel →
-              </button>
+              <select
+                id="env-gemini-model"
+                class="w-full bg-[#101110] border border-white/[0.08] rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-white/20"
+              >
+                <option value="gemini-3.8-flash">
+                  gemini-3.8-flash (Primary active flash)
+                </option>
+                <option value="gemini-3.1-flash-lite">
+                  gemini-3.1-flash-lite (Ultra fast lite)
+                </option>
+                <option value="gemini-flash-latest">
+                  gemini-flash-latest (Auto tracking)
+                </option>
+              </select>
+            </div>
+
+            <!-- Default Subtitle Style -->
+            <div class="space-y-1.5">
+              <label class="text-slate-300 font-medium block"
+                >Default captions</label
+              >
+              <select
+                id="env-sub-style"
+                class="w-full bg-[#101110] border border-white/[0.08] rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-white/20"
+              >
+                <option value="gold">Warm titanium (gold)</option>
+                <option value="hormozi">Hormozi classic</option>
+                <option value="clean">Clean studio</option>
+                <option value="minimal">Minimal editorial</option>
+                <option value="emerald">Cyber emerald</option>
+                <option value="crimson">Crimson impact</option>
+              </select>
+            </div>
+
+            <!-- Fallback Models Chain -->
+            <div class="space-y-1.5 md:col-span-2">
+              <label class="text-slate-300 font-medium block"
+                >Fallback models</label
+              >
+              <input
+                id="env-gemini-fallbacks"
+                type="text"
+                placeholder="gemini-3.1-flash-lite,gemini-flash-latest"
+                class="w-full bg-[#101110] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
+              />
+              <p class="text-[11px] text-slate-500">
+                Comma-separated models rotated automatically during rate limits
+              </p>
+            </div>
+
+            <!-- Auto Clip Density -->
+            <div class="space-y-1.5">
+              <label class="text-slate-300 font-medium block"
+                >Clip density (minutes)</label
+              >
+              <input
+                id="env-density-minutes"
+                type="number"
+                min="2"
+                max="60"
+                class="w-full bg-[#101110] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/20 tabular"
+              />
+              <p class="text-[11px] text-slate-500">
+                Clips extracted per N minutes of source footage
+              </p>
+            </div>
+
+            <!-- Hardware Threads -->
+            <div class="space-y-1.5">
+              <label class="text-slate-300 font-medium block"
+                >Rendering threads</label
+              >
+              <input
+                id="env-ffmpeg-threads"
+                type="number"
+                min="1"
+                max="32"
+                class="w-full bg-[#101110] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white focus:outline-none focus:border-white/20 tabular"
+              />
+              <p class="text-[11px] text-slate-500">
+                Worker threads allocated for FFmpeg encoding
+              </p>
             </div>
           </div>
-        `;
-      }).join('');
-      lucide.createIcons();
-    }
 
-    function nudgeTime(type, delta) {
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId);
-      if (!hook) return;
-
-      if (type === 'start') {
-        hook.start = Math.max(0, hook.start + delta);
-        hook.start_fmt = formatSecondsToMMSS(hook.start);
-      } else {
-        hook.end = Math.max(hook.start + 5, hook.end + delta);
-        hook.end_fmt = formatSecondsToMMSS(hook.end);
-      }
-      hook.duration = `${(hook.end - hook.start).toFixed(1)}s`;
-      const vidId = extractYouTubeId(document.getElementById('source-url').value.trim());
-      if (vidId) {
-        hook.youtube_embed_url = `https://www.youtube-nocookie.com/embed/${vidId}?start=${Math.floor(hook.start)}&end=${Math.floor(hook.end)}&autoplay=1&enablejsapi=1`;
-      }
-      
-      updateSelectedHookDetails();
-      renderHooksList();
-      appendConsoleLog(`[nudge] Adjusted ${type} boundary by ${delta > 0 ? '+' : ''}${delta}s -> [${hook.start_fmt} - ${hook.end_fmt}]`);
-    }
-
-    function formatSecondsToMMSS(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return `${m}:${s < 10 ? '0' : ''}${s}`;
-    }
-
-    function appendConsoleLog(msg) {
-      const box = document.getElementById('live-engine-console');
-      if (!box) return;
-      const line = document.createElement('p');
-      line.innerText = msg;
-      box.appendChild(line);
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function toggleTerminalLogs() {
-      const consoleBox = document.getElementById('live-engine-console');
-      const label = document.getElementById('terminal-toggle-label');
-      consoleBox.classList.toggle('hidden');
-      label.innerText = consoleBox.classList.contains('hidden') ? 'Show console logs' : 'Hide console logs';
-    }
-
-    // ==================== ENGINE API CALLS ====================
-
-    async function triggerAnalyze() {
-      const urlInput = document.getElementById('source-url');
-      const url = urlInput.value.trim();
-      if (!url) {
-        appendConsoleLog("[error] Please paste a YouTube or video URL first.");
-        return;
-      }
-
-      const analyzeBtn = document.getElementById('analyze-btn');
-      analyzeBtn.disabled = true;
-      analyzeBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Analyzing...</span>`;
-      lucide.createIcons();
-
-      const stepper = document.getElementById('pipeline-stepper');
-      stepper.classList.remove('hidden');
-
-      try {
-        appendConsoleLog(`[pipeline] Dispatching hook analysis request for ${url}`);
-        const startRes = await fetch('/api/analyze/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        
-        if (!startRes.ok) {
-          const errData = await startRes.json().catch(() => ({ detail: `HTTP ${startRes.status}` }));
-          throw new Error(errData.detail || `Server returned HTTP ${startRes.status}`);
-        }
-
-        const startData = await startRes.json();
-        const job_id = startData.job_id;
-        if (!job_id) {
-          throw new Error("Server did not return a valid job ID");
-        }
-        document.getElementById('active-task-id').innerText = job_id;
-
-        const pollInterval = setInterval(async () => {
-          try {
-            const sRes = await fetch(`/api/analyze/status/${job_id}`);
-            if (!sRes.ok) {
-              const err = await sRes.json().catch(() => ({ detail: `HTTP ${sRes.status}` }));
-              throw new Error(err.detail || `Polling failed (HTTP ${sRes.status})`);
-            }
-            const job = await sRes.json();
-            if (!job || job.detail) {
-              throw new Error(job?.detail || "Invalid job response");
-            }
-
-            document.getElementById('stepper-status-text').innerText = job.step || 'Running AI hook detection...';
-            document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
-            document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
-
-            if (job.logs && job.logs.length > 0) {
-              job.logs.forEach(l => appendConsoleLog(l));
-            }
-
-            if (job.status === 'completed' || job.status === 'failed') {
-              clearInterval(pollInterval);
-              analyzeBtn.disabled = false;
-              analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
-              lucide.createIcons();
-
-              if (job.status === 'failed') {
-                appendConsoleLog(`[pipeline error] Hook detection failed: ${job.error || 'Unknown error'}`);
-                return;
-              }
-
-              if (job.result && job.result.hooks && job.result.hooks.length > 0) {
-                CURRENT_HOOKS = job.result.hooks;
-                currentSourceVideoTitle = job.result.video_title || "";
-                selectedHookId = CURRENT_HOOKS[0].id;
-                isPlaying = true;
-                autoDetectedFraming = job.result.recommended_framing || 'fit';
-                autoDetectedStyle = job.result.recommended_style || 'gold';
-
-                document.getElementById('smart-recommendation-text').innerText = 
-                  `Auto-tuned: ${autoDetectedFraming === 'fit' ? 'Canvas fit' : 'Center crop'} + ${autoDetectedStyle}`;
-
-                setFramingMode(autoDetectedFraming);
-                setSubtitleMode(autoDetectedStyle);
-                renderHooksList();
-                updateSelectedHookDetails();
-                appendConsoleLog(`[pipeline] Hook analysis completed successfully. ${CURRENT_HOOKS.length} moments ready.`);
-              } else {
-                appendConsoleLog(`[pipeline] No hooks found in video transcript.`);
-              }
-            }
-          } catch (pollErr) {
-            clearInterval(pollInterval);
-            appendConsoleLog(`[pipeline error] ${pollErr.message}`);
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
-            lucide.createIcons();
-          }
-        }, 1000);
-
-      } catch (e) {
-        console.error(e);
-        appendConsoleLog(`[analyzer error] ${e.message}`);
-        analyzeBtn.disabled = false;
-        analyzeBtn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Detect hooks</span>`;
-        lucide.createIcons();
-      }
-    }
-
-    async function renderSelectedHook() {
-      if (!CURRENT_HOOKS || CURRENT_HOOKS.length === 0) {
-        appendConsoleLog("[error] No hooks available. Please enter a video URL and detect hooks first.");
-        return;
-      }
-      const hook = CURRENT_HOOKS.find(h => h.id === selectedHookId) || CURRENT_HOOKS[0];
-      if (!hook) {
-        appendConsoleLog("[error] Please select a hook to export.");
-        return;
-      }
-      await renderSingleHookById(hook.id);
-    }
-
-    async function renderSingleHookById(hookId) {
-      const hook = CURRENT_HOOKS.find(h => h.id === hookId);
-      if (!hook) {
-        appendConsoleLog("[error] Selected hook was not found.");
-        return;
-      }
-
-      const urlVal = document.getElementById('source-url').value.trim();
-      if (!urlVal) {
-        appendConsoleLog("[error] Missing source video URL.");
-        return;
-      }
-
-      const btn = document.getElementById('top-render-btn');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Exporting...</span>`;
-      lucide.createIcons();
-
-      const stepper = document.getElementById('pipeline-stepper');
-      stepper.classList.remove('hidden');
-
-      const framing = activeFramingMode === 'auto' ? autoDetectedFraming : activeFramingMode;
-      const style = activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode;
-
-      try {
-        appendConsoleLog(`[renderer] Initiating 9:16 export: "${hook.title}" [${hook.start}s - ${hook.end}s]`);
-        const res = await fetch('/api/jobs/render_clip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url: urlVal,
-            start: hook.start,
-            end: hook.end,
-            style: style,
-            framing: framing,
-            title: hook.title,
-            video_title: currentSourceVideoTitle || ""
-          })
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-          throw new Error(errData.detail || `Server returned HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const job_id = data.job_id;
-        if (!job_id) {
-          throw new Error("Server did not return a valid job ID");
-        }
-        document.getElementById('active-task-id').innerText = job_id;
-
-        let lastRenderLogIndex = 0;
-        const pollRender = setInterval(async () => {
-          try {
-            const sRes = await fetch(`/api/jobs/${job_id}`);
-            if (!sRes.ok) {
-              const err = await sRes.json().catch(() => ({ detail: `HTTP ${sRes.status}` }));
-              throw new Error(err.detail || `Render status check failed (HTTP ${sRes.status})`);
-            }
-            const job = await sRes.json();
-            if (!job || job.detail) {
-              throw new Error(job?.detail || "Invalid render job response");
-            }
-
-            document.getElementById('stepper-status-text').innerText = job.step || 'Encoding vertical 1080x1920 reel...';
-            document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
-            document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
-
-            if (job.logs && job.logs.length > lastRenderLogIndex) {
-              const newLogs = job.logs.slice(lastRenderLogIndex);
-              newLogs.forEach(l => appendConsoleLog(l));
-              lastRenderLogIndex = job.logs.length;
-            }
-
-            if (job.status === 'completed' || job.status === 'failed') {
-              clearInterval(pollRender);
-              btn.disabled = false;
-              btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
-              lucide.createIcons();
-
-              if (job.status === 'failed') {
-                appendConsoleLog(`[render error] ${job.error || 'Video export failed'}`);
-                return;
-              }
-
-              if (job.status === 'completed') {
-                appendConsoleLog(`[renderer] Reel rendered successfully: ${job.output_file}`);
-                await loadOutputs();
-                switchTab('gallery');
-                if (job.output_file) {
-                  playOutputVideo(job.output_file, hook.title);
-                }
-              }
-            }
-          } catch (pollErr) {
-            clearInterval(pollRender);
-            appendConsoleLog(`[render error] ${pollErr.message}`);
-            btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
-            lucide.createIcons();
-          }
-        }, 1000);
-
-      } catch (e) {
-        console.error(e);
-        appendConsoleLog(`[render error] ${e.message}`);
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="video" class="w-4 h-4"></i><span>Export 9:16</span>`;
-        lucide.createIcons();
-      }
-    }
-
-    async function triggerMakePipeline() {
-      const target = document.getElementById('source-url').value.trim();
-      if (!target) {
-        appendConsoleLog("[error] Please enter a URL or target to run pipeline.");
-        return;
-      }
-
-      const btn = document.getElementById('execute-make-btn');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i><span>Running...</span>`;
-      lucide.createIcons();
-
-      const stepper = document.getElementById('pipeline-stepper');
-      stepper.classList.remove('hidden');
-
-      try {
-        const res = await fetch('/api/jobs/make', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            target: target,
-            framing: activeFramingMode === 'auto' ? autoDetectedFraming : activeFramingMode,
-            style: activeSubtitleMode === 'auto' ? autoDetectedStyle : activeSubtitleMode
-          })
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-          throw new Error(errData.detail || `Server returned HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const job_id = data.job_id;
-        if (!job_id) {
-          throw new Error("Server did not return a valid job ID");
-        }
-        document.getElementById('active-task-id').innerText = job_id;
-
-        let lastMakeLogIndex = 0;
-        const pollMake = setInterval(async () => {
-          try {
-            const sRes = await fetch(`/api/jobs/${job_id}`);
-            if (!sRes.ok) {
-              const err = await sRes.json().catch(() => ({ detail: `HTTP ${sRes.status}` }));
-              throw new Error(err.detail || `Pipeline check failed (HTTP ${sRes.status})`);
-            }
-            const job = await sRes.json();
-            if (!job || job.detail) {
-              throw new Error(job?.detail || "Invalid pipeline response");
-            }
-
-            document.getElementById('stepper-status-text').innerText = job.step || 'Autonomous pipeline active...';
-            document.getElementById('stepper-percent').innerText = `${job.progress || 10}%`;
-            document.getElementById('stepper-progress-fill').style.width = `${job.progress || 10}%`;
-
-            if (job.logs && job.logs.length > lastMakeLogIndex) {
-              const newLogs = job.logs.slice(lastMakeLogIndex);
-              newLogs.forEach(l => appendConsoleLog(l));
-              lastMakeLogIndex = job.logs.length;
-            }
-
-            if (job.status === 'completed' || job.status === 'failed') {
-              clearInterval(pollMake);
-              btn.disabled = false;
-              btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
-              lucide.createIcons();
-              if (job.status === 'failed') {
-                appendConsoleLog(`[pipeline error] Job failed: ${job.error || 'Unknown error'}`);
-              }
-              loadOutputs();
-            }
-          } catch (pollErr) {
-            clearInterval(pollMake);
-            appendConsoleLog(`[pipeline error] ${pollErr.message}`);
-            btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
-            lucide.createIcons();
-          }
-        }, 1000);
-      } catch (e) {
-        console.error(e);
-        appendConsoleLog(`[pipeline error] ${e.message}`);
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i><span>Run pipeline</span>`;
-        lucide.createIcons();
-      }
-    }
-
-    // ==================== SETTINGS & .ENV MANAGEMENT ====================
-    async function loadEnvConfig() {
-      try {
-        const res = await fetch('/api/env');
-        const data = await res.json();
-        cachedEnvConfig = data;
-        const vals = data.values || {};
-
-        document.getElementById('env-gemini-key').value = vals.GEMINI_API_KEY || '';
-        if (vals.GEMINI_MODEL) document.getElementById('env-gemini-model').value = vals.GEMINI_MODEL;
-        if (vals.SUB_STYLE) document.getElementById('env-sub-style').value = vals.SUB_STYLE;
-        if (vals.GEMINI_MODEL_FALLBACKS) document.getElementById('env-gemini-fallbacks').value = vals.GEMINI_MODEL_FALLBACKS;
-        if (vals.AUTO_CLIP_DENSITY_MINUTES) document.getElementById('env-density-minutes').value = vals.AUTO_CLIP_DENSITY_MINUTES;
-        if (vals.FFMPEG_THREADS) document.getElementById('env-ffmpeg-threads').value = vals.FFMPEG_THREADS;
-
-        document.getElementById('env-raw-textarea').value = data.raw || '';
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    async function saveEnvForm() {
-      const activeIsRaw = !document.getElementById('env-raw-view').classList.contains('hidden');
-      let payload = {};
-
-      if (activeIsRaw) {
-        payload = { raw: document.getElementById('env-raw-textarea').value };
-      } else {
-        payload = {
-          values: {
-            GEMINI_API_KEY: document.getElementById('env-gemini-key').value.trim(),
-            GEMINI_MODEL: document.getElementById('env-gemini-model').value,
-            SUB_STYLE: document.getElementById('env-sub-style').value,
-            GEMINI_MODEL_FALLBACKS: document.getElementById('env-gemini-fallbacks').value.trim(),
-            AUTO_CLIP_DENSITY_MINUTES: document.getElementById('env-density-minutes').value,
-            FFMPEG_THREADS: document.getElementById('env-ffmpeg-threads').value
-          }
-        };
-      }
-
-      try {
-        const res = await fetch('/api/env', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          const alertElem = document.getElementById('env-status-alert');
-          alertElem.classList.remove('hidden');
-          setTimeout(() => alertElem.classList.add('hidden'), 3500);
-          await loadEnvConfig();
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function switchEnvTab(mode) {
-      const isRaw = mode === 'raw';
-      document.getElementById('env-form-view').classList.toggle('hidden', isRaw);
-      document.getElementById('env-raw-view').classList.toggle('hidden', !isRaw);
-      
-      const tabForm = document.getElementById('env-tab-form');
-      const tabRaw = document.getElementById('env-tab-raw');
-
-      if (isRaw) {
-        tabRaw.className = "px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all";
-        tabForm.className = "px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all";
-      } else {
-        tabForm.className = "px-3 py-1.5 bg-[#21232a] text-white font-medium rounded-md border border-white/10 transition-all";
-        tabRaw.className = "px-3 py-1.5 text-slate-400 hover:text-white rounded-md transition-all";
-      }
-    }
-
-    function togglePasswordVisibility(fieldId, btn) {
-      const field = document.getElementById(fieldId);
-      if (field.type === 'password') {
-        field.type = 'text';
-        btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i>`;
-      } else {
-        field.type = 'password';
-        btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i>`;
-      }
-      lucide.createIcons();
-    }
-
-    // ==================== CHANNELS.TXT RADAR ====================
-    async function loadChannels() {
-      try {
-        const res = await fetch('/api/channels');
-        const data = await res.json();
-        cachedChannels = data.channels || [];
-        renderChannelsTable();
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function renderChannelsTable() {
-      const tbody = document.getElementById('channels-table-body');
-      if (!tbody) return;
-
-      if (cachedChannels.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500 font-mono">No channels configured in channels.txt</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = cachedChannels.map((line, idx) => {
-        const parts = line.split('|').map(s => s.trim());
-        const handle = parts[0] || '';
-        const clips = parts.find(p => p.startsWith('clips=')) || 'clips=auto';
-        const focus = parts.find(p => p.startsWith('focus=')) || 'focus=general';
-
-        return `
-          <tr class="hover:bg-white/[0.02] transition-colors">
-            <td class="p-3 font-mono font-medium text-white">${handle}</td>
-            <td class="p-3 text-slate-400 font-mono tabular">${clips}</td>
-            <td class="p-3 text-slate-400 font-mono">${focus}</td>
-            <td class="p-3 text-right">
-              <button onclick="removeChannel(${idx})" class="text-red-400 hover:text-red-300 font-mono text-[11px]">
-                Remove
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function addNewChannel() {
-      const input = document.getElementById('new-channel-input');
-      const val = input.value.trim();
-      if (!val) return;
-      cachedChannels.push(val);
-      input.value = '';
-      renderChannelsTable();
-    }
-
-    function removeChannel(idx) {
-      cachedChannels.splice(idx, 1);
-      renderChannelsTable();
-    }
-
-    async function saveActiveChannels() {
-      try {
-        await fetch('/api/channels', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ channels: cachedChannels })
-        });
-        appendConsoleLog('[channels] Successfully saved channels.txt');
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    // ==================== GALLERY & OUTPUTS ====================
-    async function loadOutputs() {
-      try {
-        const res = await fetch('/api/outputs');
-        const data = await res.json();
-        const files = data.files || [];
-        const folders = data.folders || [];
-        document.getElementById('gallery-count').innerText = files.length;
-
-        const container = document.getElementById('outputs-grid') || document.getElementById('outputs-container');
-        if (!container) return;
-
-        if (files.length === 0) {
-          container.innerHTML = `
-            <div class="p-12 border border-white/[0.08] bg-[#18191e] rounded-xl text-center space-y-3">
-              <div class="w-10 h-10 rounded-full bg-[#21232a] border border-white/10 flex items-center justify-center mx-auto text-slate-400">
-                <i data-lucide="video" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <p class="text-sm font-medium text-slate-300">No rendered video clips in output/ yet</p>
-                <p class="text-xs text-slate-500 mt-1 font-mono">Use "Export 9:16" or "Run pipeline" to generate high-retention vertical reels.</p>
-              </div>
-            </div>
-          `;
-          lucide.createIcons();
-          return;
-        }
-
-        const tokenParam = window.__HOOKY_TOKEN__ ? `?token=${encodeURIComponent(window.__HOOKY_TOKEN__)}` : '';
-
-        // Render foldered collections grouped by source video title
-        if (folders.length > 0) {
-          container.innerHTML = folders.map(folder => {
-            const folderFiles = folder.files || [];
-            return `
-              <div class="border border-white/[0.08] bg-[#141519] rounded-xl overflow-hidden transition-all">
-                <div class="px-5 py-3.5 bg-[#18191e] border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-[#21232a] border border-white/10 flex items-center justify-center text-[#ffd166] shrink-0">
-                      <i data-lucide="folder-video" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                      <h3 class="text-sm font-medium text-white tracking-tight leading-snug">${folder.name}</h3>
-                      <p class="text-[11px] text-slate-400 font-mono">Source collection • ${folderFiles.length} ${folderFiles.length === 1 ? 'reel' : 'reels'}</p>
-                    </div>
-                  </div>
-                  <span class="self-start sm:self-auto text-[11px] font-mono px-2.5 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded-full tabular">
-                    ${folderFiles.length} ${folderFiles.length === 1 ? 'clip' : 'clips'}
-                  </span>
-                </div>
-
-                <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  ${folderFiles.map(f => {
-                    const rankMatch = f.name.match(/reel_rank(\d+)_(\d+)pts/i);
-                    const badgeHTML = rankMatch 
-                      ? `<span class="text-[10px] font-mono px-2 py-0.5 bg-[#ffd166]/10 text-[#ffd166] border border-[#ffd166]/20 rounded font-semibold">Rank #${parseInt(rankMatch[1])} • ${rankMatch[2]}pts</span>`
-                      : `<span class="text-[10px] font-mono px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded font-medium">1080×1920 MP4</span>`;
-                    
-                    const cleanDisplayName = f.name.replace(/^reel_rank\d+_\d+pts_/, '').replace(/^reel_/, '').replace(/_\d+\.mp4$/, '').replace(/_/g, ' ') || f.name;
-                    const encodedUrl = `/api/outputs/${String(f.rel_path).replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}${tokenParam}`;
-
-                    return `
-                      <div class="p-4 bg-[#18191e] border border-white/[0.08] hover:border-white/20 rounded-lg transition-all space-y-3 font-mono flex flex-col justify-between">
-                        <div class="space-y-2">
-                          <div class="flex items-center justify-between gap-2">
-                            ${badgeHTML}
-                            <span class="text-[11px] text-slate-400 tabular">${f.size_mb} MB</span>
-                          </div>
-                          <div>
-                            <h4 class="font-medium text-white text-xs truncate max-w-full font-sans capitalize" title="${f.name}">${cleanDisplayName}</h4>
-                            <p class="text-[10px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
-                          </div>
-                        </div>
-                        <div class="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
-                          <button
-                            onclick="playOutputVideo('${String(f.rel_path).replace(/\\/g, '/').replace(/'/g, "\\'")}', '${cleanDisplayName.replace(/'/g, "\\'")}')"
-                            class="flex-1 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
-                          >
-                            <i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i>
-                            <span>Watch</span>
-                          </button>
-                          <a
-                            href="${encodedUrl}"
-                            download
-                            class="px-3 py-1.5 bg-[#121316] text-slate-300 hover:text-white border border-white/[0.08] rounded text-xs transition-all"
-                            title="Download MP4"
-                          >
-                            <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
-                          </a>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-            `;
-          }).join('');
-        } else {
-          container.innerHTML = files.map(f => {
-            const cleanDisplayName = f.name.replace(/^reel_/, '').replace(/_\d+\.mp4$/, '').replace(/_/g, ' ') || f.name;
-            const encodedUrl = `/api/outputs/${String(f.rel_path).replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/')}${tokenParam}`;
-            return `
-              <div class="p-4 bg-[#18191e] border border-white/[0.08] hover:border-white/20 rounded-lg transition-all space-y-3 font-mono">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs px-2 py-0.5 bg-white/5 text-slate-300 border border-white/10 rounded font-medium">1080×1920 MP4</span>
-                  <span class="text-xs text-slate-400 tabular">${f.size_mb} MB</span>
-                </div>
-                <div>
-                  <h4 class="font-medium text-white text-xs truncate max-w-full font-sans capitalize" title="${f.name}">${cleanDisplayName}</h4>
-                  <p class="text-[11px] text-slate-500 mt-0.5">${new Date(f.mtime * 1000).toLocaleString()}</p>
-                </div>
-                <div class="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
-                  <button
-                    onclick="playOutputVideo('${String(f.rel_path).replace(/\\/g, '/').replace(/'/g, "\\'")}', '${cleanDisplayName.replace(/'/g, "\\'")}')"
-                    class="flex-1 py-1.5 bg-[#21232a] hover:bg-[#2b2e38] text-white border border-white/10 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <i data-lucide="play" class="w-3.5 h-3.5 text-[#34d399]"></i>
-                    <span>Watch</span>
-                  </button>
-                  <a
-                    href="${encodedUrl}"
-                    download
-                    class="px-3 py-1.5 bg-[#121316] text-slate-300 hover:text-white border border-white/[0.08] rounded text-xs transition-all"
-                  >
-                    <i data-lucide="download" class="w-3.5 h-3.5 inline"></i>
-                  </a>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-        lucide.createIcons();
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function playOutputVideo(filepath, title) {
-      const box = document.getElementById('active-video-player-box');
-      box.classList.remove('hidden');
-      document.getElementById('active-playing-title').innerText = title || filepath;
-
-      const player = document.getElementById('html5-video-player');
-      const srcElem = document.getElementById('video-source-elem');
-      const tokenParam = window.__HOOKY_TOKEN__ ? `?token=${encodeURIComponent(window.__HOOKY_TOKEN__)}` : '';
-      const cleanPath = String(filepath).replace(/\\/g, '/');
-      const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
-      srcElem.src = `/api/outputs/${encodedPath}${tokenParam}`;
-      player.load();
-      player.play().catch(() => {});
-      box.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function closeActivePlayer() {
-      const box = document.getElementById('active-video-player-box');
-      box.classList.add('hidden');
-      const player = document.getElementById('html5-video-player');
-      player.pause();
-    }
-
-    // ==================== SYSTEM DOCTOR ====================
-    async function loadDoctorReport() {
-      try {
-        const res = await fetch('/api/doctor');
-        const data = await res.json();
-        const container = document.getElementById('doctor-checks-container');
-        if (!container) return;
-
-        if (data.gpu) {
-          document.getElementById('gpu-text').innerText = data.gpu;
-        }
-
-        const checks = data.checks || [];
-        container.innerHTML = checks.map(c => `
-          <div class="p-3 bg-[#18191e] border border-white/[0.08] rounded-md flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center gap-2">
-              <span class="${c.ok ? 'text-[#34d399]' : 'text-red-400'} font-medium">
-                ${c.ok ? '✓ pass' : '✗ fail'}
-              </span>
-              <span class="text-white font-medium">${c.name}</span>
-            </div>
-            <span class="text-slate-400 text-[11px] truncate max-w-[200px]" title="${c.detail}">${c.detail}</span>
+          <!-- Sub-View 2: Raw .env Code Editor -->
+          <div id="env-raw-view" class="hidden space-y-3">
+            <textarea
+              id="env-raw-textarea"
+              rows="16"
+              class="w-full bg-[#101110] border border-white/[0.08] rounded-lg p-4 font-mono text-xs text-slate-200 focus:outline-none focus:border-white/20 leading-relaxed"
+            ></textarea>
           </div>
-        `).join('');
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  </script>
-</body>
+
+          <div
+            id="env-status-alert"
+            class="hidden p-3 bg-emerald-500/10 border border-emerald-500/20 text-[#d2fa69] text-xs font-mono rounded-md"
+          >
+            Environment configuration saved successfully and reloaded into
+            engine.
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 3: CHANNEL RADAR ==================== -->
+      <section id="view-radar" class="hidden space-y-6">
+        <div class="brutal-card p-6 space-y-6">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
+            <div>
+              <h2
+                class="text-base font-semibold text-white flex items-center gap-2"
+              >
+                <i data-lucide="radio" class="w-4 h-4 text-[#d2fa69]"></i>
+                <span>Let the next video find you</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-1">
+                Autonomous YouTube channel radar saved in
+                <code class="text-slate-300 font-mono">channels.txt</code>
+              </p>
+            </div>
+            <button
+              onclick="saveActiveChannels()"
+              class="brutal-btn-acid px-4 py-2 text-xs flex items-center gap-2"
+            >
+              <i data-lucide="save" class="w-3.5 h-3.5"></i>
+              <span>Save channels</span>
+            </button>
+          </div>
+
+          <div
+            class="p-3.5 bg-[#101110] border border-white/[0.08] rounded-lg flex gap-2"
+          >
+            <input
+              id="new-channel-input"
+              aria-label="YouTube channel handle or URL"
+              type="text"
+              placeholder="@CreatorHandle | clips=2 | focus=high energy moments"
+              class="flex-1 bg-[#191b18] border border-white/[0.08] rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-white/20"
+            />
+            <button
+              onclick="addNewChannel()"
+              class="px-4 py-2 bg-[#242721] hover:bg-[#2b2e38] text-white border border-white/10 rounded-md text-xs font-mono font-medium transition-all"
+            >
+              Add channel
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse font-mono">
+              <thead>
+                <tr
+                  class="border-b border-white/[0.08] text-slate-400 text-[11px]"
+                >
+                  <th class="p-3">Handle / URL</th>
+                  <th class="p-3">Clips desired</th>
+                  <th class="p-3">Editing focus</th>
+                  <th class="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody
+                id="channels-table-body"
+                class="divide-y divide-white/[0.06]"
+              >
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 4: OUTPUT GALLERY ==================== -->
+      <section id="view-gallery" class="hidden space-y-6">
+        <div class="brutal-card p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2
+                class="text-base font-semibold text-white flex items-center gap-2"
+              >
+                <i data-lucide="folder" class="w-4 h-4 text-[#d2fa69]"></i>
+                <span>A home for your good moments</span>
+              </h2>
+              <p class="text-xs text-slate-400 mt-1">
+                Rendered MP4 video clips saved in
+                <code class="text-slate-300 font-mono">output/</code>
+              </p>
+            </div>
+            <button
+              onclick="loadOutputs()"
+              class="px-3 py-1.5 bg-[#242721] hover:bg-[#2b2e38] text-slate-300 hover:text-white border border-white/10 rounded-md text-xs font-mono flex items-center gap-1.5 transition-all"
+            >
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <!-- Video Player Modal / Active Video Card -->
+          <div
+            id="active-video-player-box"
+            class="hidden p-5 bg-[#101110] border border-white/10 rounded-xl space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <span
+                id="active-playing-title"
+                class="font-medium text-white text-sm font-mono"
+                >Now playing</span
+              >
+              <button
+                onclick="closeActivePlayer()"
+                class="text-slate-400 hover:text-white text-xs font-mono"
+              >
+                Close player ✕
+              </button>
+            </div>
+            <div
+              class="max-w-xs mx-auto aspect-[9/16] overflow-hidden bg-black border border-white/10 rounded-lg"
+            >
+              <video
+                id="html5-video-player"
+                controls
+                class="w-full h-full object-cover"
+              >
+                <source id="video-source-elem" src="" type="video/mp4" />
+              </video>
+            </div>
+          </div>
+
+          <div id="outputs-container" class="space-y-6">
+            <div id="outputs-grid" class="space-y-6">
+              <!-- Dynamically populated foldered collections -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 5: SYSTEM DOCTOR ==================== -->
+      <section id="view-doctor" class="hidden space-y-6">
+        <div class="brutal-card p-6 space-y-6">
+          <div>
+            <h2
+              class="text-base font-semibold text-white flex items-center gap-2"
+            >
+              <i data-lucide="activity" class="w-4 h-4 text-[#d2fa69]"></i>
+              <span>Keep the engine running</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Diagnostic status across FFmpeg, Whisper, hardware acceleration,
+              and Gemini API.
+            </p>
+          </div>
+
+          <div
+            id="doctor-checks-container"
+            class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono"
+          >
+            <!-- Dynamically loaded checks -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>

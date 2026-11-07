@@ -16,6 +16,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from hooky.config import CHANNELS_FILE, LINKS_FILE, OUTPUT_DIR, PROJECT_ROOT, ENV_FILE
 from hooky.doctor import dependency_checks
@@ -108,6 +109,7 @@ async def security_middleware(request: Request, call_next):
 
 STATIC_DIR = Path(__file__).parent / "static"
 INDEX_HTML = STATIC_DIR / "index.html"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="studio-static")
 
 _JOBS: dict[str, dict[str, Any]] = {}
 
