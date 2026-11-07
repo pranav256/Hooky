@@ -1,4 +1,4 @@
-# ⚡ Hooky — Autonomous AI Video Clipper & Shorts/Reels Generator
+# Hooky — AI Video Clipper & Shorts Generator
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue?logo=python&logoColor=white" alt="Python Versions">
@@ -11,22 +11,21 @@
 </p>
 
 <p align="center">
-  <b>The open-source Opus Clip & Klap alternative.</b><br>
-  Automatically turn long YouTube videos, podcasts, and interviews into high-retention <b>vertical 9:16 Shorts, TikToks, and Instagram Reels</b> with AI hook detection, dynamic animated captions (Hormozi style), and smart rate-limited auto-posting.
+  CLI tool and local web studio for extracting vertical 9:16 clips from long-form video with synchronized subtitle animation.
 </p>
 
 ---
 
 ## 🌟 Why Hooky?
 
-Most clipping tools are either expensive monthly subscriptions or clunky scripts that cut random timestamps. **Hooky** is a production-grade, terminal-first automation engine designed for creators, podcast managers, and faceless channel builders.
+Hooky provides automated clipping, transcription, and subtitle styling for vertical video production.
 
-* 🧠 **AI Viral Highlight Detection**: Uses Google Gemini to analyze transcripts, detect narrative hooks, and pick high-retention moments (not just audio peaks).
-* 📝 **Animated Hormozi-Style Captions**: Powered by `faster-whisper` and source captions with karaoke-style highlight words, custom fonts, and multiple preset styles (`hormozi`, `clean`, `yellow`).
-* 📺 **Automated Channel Monitor**: Simply drop channel handles in `channels.txt` — Hooky discovers high-performing winners based on view count and feeds them directly to the render pipeline.
-* 🛡️ **Anti-Ban Instagram Publisher**: Built-in scheduler with safe pacing, cooldown jitter, upload checkpoints, and duplicate prevention to protect account health.
-* 📁 **Zero Database Overhead**: Zero SQL or heavy docker setup. Driven cleanly by two text files (`channels.txt` and `links.txt`).
-* ⚡ **Lightning Fast & Hardware Adaptive**: Leverages GPU acceleration (CUDA) and multi-threaded FFmpeg presets with automatic memory/CPU profiling.
+* **Highlight Detection**: Uses Google Gemini to analyze transcripts, detect narrative hooks, and pick high-retention moments (not just audio peaks).
+* **Animated Captions**: Powered by `faster-whisper` and source captions with karaoke-style highlight words, custom fonts, and multiple preset styles (`hormozi`, `clean`, `yellow`).
+* **Channel Monitor**: Simply drop channel handles in `channels.txt` — Hooky discovers high-performing winners based on view count and feeds them directly to the render pipeline.
+* **Scheduled Publishing**: Built-in scheduler with safe pacing, cooldown jitter, upload checkpoints, and duplicate prevention to protect account health.
+* **File-Based Configuration**: Zero SQL or heavy docker setup. Driven cleanly by two text files (`channels.txt` and `links.txt`).
+* **Hardware Acceleration**: Leverages GPU acceleration (CUDA) and multi-threaded FFmpeg presets with automatic memory/CPU profiling.
 
 ---
 
